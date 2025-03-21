@@ -4,7 +4,7 @@ vs_build/
 lib/
 .vs/
 .vscode/
-bin/
+# bin/
 _deps/
 
 *Config.h
@@ -40,3 +40,5 @@ _deps/
 *.ilk
 *.pdb
 *.pyc
+
+!/meta/bin/**
