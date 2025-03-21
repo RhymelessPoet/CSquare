@@ -1,0 +1,9 @@
+{
+    "Attributes": ["Meta", "Method", "Property"],
+    "Tags":
+    {
+        "Meta": ["QML"],
+        "Method": [],
+        "Property": ["Setter", "Getter", "UIName"]
+    }
+}
