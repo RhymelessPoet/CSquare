@@ -1,0 +1,26 @@
+{
+    "version": 3,
+    "configurePresets": [
+      {
+        "name": "MSVC",
+        "displayName": "Visual Studio 2022 (x64)",
+        "generator": "Visual Studio 17 2022",
+        "architecture": "x64", 
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "cacheVariables": {
+        },
+        "environment": {
+          
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "Build-MSVC",
+        "configurePreset": "MSVC",
+        "configuration": "Debug",
+        "jobs": 8
+      }
+    ]
+}
+  
