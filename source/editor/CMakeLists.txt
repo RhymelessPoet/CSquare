@@ -4,7 +4,7 @@ set(TARGET_NAME CSEditor)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2)
 
 add_executable(${TARGET_NAME} main.cpp)
 
@@ -18,8 +18,19 @@ foreach(filepath IN LISTS QML_PATHS)
                OUTPUT_VARIABLE rel_path)
     list(APPEND QML_FILES "${rel_path}")
 endforeach()
-
 # message(STATUS "QML文件列表: ${QML_FILES}")
+
+file(GLOB_RECURSE ICON_PATHS LIST_DIRECTORIES false
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.png"
+)
+foreach(filepath IN LISTS ICON_PATHS)
+    # 将绝对路径转换为相对于当前源码目录的相对路径
+    cmake_path(RELATIVE_PATH filepath 
+               BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+               OUTPUT_VARIABLE rel_path)
+    list(APPEND ICON_FILES "${rel_path}")
+endforeach()
+# message(STATUS "QML文件列表: ${ICON_FILES}")
 
 set(QML_MODULE CSQML)
 
@@ -29,12 +40,14 @@ qt_add_qml_module(
     URI ${QML_MODULE}
     VERSION 1.0
     QML_FILES ${QML_FILES}
+    RESOURCES
+        ${ICON_FILES}
     OUTPUT_DIRECTORY ${QML_MODULE}
     RESOURCE_PREFIX /
 )
 
 
-target_link_libraries(${TARGET_NAME} PRIVATE Qt6::Core Qt6::Qml Qt6::Quick ${QML_MODULE})
+target_link_libraries(${TARGET_NAME} PRIVATE Qt6::Core Qt6::Qml Qt6::Quick Qt6::QuickControls2 ${QML_MODULE})
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 
