@@ -1,0 +1,27 @@
+Language: Cpp
+BasedOnStyle: LLVM
+
+PointerAlignment: Left
+IndentWidth: 4
+
+# 类/结构体/枚举/命名空间的大括号换行风格
+BreakBeforeBraces: Custom
+# 大括号换行规则
+BraceWrapping:
+  AfterNamespace: true  # 命名空间后换行
+  AfterClass: true      # 类定义后换行
+  AfterFunction: true   # 函数后不换行
+  AfterControlStatement: MultiLine   # 控制语句后换行规则
+#   AfterControlStatementsWrap: true    # 多行控制语句强制换行
+  SplitEmptyFunction: false
+
+AlwaysBreakAfterReturnType: None  # 强制返回值类型与函数名在同一行 
+AllowAllParametersOfDeclarationOnNextLine: false  # 参数不换行，减少返回值换行概率  
+
+# 允许短函数单行显示（可选）
+AllowShortFunctionsOnASingleLine: Inline
+
+# 控制访问修饰符（public/private/protected）的缩进偏移量
+AccessModifierOffset: -4
+
+ColumnLimit: 120  # 放宽行宽限制
