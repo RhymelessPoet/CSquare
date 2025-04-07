@@ -2,7 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.12
 
-import CSTheme 1.0
+import CSEditor.Theme 1.0
 
 Button {
     id: button
