@@ -1,3 +1,6 @@
-[submodule "UDRefl"]
-	path = UDRefl
+[submodule "thirdparty/UDRefl"]
+	path = thirdparty/UDRefl
 	url = https://github.com/Ubpa/UDRefl.git
+[submodule "thirdparty/glfw"]
+	path = thirdparty/glfw
+	url = https://github.com/glfw/glfw.git
