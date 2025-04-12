@@ -57,6 +57,7 @@ qt_add_qml_module(
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE Qt6::Core Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::OpenGLWidgets ${QML_MODULE})
+target_link_libraries(${TARGET_NAME} PRIVATE CSEngine)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 
