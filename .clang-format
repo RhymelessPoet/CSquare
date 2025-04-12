@@ -10,7 +10,8 @@ BreakBeforeBraces: Custom
 BraceWrapping:
   AfterNamespace: true  # 命名空间后换行
   AfterClass: true      # 类定义后换行
-  AfterFunction: true   # 函数后不换行
+  AfterFunction: true   # 函数后换行
+  AfterEnum: true       # 枚举类后换行
   AfterControlStatement: MultiLine   # 控制语句后换行规则
 #   AfterControlStatementsWrap: true    # 多行控制语句强制换行
   SplitEmptyFunction: false
