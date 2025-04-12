@@ -1,4 +1,5 @@
 #include "CSQuickRenderer.h"
+#include "RenderModule.h"
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
 
@@ -11,9 +12,7 @@ CSQuickRenderer::~CSQuickRenderer() {}
 
 void CSQuickRenderer::render()
 {
-    auto gl = QOpenGLContext::currentContext()->extraFunctions();
-    gl->glClearColor(0.5f, 0.6f, 0.7f, 1.0f);
-    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    CS::RenderModule(CS::EGraphicAPI::OpenGL).Update();
 }
 
 QOpenGLFramebufferObject* CSQuickRenderer::createFramebufferObject(const QSize& size)
