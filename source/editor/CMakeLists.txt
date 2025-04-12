@@ -4,7 +4,7 @@ set(TARGET_NAME CSEditor)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2 OpenGLWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2 Gui)
 
 file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -56,8 +56,19 @@ qt_add_qml_module(
     RESOURCE_PREFIX /
 )
 
-target_link_libraries(${TARGET_NAME} PRIVATE Qt6::Core Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::OpenGLWidgets ${QML_MODULE})
-target_link_libraries(${TARGET_NAME} PRIVATE CSEngine)
+target_link_libraries(${TARGET_NAME} PRIVATE
+    Qt6::Core
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickPrivate
+    Qt6::QuickControls2
+    Qt6::Gui
+    Qt6::GuiPrivate
+    ${QML_MODULE}
+    CSEngine)
+
+target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS})
+target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIRS})
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 

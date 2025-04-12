@@ -1,7 +1,7 @@
 #include "CSQuickRenderer.h"
 #include "RenderModule.h"
-#include <QOpenGLContext>
-#include <QOpenGLExtraFunctions>
+
+#include <rhi/qrhi.h>
 
 namespace CSEditor
 {
@@ -10,19 +10,16 @@ CSQuickRenderer::CSQuickRenderer() {}
 
 CSQuickRenderer::~CSQuickRenderer() {}
 
-void CSQuickRenderer::render()
+void CSQuickRenderer::initialize(QRhiCommandBuffer* cb) {}
+
+void CSQuickRenderer::render(QRhiCommandBuffer* cb)
 {
-    CS::RenderModule(CS::EGraphicAPI::OpenGL).Update();
+    const QColor clearColor = QColor::fromRgbF(0.7f, 0.3f, 0.2f, 1.0f);
+    cb->beginPass(renderTarget(), clearColor, {1.0f, 0});
+
+    cb->endPass();
 }
 
-QOpenGLFramebufferObject* CSQuickRenderer::createFramebufferObject(const QSize& size)
-{
-    return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
-}
-
-void CSQuickRenderer::synchronize(QQuickFramebufferObject* fbo)
-{
-    QQuickFramebufferObject::Renderer::synchronize(fbo);
-}
+void CSQuickRenderer::synchronize(QQuickRhiItem* item) {}
 
 } // namespace CSEditor

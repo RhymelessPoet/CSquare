@@ -8,7 +8,7 @@ CSQuickRenderView::CSQuickRenderView() {}
 
 CSQuickRenderView::~CSQuickRenderView() noexcept {}
 
-QQuickFramebufferObject::Renderer* CSQuickRenderView::createRenderer() const
+QQuickRhiItemRenderer* CSQuickRenderView::createRenderer()
 {
     return new CSQuickRenderer();
 }

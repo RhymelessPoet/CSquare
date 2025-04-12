@@ -1,17 +1,17 @@
-#include <QQuickFramebufferObject>
+#include <QQuickRhiItem>
 
 namespace CSEditor
 {
 
 class CSQuickRenderer;
 
-class CSQuickRenderView : public QQuickFramebufferObject
+class CSQuickRenderView : public QQuickRhiItem
 {
 public:
     CSQuickRenderView(/* args */);
     ~CSQuickRenderView() noexcept;
 
-    virtual Renderer* createRenderer() const override;
+    virtual QQuickRhiItemRenderer* createRenderer() override;
 
 private:
     CSQuickRenderer* m_renderer{nullptr};
