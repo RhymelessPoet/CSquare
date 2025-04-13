@@ -1,4 +1,4 @@
-set(TARGET_NAME CSEngine)
+set(TARGET_NAME CSRender)
 
 file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -15,3 +15,4 @@ target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/graphics/opengl/glad/include)
 
 target_link_libraries(${TARGET_NAME} PRIVATE glfw)
+target_link_libraries(${TARGET_NAME} PRIVATE CSEngine)

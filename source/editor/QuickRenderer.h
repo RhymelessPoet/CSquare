@@ -3,11 +3,11 @@
 namespace CSEditor
 {
 
-class CSQuickRenderer : public QQuickRhiItemRenderer
+class QuickRenderer : public QQuickRhiItemRenderer
 {
 public:
-    CSQuickRenderer(/* args */);
-    ~CSQuickRenderer();
+    QuickRenderer(/* args */);
+    ~QuickRenderer();
 
     virtual void initialize(QRhiCommandBuffer* cb) override;
     virtual void render(QRhiCommandBuffer* cb) override;
