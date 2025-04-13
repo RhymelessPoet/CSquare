@@ -1,25 +1,14 @@
-#include "CSQuickRenderView.h"
-// #include "engine/Engine.h"
-#include <QGuiApplication>
-#include <QIcon>
-#include <QQmlApplicationEngine>
-#include <QQuickStyle>
+#include "Engine.h"
+#include "QUIModule.h"
+#include "RenderModule.h"
 
 int main(int argc, char* argv[])
 {
-    qputenv("QSG_RHI_BACKEND", "opengl");
-    QGuiApplication app(argc, argv);
+    CS::Engine engine;
+    engine.addModule<CS::QUIModule>(argc, argv);
+    engine.addModule<CS::RenderModule>(CS::EGraphicAPI::OpenGL);
 
-    app.setWindowIcon(QIcon(":/CSQML/qml/icons/cslogo.png"));
-    QQuickStyle::setStyle("Fusion");
+    engine.Run();
 
-    QQmlApplicationEngine engine;
-    // 添加模块搜索路径
-    engine.addImportPath("qrc:/");
-    qmlRegisterType<CSEditor::CSQuickRenderView>("CSEditor.View", 1, 0, "CSQuickRenderView");
-    qmlRegisterSingletonType(QStringLiteral("qrc:/CSQML/qml/CSThemePalette.qml"), "CSEditor.Theme", 1, 0, "CSTheme");
-
-    engine.load(QUrl("qrc:/CSQML/qml/CSAppWindow.qml"));
-
-    return app.exec();
+    return 0;
 }

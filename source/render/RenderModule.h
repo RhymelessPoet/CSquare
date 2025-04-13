@@ -17,6 +17,8 @@ public:
     ~RenderModule() override;
 
     virtual void Update() override;
+
+    virtual void SetEngineController(std::shared_ptr<EngineController> controller) override {}
 };
 
 } // namespace CS

@@ -65,7 +65,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     Qt6::Gui
     Qt6::GuiPrivate
     ${QML_MODULE}
-    CSEngine)
+    CSEngine
+    CSRender)
 
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS})
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIRS})
