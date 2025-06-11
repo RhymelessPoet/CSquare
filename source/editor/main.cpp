@@ -1,12 +1,13 @@
 #include "Engine.h"
 #include "QUIModule.h"
 #include "RenderModule.h"
+#include "graphics/GraphicsDefine.h"
 
 int main(int argc, char* argv[])
 {
-    CS::Engine engine;
-    engine.addModule<CS::QUIModule>(argc, argv);
-    engine.addModule<CS::RenderModule>(CS::EGraphicAPI::OpenGL);
+    auto& engine = CS::Engine::Instance();
+    engine.AddModule<CS::QUIModule>(argc, argv);
+    engine.AddModule<CS::RenderModule>();
 
     engine.Run();
 

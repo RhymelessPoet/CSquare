@@ -1,6 +1,7 @@
 #include "QUIModule.h"
 #include "EngineController.h"
 #include "UIApplication.h"
+#include <QSurfaceFormat>
 
 namespace CS
 {
@@ -14,7 +15,17 @@ struct QUIModuleImpl
 
 QUIModule::QUIModule(int argc, char* argv[])
 {
+    qputenv("QSG_RHI_BACKEND", "opengl");
+    QSurfaceFormat format;
+    format.setRenderableType(QSurfaceFormat::OpenGL);
+    format.setVersion(4, 5);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    QSurfaceFormat::setDefaultFormat(format);
+
     m_impl = std::make_unique<QUIModuleImpl>(argc, argv);
+
+    // HGLRC qtHGLRC = ...;                            // 从 Qt 上下文获取
+    // wglShareLists(qtHGLRC, wglGetCurrentContext()); // 关键：共享资源列表
 }
 
 void QUIModule::Update()

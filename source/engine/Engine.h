@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace CS
@@ -11,19 +12,36 @@ class EngineController;
 class Engine final
 {
 public:
-    Engine(/* args */);
+    static Engine& Instance();
+    Engine();
     ~Engine();
+
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+    Engine(Engine&&) = delete;
+    Engine& operator=(Engine&&) = delete;
 
     void Run();
 
     template <typename ModuleType, typename... Args>
-    ModuleType& addModule(Args&&... args)
+    ModuleType& AddModule(Args&&... args)
     {
         ModuleType* module = new ModuleType(std::forward<Args>(args)...);
         module->SetEngineController(m_controller);
         m_modules.push_back(module);
 
         return *module;
+    }
+
+    template <typename ModuleType>
+    std::optional<ModuleType*> GetModule()
+    {
+        for (auto& module : m_modules) {
+            if (typeid(*module) == typeid(ModuleType)) {
+                return dynamic_cast<ModuleType*>(module);
+            }
+        }
+        return std::nullopt;
     }
 
 private:
