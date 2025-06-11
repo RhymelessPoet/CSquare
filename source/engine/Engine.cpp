@@ -4,6 +4,11 @@
 
 namespace CS
 {
+Engine& Engine::Instance()
+{
+    static Engine engine;
+    return engine;
+}
 Engine::Engine()
 {
     m_controller = std::make_shared<EngineController>();

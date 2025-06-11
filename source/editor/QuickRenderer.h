@@ -1,4 +1,10 @@
+#include "RenderTarget.h"
 #include <QQuickRhiItem>
+
+namespace CS
+{
+class View;
+}
 
 namespace CSEditor
 {
@@ -14,6 +20,7 @@ public:
     virtual void synchronize(QQuickRhiItem* fbo) override;
 
 private:
+    std::shared_ptr<CS::View> m_view;
     QRhiTexture* m_texture{nullptr};
 };
 
