@@ -28,6 +28,8 @@ QUIModule::QUIModule(int argc, char* argv[])
     // wglShareLists(qtHGLRC, wglGetCurrentContext()); // 关键：共享资源列表
 }
 
+void QUIModule::Initialize() {}
+
 void QUIModule::Update()
 {
     impl().guiApp.processEvents();

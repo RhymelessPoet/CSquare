@@ -14,19 +14,14 @@ public:
     OpenGLContext(std::unique_ptr<INativeContext> nativeContext);
     ~OpenGLContext();
 
-    // template <typename NativeContextType>
-    // bool Is() const
-    // {
-    //     return m_nativeContext.type() == typeid(NativeContextType);
-    // }
-
-    // template <typename NativeContextHandleType>
-    // NativeContextHandleType GetNativeContext() const
-    // {
-    //     return std::any_cast<NativeContextType>(m_nativeContext);
-    // }
-
     bool IsShared() const;
+
+    OpenGLContext& GLBindFramebuffer(GLenum target, GLuint framebuffer);
+    OpenGLContext& GLGenFramebuffers(GLsizei n, GLuint* ids);
+    OpenGLContext& GLDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
+    OpenGLContext&
+    GLFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+    bool GLCheckFramebufferStatus(GLenum target);
 
     OpenGLContext& GLGenTextures(GLsizei n, GLuint* textures);
     OpenGLContext& GLBindTexture(GLenum target, GLuint texture);

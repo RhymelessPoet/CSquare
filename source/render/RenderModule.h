@@ -15,9 +15,12 @@ public:
     RenderModule();
     ~RenderModule() override;
 
+    virtual void Initialize() override;
     virtual void Update() override;
 
     virtual void SetEngineController(std::shared_ptr<EngineController> controller) override {}
+
+    void Render();
 
     std::shared_ptr<View> CreateView();
 

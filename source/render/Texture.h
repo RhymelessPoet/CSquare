@@ -11,7 +11,6 @@ class Texture final : public IGraphicsResource
 {
 public:
     friend class GraphicsAPI;
-    friend class RenderTarget;
     ~Texture() = default;
 
     std::any GetNativeTexture() const;

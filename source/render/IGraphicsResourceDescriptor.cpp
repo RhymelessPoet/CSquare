@@ -34,8 +34,9 @@ std::shared_ptr<GraphicsGLImpl> IGraphicsResourceDescriptor::GetGraphicsAPI() co
 
 bool IGraphicsResourceDescriptor::Build()
 {
-    bool isNeedBuild = !IsBuild() || m_isDirty;
-    bool isNeedDestroy = IsBuild() && m_isDirty;
+    bool dirty = IsDirty();
+    bool isNeedBuild = !IsBuild() || dirty;
+    bool isNeedDestroy = IsBuild() && dirty;
 
     if (isNeedDestroy) {
         Destroy();

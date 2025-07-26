@@ -23,7 +23,6 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
         // auto glContext = static_cast<const QRhiGles2NativeHandles*>(rhi()->nativeHandles())->context;
         // HGLRC wglContext = glContext->nativeInterface<QNativeInterface::QWGLContext>()->nativeContext();
 
-        auto& engine = CS::Engine::Instance();
         auto renderModule = CS::Engine::Instance().GetModule<CS::RenderModule>();
         if (renderModule.has_value() && m_view == nullptr) {
             CS::GLRendererBuilder rendererBuilder;
@@ -46,6 +45,7 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             renderModule.value()->CreateRenderer(rendererBuilder);
             m_view = renderModule.value()->CreateView();
             auto graphicsAPI = renderModule.value()->GetGraphicsAPI(m_view);
+            graphicsAPI->Initialize();
             auto csTexture = graphicsAPI->CreateTexture();
             // csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
             auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2U(1, 1));
@@ -66,13 +66,15 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             cb->resourceUpdate(batch);
         }
     }
-
-    if (m_renderPass == nullptr) {
-    }
 }
 
 void QuickRenderer::render(QRhiCommandBuffer* cb)
 {
+    auto renderModule = CS::Engine::Instance().GetModule<CS::RenderModule>();
+    if (renderModule.has_value()) {
+        renderModule.value()->Render();
+    }
+
     m_renderPass->Submit(cb, renderTarget());
     update();
 }

@@ -3,13 +3,10 @@
 #include "GraphicsResourceDescriptors.h"
 #include "opengl/GraphicsGLImpl.h"
 
+#include <stdexcept>
+
 namespace CS
 {
-
-void GraphicsAPI::GlobalInit()
-{
-    GraphicsGLImpl::GlobalInit();
-}
 
 std::shared_ptr<GraphicsAPI> GraphicsAPI::Create(std::unique_ptr<GraphicsGLImpl> impl,
                                                  std::shared_ptr<GraphicsResourceCache> resourceCache)
@@ -22,9 +19,15 @@ GraphicsAPI::GraphicsAPI(std::unique_ptr<GraphicsGLImpl> impl, std::shared_ptr<G
     : m_impl(std::move(impl))
 {}
 
+void GraphicsAPI::Initialize()
+{
+    if (!m_impl->Initialize()) {
+        throw std::runtime_error("Graphics API fails to initialize");
+    }
+}
+
 Texture GraphicsAPI::CreateTexture()
 {
-    auto self = shared_from_this();
     auto resourceID = m_impl->GetResourceCache()->Allocate<TextureDescriptor>(m_impl);
     auto descriptor = m_impl->GetResourceCache()->GetDescriptor<TextureDescriptor>(resourceID);
     return Texture(descriptor);
@@ -32,7 +35,6 @@ Texture GraphicsAPI::CreateTexture()
 
 RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
 {
-    auto self = shared_from_this();
     auto resourceID = m_impl->GetResourceCache()->Allocate<RenderTargetDescriptor>(m_impl);
     auto descriptor = m_impl->GetResourceCache()->GetDescriptor<RenderTargetDescriptor>(resourceID);
     return RenderTarget(descriptor);

@@ -19,6 +19,8 @@ public:
     bool Build();
     virtual void Destroy() = 0;
 
+    virtual bool IsDirty() const { return m_isDirty; }
+
     size_t GetID() const { return m_id; }
     std::shared_ptr<GraphicsGLImpl> GetGraphicsAPI() const;
 
