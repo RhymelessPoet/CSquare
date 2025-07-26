@@ -22,12 +22,10 @@ public:
     template <typename DescriptorType>
     DescriptorType* GetDescriptor(size_t id) const
     {
-        auto itr = m_resources.find(id);
-        if (itr != m_resources.end()) {
-            return dynamic_cast<DescriptorType*>(itr->second);
-        }
-        return nullptr;
+        return dynamic_cast<DescriptorType*>(GetIDescriptor(id));
     }
+
+    IGraphicsResourceDescriptor* GetIDescriptor(size_t id) const;
 
     bool RemoveDescriptor(size_t id);
 

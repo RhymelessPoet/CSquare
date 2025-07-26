@@ -12,10 +12,11 @@ class GraphicsAPI final : public std::enable_shared_from_this<GraphicsAPI>
 {
 public:
     friend class IGraphicsResource;
-    static void GlobalInit();
     ~GraphicsAPI() = default;
     static std::shared_ptr<GraphicsAPI> Create(std::unique_ptr<GraphicsGLImpl> impl,
                                                std::shared_ptr<GraphicsResourceCache> resourceCache);
+
+    void Initialize();
 
     Texture CreateTexture();
 

@@ -10,7 +10,7 @@ RenderTarget::~RenderTarget() {}
 void RenderTarget::SetColorAttachment(Texture texture)
 {
     auto& renderTargetDescriptor = descriptor<RenderTargetDescriptor>();
-    renderTargetDescriptor.SetColorAttachment(&texture.descriptor<TextureDescriptor>());
+    renderTargetDescriptor.SetColorAttachment(texture.GetID());
 }
 
 void RenderTarget::SetSize(Size2U size)

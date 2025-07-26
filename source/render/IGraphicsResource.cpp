@@ -46,7 +46,12 @@ IGraphicsResource& IGraphicsResource::operator=(IGraphicsResource&& other) noexc
 
 bool operator==(const IGraphicsResource& lft, const IGraphicsResource& rhs)
 {
-    return lft.m_descriptor->GetID() == rhs.m_descriptor->GetID();
+    return lft.GetID() == rhs.GetID();
+}
+
+size_t IGraphicsResource::GetID() const
+{
+    return m_descriptor->GetID();
 }
 
 bool IGraphicsResource::IsBuild() const

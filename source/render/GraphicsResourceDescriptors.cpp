@@ -40,6 +40,14 @@ bool RenderTargetDescriptor::IsBuild() const
 
 void RenderTargetDescriptor::Destroy() {}
 
+bool RenderTargetDescriptor::IsDirty() const
+{
+    bool colorAttachmentDirty = m_colorAttachment != nullptr && m_colorAttachment->IsDirty();
+    bool depthAttachmentDirty = m_depthAttachment != nullptr && m_depthAttachment->IsDirty();
+
+    return IGraphicsResourceDescriptor::IsDirty() || colorAttachmentDirty || depthAttachmentDirty;
+}
+
 bool RenderTargetDescriptor::build()
 {
     return m_graphicsAPI.lock()->BuildRenderTarget(this);
@@ -55,23 +63,26 @@ std::optional<uint32_t> RenderTargetDescriptor::GetNativeFBO() const
     return m_FBO;
 }
 
-void RenderTargetDescriptor::SetColorAttachment(TextureDescriptor* descriptor)
+void RenderTargetDescriptor::SetColorAttachment(size_t textureResourceID)
 {
+    auto graphicsAPI = m_graphicsAPI.lock();
     if (m_colorAttachment != nullptr) {
         m_colorAttachment->Release();
     }
 
-    m_colorAttachment = descriptor;
+    m_colorAttachment = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureResourceID);
     m_colorAttachment->AddReference();
     setDirty();
 }
 
-void RenderTargetDescriptor::SetDepthAttachment(TextureDescriptor* descriptor)
+void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
 {
+    auto graphicsAPI = m_graphicsAPI.lock();
     if (m_depthAttachment != nullptr) {
         m_depthAttachment->Release();
     }
-    m_depthAttachment = descriptor;
+
+    m_depthAttachment = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureResourceID);
     m_depthAttachment->AddReference();
     setDirty();
 }

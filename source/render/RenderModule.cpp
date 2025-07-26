@@ -23,7 +23,14 @@ RenderModule::RenderModule()
 
 RenderModule::~RenderModule() {}
 
+void RenderModule::Initialize() {}
+
 void RenderModule::Update()
+{
+    // m_impl->m_renderer->Render(m_impl->m_view);
+}
+
+void RenderModule::Render()
 {
     m_impl->m_renderer->Render(m_impl->m_view);
 }

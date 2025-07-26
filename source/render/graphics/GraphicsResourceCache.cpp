@@ -7,6 +7,15 @@ GraphicsResourceCache::GraphicsResourceCache() {}
 
 GraphicsResourceCache::~GraphicsResourceCache() {}
 
+IGraphicsResourceDescriptor* GraphicsResourceCache::GetIDescriptor(size_t id) const
+{
+    auto itr = m_resources.find(id);
+    if (itr != m_resources.end()) {
+        return itr->second;
+    }
+    return nullptr;
+}
+
 bool GraphicsResourceCache::RemoveDescriptor(size_t id)
 {
     auto itr = m_resources.find(id);

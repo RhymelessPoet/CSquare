@@ -9,6 +9,7 @@ class IModule
 public:
     virtual ~IModule();
 
+    virtual void Initialize() = 0;
     virtual void Update() = 0;
 
     virtual void SetEngineController(std::shared_ptr<EngineController> controller) = 0;

@@ -40,12 +40,14 @@ public:
     virtual bool IsBuild() const override;
     virtual void Destroy() override;
 
+    virtual bool IsDirty() const override;
+
     void SetNativeFBO(uint32_t fbo);
     std::optional<uint32_t> GetNativeFBO() const;
 
-    void SetColorAttachment(TextureDescriptor* descriptor);
+    void SetColorAttachment(size_t textureResourceID);
 
-    void SetDepthAttachment(TextureDescriptor* descriptor);
+    void SetDepthAttachment(size_t textureResourceID);
 
     void SetSize(const Size2U& size);
 

@@ -18,6 +18,10 @@ Engine::~Engine() {}
 
 void Engine::Run()
 {
+    for (auto module : m_modules) {
+        module->Initialize();
+    }
+
     while (!m_controller->isToExit()) {
         for (auto module : m_modules) {
             module->Update();

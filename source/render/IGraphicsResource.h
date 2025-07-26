@@ -20,6 +20,7 @@ public:
 
     friend bool operator==(const IGraphicsResource& lft, const IGraphicsResource& rhs);
 
+    size_t GetID() const;
     bool IsBuild() const;
     bool Build();
 

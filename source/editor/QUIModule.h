@@ -9,6 +9,7 @@ public:
     QUIModule(int argc, char* argv[]);
     ~QUIModule() = default;
 
+    virtual void Initialize() override;
     virtual void Update() override;
     virtual void SetEngineController(std::shared_ptr<EngineController> controller);
 

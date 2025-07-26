@@ -21,6 +21,36 @@ bool OpenGLContext::IsShared() const
     return false;
 }
 
+OpenGLContext& OpenGLContext::GLBindFramebuffer(GLenum target, GLuint framebuffer)
+{
+    glBindFramebuffer(target, framebuffer);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLGenFramebuffers(GLsizei n, GLuint* ids)
+{
+    glGenFramebuffers(n, ids);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLDeleteFramebuffers(GLsizei n, const GLuint* framebuffers)
+{
+    glDeleteFramebuffers(n, framebuffers);
+    return *this;
+}
+
+OpenGLContext&
+OpenGLContext::GLFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+    glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    return *this;
+}
+
+bool OpenGLContext::GLCheckFramebufferStatus(GLenum target)
+{
+    return GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(target);
+}
+
 OpenGLContext& OpenGLContext::GLGenTextures(GLsizei n, GLuint* textures)
 {
     glGenTextures(n, textures);
@@ -62,6 +92,12 @@ OpenGLContext& OpenGLContext::GLDeleteTextures(GLsizei n, const GLuint* textures
 OpenGLContext& OpenGLContext::GLClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
     glClearColor(red, green, blue, alpha);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLClearDepth(GLfloat depth)
+{
+    glClearDepth(depth);
     return *this;
 }
 
