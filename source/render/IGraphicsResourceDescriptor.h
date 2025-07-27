@@ -10,6 +10,8 @@ class IGraphicsResourceDescriptor
 {
 public:
     IGraphicsResourceDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
+    IGraphicsResourceDescriptor(const IGraphicsResourceDescriptor&) = delete;
+    IGraphicsResourceDescriptor& operator=(const IGraphicsResourceDescriptor&) = delete;
     virtual ~IGraphicsResourceDescriptor() = 0 {};
 
     void AddReference();

@@ -1,13 +1,11 @@
 #pragma once
 #include "GraphicsResourceDescriptors.h"
-#include "IGraphicsCommand.h"
 #include "IGraphicsResourceDescriptor.h"
-
-
 #include <queue>
 
 namespace CS
 {
+class IGraphicsCommand;
 class GraphicsCommandBufferDescriptor final : public IGraphicsResourceDescriptor
 {
 public:
@@ -18,13 +16,20 @@ public:
     virtual bool IsBuild() const override;
     virtual void Destroy() override;
 
+    void Clear();
+
+    void Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI);
+
     template <typename CommandType, typename... Args>
     void Push(Args&&... args)
     {
-        m_buffer.push(std::make_unique<CommandType>(std::forward<Args>(args)...));
+        m_buffer.push(std::make_shared<CommandType>(std::forward<Args>(args)...));
     }
 
+protected:
+    virtual bool build() override;
+
 private:
-    std::queue<std::unique_ptr<IGraphicsCommand>> m_buffer;
+    std::queue<std::shared_ptr<IGraphicsCommand>> m_buffer;
 };
 } // namespace CS

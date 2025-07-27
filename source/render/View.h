@@ -5,6 +5,7 @@
 namespace CS
 {
 class ViewImpl;
+class RenderContext;
 
 class View final
 {
@@ -14,8 +15,9 @@ public:
     ~View();
 
     void SetRenderTarget(RenderTarget target);
-
     RenderTarget GetRenderTarget();
+
+    void Render(RenderContext& context);
 
 private:
     std::unique_ptr<ViewImpl> m_impl;

@@ -38,6 +38,7 @@ public:
     OpenGLContext& GLDeleteTextures(GLsizei n, const GLuint* textures);
 
     OpenGLContext& GLClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+    OpenGLContext& GLClearDepth(GLfloat depth);
     OpenGLContext& GLClear(GLbitfield mask);
 
 private:

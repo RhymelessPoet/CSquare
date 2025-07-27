@@ -47,7 +47,8 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             auto graphicsAPI = renderModule.value()->GetGraphicsAPI(m_view);
             graphicsAPI->Initialize();
             auto csTexture = graphicsAPI->CreateTexture();
-            // csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
+            csTexture.SetSize(CS::Size2U(img.width(), img.height()));
+            csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
             auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2U(1, 1));
             csRenderTarget.SetColorAttachment(csTexture);
             m_view->SetRenderTarget(csRenderTarget);

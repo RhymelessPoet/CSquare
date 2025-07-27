@@ -5,7 +5,7 @@
 namespace CS
 {
 
-class Command_BeginPass : public IGraphicsCommand
+class Command_BeginPass final : public IGraphicsCommand
 {
 public:
     Command_BeginPass(size_t renderTarget) : m_renderTarget(renderTarget) {}
@@ -16,7 +16,7 @@ private:
     size_t m_renderTarget{-1u};
 };
 
-class Command_EndPass : public IGraphicsCommand
+class Command_EndPass final : public IGraphicsCommand
 {
 public:
     Command_EndPass() {}

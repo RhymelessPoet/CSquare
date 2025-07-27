@@ -1,4 +1,7 @@
 #include "View.h"
+#include "GraphicsCommandBuffer.h"
+#include "RenderContext.h"
+#include "RenderTarget.h"
 #include <optional>
 
 namespace CS
@@ -30,6 +33,11 @@ void View::SetRenderTarget(RenderTarget target)
 RenderTarget View::GetRenderTarget()
 {
     return m_impl->m_renderTarget.value();
+}
+
+void View::Render(RenderContext& context)
+{
+    context.GetCommandBuffer().BeginPass(GetRenderTarget()).Clear(Color(0.0f, 0.0f, 1.0f, 1.0f)).EndPass();
 }
 
 } // namespace CS
