@@ -98,6 +98,23 @@ bool GraphicsGLImpl::DestroyTexture(TextureDescriptor* descriptor)
     return true;
 }
 
+bool GraphicsGLImpl::Clear(std::optional<Color> color, std::optional<float> depth)
+{
+    GLbitfield mask = 0;
+    if (color.has_value()) {
+        m_glContext->GLClearColor(color->Red(), color->Green(), color->Blue(), color->Alpha());
+        mask |= GL_COLOR_BUFFER_BIT;
+    }
+    if (depth.has_value()) {
+        m_glContext->GLClearDepth(depth.value());
+        mask |= GL_DEPTH_BUFFER_BIT;
+    }
+    if (mask != 0) {
+        m_glContext->GLClear(mask);
+    }
+    return false;
+}
+
 std::shared_ptr<GraphicsResourceCache> GraphicsGLImpl::GetResourceCache()
 {
     return m_resouceCache.lock();

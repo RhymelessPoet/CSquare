@@ -20,4 +20,15 @@ void Texture::SetNativeTexture(std::any nativeTexture)
     }
 }
 
+void Texture::SetSize(const Size2U& size)
+{
+    auto& textureDescriptor = descriptor<TextureDescriptor>();
+    textureDescriptor.SetSize(size);
+}
+
+Size2U Texture::GetSize() const
+{
+    return descriptor<TextureDescriptor>().GetSize();
+}
+
 } // namespace CS

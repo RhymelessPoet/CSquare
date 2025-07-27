@@ -1,4 +1,5 @@
 #include "GraphicsAPI.h"
+#include "GraphicsCommandBufferDescriptor.h"
 #include "GraphicsResourceCache.h"
 #include "GraphicsResourceDescriptors.h"
 #include "opengl/GraphicsGLImpl.h"
@@ -38,6 +39,25 @@ RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
     auto resourceID = m_impl->GetResourceCache()->Allocate<RenderTargetDescriptor>(m_impl);
     auto descriptor = m_impl->GetResourceCache()->GetDescriptor<RenderTargetDescriptor>(resourceID);
     return RenderTarget(descriptor);
+}
+
+GraphicsCommandBuffer GraphicsAPI::CreateCommandBuffer()
+{
+    auto resourceID = m_impl->GetResourceCache()->Allocate<GraphicsCommandBufferDescriptor>(m_impl);
+    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<GraphicsCommandBufferDescriptor>(resourceID);
+    return GraphicsCommandBuffer(descriptor);
+}
+
+void GraphicsAPI::SubmitCommandBuffer(GraphicsCommandBuffer commandBuffer)
+{
+    auto& descriptor = commandBuffer.descriptor<GraphicsCommandBufferDescriptor>();
+    if (!descriptor.IsBuild()) {
+        if (!descriptor.Build()) {
+            throw std::runtime_error("Failed to build command buffer");
+        }
+    }
+
+    descriptor.Execute(m_impl);
 }
 
 } // namespace CS

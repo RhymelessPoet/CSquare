@@ -28,4 +28,9 @@ GraphicsCommandBuffer& GraphicsCommandBuffer::Clear(std::optional<Color> clearCo
     return *this;
 }
 
+void GraphicsCommandBuffer::Clear()
+{
+    descriptor<GraphicsCommandBufferDescriptor>().Clear();
+}
+
 } // namespace CS

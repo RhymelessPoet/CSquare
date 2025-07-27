@@ -1,10 +1,11 @@
 #pragma once
-#include "graphics/GraphicsAPI.h"
 #include <memory>
 
 namespace CS
 {
 class View;
+class RenderContext;
+class GraphicsAPI;
 class Renderer
 {
 public:
@@ -17,6 +18,7 @@ public:
 
 private:
     std::shared_ptr<GraphicsAPI> m_graphicAPI;
+    std::unique_ptr<RenderContext> m_renderContext;
 };
 
 } // namespace CS

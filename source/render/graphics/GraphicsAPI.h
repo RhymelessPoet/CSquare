@@ -1,7 +1,9 @@
 #pragma once
+#include "GraphicsCommandBuffer.h"
 #include "RenderTarget.h"
 #include "Texture.h"
 #include <memory>
+
 
 namespace CS
 {
@@ -21,6 +23,10 @@ public:
     Texture CreateTexture();
 
     RenderTarget CreateRenderTarget(const Size2U& size);
+
+    GraphicsCommandBuffer CreateCommandBuffer();
+
+    void SubmitCommandBuffer(GraphicsCommandBuffer commandBuffer);
 
 private:
     GraphicsAPI(std::unique_ptr<GraphicsGLImpl> impl, std::shared_ptr<GraphicsResourceCache> resourceCache);

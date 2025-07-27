@@ -16,10 +16,14 @@ public:
 
     virtual bool IsBuild() const override;
     virtual void Destroy() override;
+    virtual bool IsDirty() const override;
 
     uint32_t GetNativeTexture() const;
 
     void SetNativeTexture(uint32_t texture);
+
+    void SetSize(const Size2U& size);
+    Size2U GetSize() const { return m_size; }
 
 protected:
     virtual bool build() override;
@@ -28,6 +32,7 @@ private:
     uint32_t m_textureID{0u};
     Size2U m_size;
     const char* m_data{nullptr};
+    bool m_isExternal{false};
 };
 
 class RenderTargetDescriptor final : public IGraphicsResourceDescriptor

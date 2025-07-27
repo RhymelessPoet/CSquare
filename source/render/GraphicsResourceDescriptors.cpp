@@ -9,13 +9,29 @@ TextureDescriptor::TextureDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> 
 
 bool TextureDescriptor::IsBuild() const
 {
-    return m_textureID != 0u;
+    return m_isExternal || m_textureID != 0u;
 }
 
-void TextureDescriptor::Destroy() {}
+void TextureDescriptor::Destroy()
+{
+    if (m_isExternal) {
+        m_textureID = 0u;
+        m_isExternal = false;
+    } else {
+        m_graphicsAPI.lock()->DestroyTexture(this);
+    }
+}
+
+bool TextureDescriptor::IsDirty() const
+{
+    return IGraphicsResourceDescriptor::IsDirty() && !m_isExternal;
+}
 
 bool TextureDescriptor::build()
 {
+    if (m_isExternal) {
+        return true; // If it's an external texture, we assume it's already built.
+    }
     return m_graphicsAPI.lock()->BuildTexture(this);
 }
 
@@ -27,6 +43,13 @@ uint32_t TextureDescriptor::GetNativeTexture() const
 void TextureDescriptor::SetNativeTexture(uint32_t texture)
 {
     m_textureID = texture;
+    m_isExternal = true;
+}
+
+void TextureDescriptor::SetSize(const Size2U& size)
+{
+    m_size = size;
+    setDirty();
 }
 
 RenderTargetDescriptor::RenderTargetDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI)
@@ -90,6 +113,12 @@ void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
 void RenderTargetDescriptor::SetSize(const Size2U& size)
 {
     m_size = size;
+    if (m_colorAttachment != nullptr) {
+        m_colorAttachment->SetSize(size);
+    }
+    if (m_depthAttachment != nullptr) {
+        m_depthAttachment->SetSize(size);
+    }
     setDirty();
 }
 
