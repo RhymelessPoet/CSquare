@@ -1,10 +1,8 @@
 #include "QuickRenderer.h"
 #include "Engine.h"
-#include "GLRendererBuilder.h"
 #include "QBlitRenderPass.h"
 #include "RenderModule.h"
 #include "Texture.h"
-#include "View.h"
 #include "graphics/GraphicsAPI.h"
 #include <QOpenGLContext>
 #include <rhi/qrhi.h>
@@ -12,7 +10,9 @@
 namespace CSEditor
 {
 
-QuickRenderer::QuickRenderer() {}
+QuickRenderer::QuickRenderer(std::shared_ptr<CS::GraphicsAPI> graphicsAPI, CS::RenderTarget renderTarget)
+    : m_graphicsAPI(std::move(graphicsAPI)), m_renderTarget(renderTarget)
+{}
 
 QuickRenderer::~QuickRenderer() {}
 
@@ -23,9 +23,7 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
         // auto glContext = static_cast<const QRhiGles2NativeHandles*>(rhi()->nativeHandles())->context;
         // HGLRC wglContext = glContext->nativeInterface<QNativeInterface::QWGLContext>()->nativeContext();
 
-        auto renderModule = CS::Engine::Instance().GetModule<CS::RenderModule>();
-        if (renderModule.has_value() && m_view == nullptr) {
-            CS::GLRendererBuilder rendererBuilder;
+        if (!m_initialized) {
             // rendererBuilder.SetSharedContext(wglContext);
 
             QImage img(":/CSQML/qml/icons/cslogo.png");
@@ -42,16 +40,11 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             QRhiResourceUpdateBatch* batch = rhi()->nextResourceUpdateBatch();
             batch->uploadTexture(m_texture.get(), img.convertToFormat(QImage::Format_RGBA8888));
 
-            renderModule.value()->CreateRenderer(rendererBuilder);
-            m_view = renderModule.value()->CreateView();
-            auto graphicsAPI = renderModule.value()->GetGraphicsAPI(m_view);
-            graphicsAPI->Initialize();
-            auto csTexture = graphicsAPI->CreateTexture();
+            m_graphicsAPI->Initialize();
+
+            auto csTexture = m_graphicsAPI->GetColorAttachment(m_renderTarget);
             csTexture.SetSize(CS::Size2U(img.width(), img.height()));
             csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
-            auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2U(1, 1));
-            csRenderTarget.SetColorAttachment(csTexture);
-            m_view->SetRenderTarget(csRenderTarget);
 
             auto _renderTarget = dynamic_cast<QRhiTextureRenderTarget*>(renderTarget());
             if (_renderTarget != nullptr) {
@@ -67,6 +60,7 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             cb->resourceUpdate(batch);
         }
     }
+    m_initialized = true;
 }
 
 void QuickRenderer::render(QRhiCommandBuffer* cb)
@@ -84,16 +78,8 @@ void QuickRenderer::synchronize(QQuickRhiItem* item)
 {
     auto viewSize = item->size().toSize();
     if (viewSize != m_texture->pixelSize()) {
-        // m_texture->destroy();
-        // m_texture->setPixelSize(viewSize);
-        // m_texture->create();
-        // m_renderPass->SetSrcTexture(m_texture.get(), m_sampler.get());
-
-        if (m_view != nullptr) {
-            auto renderTaget = m_view->GetRenderTarget();
-            renderTaget.SetSize(CS::Size2U(viewSize.width(), viewSize.height()));
-            renderTaget.Build();
-        }
+        m_renderTarget.SetSize(CS::Size2U(viewSize.width(), viewSize.height()));
+        m_renderTarget.Build();
     }
 }
 

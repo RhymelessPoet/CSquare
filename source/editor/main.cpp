@@ -6,8 +6,9 @@
 int main(int argc, char* argv[])
 {
     auto& engine = CS::Engine::Instance();
-    engine.AddModule<CS::QUIModule>(argc, argv);
+
     engine.AddModule<CS::RenderModule>();
+    engine.AddModule<CS::QUIModule>(argc, argv);
 
     engine.Run();
 

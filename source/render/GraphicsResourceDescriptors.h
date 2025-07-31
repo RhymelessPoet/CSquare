@@ -51,6 +51,7 @@ public:
     std::optional<uint32_t> GetNativeFBO() const;
 
     void SetColorAttachment(size_t textureResourceID);
+    TextureDescriptor* GetColorAttachment() const { return m_colorAttachment; }
 
     void SetDepthAttachment(size_t textureResourceID);
 

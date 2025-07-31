@@ -1,5 +1,11 @@
 #include <QQuickRhiItem>
-
+#include <memory>
+namespace CS
+{
+class View;
+class GraphicsAPI;
+class RenderModule;
+} // namespace CS
 namespace CSEditor
 {
 
@@ -12,9 +18,12 @@ public:
     ~QuickRenderView() noexcept;
 
     virtual QQuickRhiItemRenderer* createRenderer() override;
+    std::shared_ptr<CS::View> GetView() const { return m_view; }
 
 private:
     QuickRenderer* m_renderer{nullptr};
+    std::shared_ptr<CS::View> m_view;
+    std::optional<CS::RenderModule*> m_renderModule;
 };
 
 } // namespace CSEditor
