@@ -3,8 +3,8 @@
 
 namespace CS
 {
-class View;
-}
+class GraphicsAPI;
+} // namespace CS
 
 class QRhiSampler;
 
@@ -16,7 +16,7 @@ class QBlitRenderPass;
 class QuickRenderer : public QQuickRhiItemRenderer
 {
 public:
-    QuickRenderer(/* args */);
+    QuickRenderer(std::shared_ptr<CS::GraphicsAPI> graphicsAPI, CS::RenderTarget renderTarget);
     ~QuickRenderer();
 
     virtual void initialize(QRhiCommandBuffer* cb) override;
@@ -28,7 +28,9 @@ private:
     void destroyGraphics();
 
 private:
-    std::shared_ptr<CS::View> m_view;
+    bool m_initialized{false};
+    std::shared_ptr<CS::GraphicsAPI> m_graphicsAPI;
+    CS::RenderTarget m_renderTarget;
     std::unique_ptr<QBlitRenderPass> m_renderPass;
     std::unique_ptr<QRhiTexture> m_texture;
     std::unique_ptr<QRhiSampler> m_sampler;

@@ -34,6 +34,20 @@ Texture GraphicsAPI::CreateTexture()
     return Texture(descriptor);
 }
 
+Texture GraphicsAPI::GetTexture(size_t id) const
+{
+    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<TextureDescriptor>(id);
+    if (!descriptor) {
+        return Texture(nullptr);
+    }
+    return Texture(descriptor);
+}
+
+Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
+{
+    return GetTexture(renderTarget.GetColorAttachment());
+}
+
 RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
 {
     auto resourceID = m_impl->GetResourceCache()->Allocate<RenderTargetDescriptor>(m_impl);

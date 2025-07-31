@@ -4,7 +4,6 @@
 #include "Texture.h"
 #include <memory>
 
-
 namespace CS
 {
 class GraphicsGLImpl;
@@ -21,6 +20,8 @@ public:
     void Initialize();
 
     Texture CreateTexture();
+    Texture GetTexture(size_t id) const;
+    Texture GetColorAttachment(RenderTarget renderTarget) const;
 
     RenderTarget CreateRenderTarget(const Size2U& size);
 

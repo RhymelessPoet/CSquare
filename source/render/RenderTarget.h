@@ -13,6 +13,7 @@ public:
     ~RenderTarget() override;
 
     void SetColorAttachment(Texture texture);
+    size_t GetColorAttachment() const;
 
     void SetSize(Size2U size);
 
