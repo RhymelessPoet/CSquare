@@ -46,12 +46,7 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             csTexture.SetSize(CS::Size2U(img.width(), img.height()));
             csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
 
-            auto _renderTarget = dynamic_cast<QRhiTextureRenderTarget*>(renderTarget());
-            if (_renderTarget != nullptr) {
-                _renderTarget->setFlags(_renderTarget->flags() | QRhiTextureRenderTarget::PreserveColorContents);
-            }
-
-            m_renderPass = std::make_unique<QBlitRenderPass>(rhi(), _renderTarget->renderPassDescriptor());
+            m_renderPass = std::make_unique<QBlitRenderPass>(rhi(), renderTarget()->renderPassDescriptor());
             m_renderPass->SetSrcTexture(m_texture.get(), m_sampler.get());
 
             auto vertices = m_renderPass->getVertices();
