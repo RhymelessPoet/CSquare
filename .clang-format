@@ -10,13 +10,20 @@ BreakBeforeBraces: Custom
 BraceWrapping:
   AfterNamespace: true  # 命名空间后换行
   AfterClass: true      # 类定义后换行
-  AfterFunction: true   # 函数后不换行
+  AfterStruct: true     # 结构体定义后换行
+  AfterFunction: true   # 函数后换行
+  AfterEnum: true       # 枚举类后换行
   AfterControlStatement: MultiLine   # 控制语句后换行规则
 #   AfterControlStatementsWrap: true    # 多行控制语句强制换行
   SplitEmptyFunction: false
 
 AlwaysBreakAfterReturnType: None  # 强制返回值类型与函数名在同一行 
-AllowAllParametersOfDeclarationOnNextLine: false  # 参数不换行，减少返回值换行概率  
+AllowAllParametersOfDeclarationOnNextLine: false  # 参数不换行，减少返回值换行概率
+
+# 强制模板声明换行
+AlwaysBreakTemplateDeclarations: Yes
+# 每个模板参数单独成行
+BinPackParameters: false
 
 # 允许短函数单行显示（可选）
 AllowShortFunctionsOnASingleLine: Inline

@@ -63,7 +63,7 @@ ApplicationWindow {
                     }
 
                     Rectangle {
-                        width: 320
+                        width: 380
                         Layout.fillHeight: true
                         color: CSTheme.surface
                     }

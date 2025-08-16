@@ -4,7 +4,7 @@ set(TARGET_NAME CSEditor)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2 OpenGLWidgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2 Gui ShaderTools)
 
 file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -56,7 +56,48 @@ qt_add_qml_module(
     RESOURCE_PREFIX /
 )
 
-target_link_libraries(${TARGET_NAME} PRIVATE Qt6::Core Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::OpenGLWidgets ${QML_MODULE})
+file(GLOB_RECURSE SHADER_PATHS LIST_DIRECTORIES false
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.frag"
+)
+
+foreach(filepath IN LISTS SHADER_PATHS)
+    # 将绝对路径转换为相对于当前源码目录的相对路径
+    cmake_path(RELATIVE_PATH filepath
+        BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        OUTPUT_VARIABLE rel_path)
+    list(APPEND SHADER_FILES "${rel_path}")
+endforeach()
+
+set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders/qsb")
+
+# message(${SHADER_FILES} ${SHADER_OUTPUT_DIR})
+qt_add_shaders(${TARGET_NAME} "CS_GL45Shaders"
+    GLSL "450"
+    PREFIX ""
+    FILES ${SHADER_FILES}
+    OUTPUT_TARGETS SHADER_LIB
+    OUTPUT_DIRECTORY ${SHADER_OUTPUT_DIR}
+    PLATFORMS "OpenGL"
+)
+
+target_link_libraries(${TARGET_NAME} PRIVATE
+    Qt6::Core
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickPrivate
+    Qt6::QuickControls2
+    Qt6::Gui
+    Qt6::GuiPrivate
+    Qt6::ShaderTools
+    ${QML_MODULE}
+    ${SHADER_LIB}
+    CSEngine
+    CSRender
+)
+
+target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS})
+target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIRS})
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 

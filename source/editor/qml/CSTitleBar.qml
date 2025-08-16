@@ -67,7 +67,6 @@ Rectangle {
                     window.showNormal() : window.showMaximized()
 
             onCheckedChanged: {
-                console.log(maximizeButton.checked)
                 if (maximizeButton.checked) {
                     iconPath = "qrc:/CSQML/qml/icons/cs_title_bar_maximized.png"
                 }
