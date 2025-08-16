@@ -33,6 +33,13 @@ ApplicationWindow {
         color: CSTheme.background
         layer.enabled: true
 
+        states: [
+            State {
+                when: appWindow.visibility === Window.Maximized
+                PropertyChanges { target: background; radius: 0 }
+            }
+        ]
+
         ColumnLayout {
             spacing: 2
             anchors.fill: parent
