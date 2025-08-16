@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "graphics/GraphicsAPI.h"
 #include <QOpenGLContext>
+#include <QQuickWindow>
 #include <rhi/qrhi.h>
 
 namespace CSEditor
@@ -71,9 +72,20 @@ void QuickRenderer::render(QRhiCommandBuffer* cb)
 
 void QuickRenderer::synchronize(QQuickRhiItem* item)
 {
-    auto viewSize = item->size().toSize();
+    auto viewSize = item->size().toSize() * item->window()->devicePixelRatio();
+
     if (viewSize != m_texture->pixelSize()) {
-        m_renderTarget.SetSize(CS::Size2U(viewSize.width(), viewSize.height()));
+        m_texture->destroy();
+        m_texture->setPixelSize(viewSize);
+        m_texture->create();
+
+        m_renderPass->SetSrcTexture(m_texture.get(), m_sampler.get());
+
+        auto csTexture = m_graphicsAPI->GetColorAttachment(m_renderTarget);
+        auto csRtSize = CS::Size2U(viewSize.width(), viewSize.height());
+        csTexture.SetSize(csRtSize);
+        csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
+        m_renderTarget.SetSize(csRtSize);
         m_renderTarget.Build();
     }
 }

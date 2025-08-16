@@ -3,6 +3,7 @@
 namespace CS
 {
 class View;
+class Scene;
 class GraphicsAPI;
 class RenderModule;
 } // namespace CS
@@ -23,6 +24,7 @@ public:
 private:
     QuickRenderer* m_renderer{nullptr};
     std::shared_ptr<CS::View> m_view;
+    std::shared_ptr<CS::Scene> m_scene;
     std::optional<CS::RenderModule*> m_renderModule;
 };
 

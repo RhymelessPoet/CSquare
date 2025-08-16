@@ -11,6 +11,7 @@ class GraphicsResourceCache;
 class IGraphicsResource
 {
 public:
+    IGraphicsResource() = default;
     virtual ~IGraphicsResource() = 0;
 
     IGraphicsResource(const IGraphicsResource& other);
@@ -19,6 +20,8 @@ public:
     IGraphicsResource& operator=(IGraphicsResource&& other) noexcept;
 
     friend bool operator==(const IGraphicsResource& lft, const IGraphicsResource& rhs);
+
+    bool IsValid() const { return m_descriptor != nullptr; }
 
     size_t GetID() const;
     bool IsBuild() const;

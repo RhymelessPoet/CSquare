@@ -23,4 +23,9 @@ void RenderTarget::SetSize(Size2U size)
     descriptor<RenderTargetDescriptor>().SetSize(size);
 }
 
+const Size2U& RenderTarget::GetSize() const
+{
+    return descriptor<RenderTargetDescriptor>().GetSize();
+}
+
 } // namespace CS

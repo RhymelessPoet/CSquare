@@ -43,6 +43,11 @@ uint32_t TextureDescriptor::GetNativeTexture() const
 void TextureDescriptor::SetNativeTexture(uint32_t texture)
 {
     m_textureID = texture;
+}
+
+void TextureDescriptor::SetExternalTexture(uint32_t textureID)
+{
+    m_textureID = textureID;
     m_isExternal = true;
 }
 
@@ -61,7 +66,10 @@ bool RenderTargetDescriptor::IsBuild() const
     return m_FBO.has_value();
 }
 
-void RenderTargetDescriptor::Destroy() {}
+void RenderTargetDescriptor::Destroy()
+{
+    m_graphicsAPI.lock()->DestroyRenderTarget(this);
+}
 
 bool RenderTargetDescriptor::IsDirty() const
 {

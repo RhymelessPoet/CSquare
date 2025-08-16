@@ -1,10 +1,13 @@
 #include "GraphicsAPI.h"
+#include "GraphicsBufferDescriptor.h"
 #include "GraphicsCommandBufferDescriptor.h"
+#include "GraphicsInputAssemblyDescriptor.h"
+#include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceCache.h"
 #include "GraphicsResourceDescriptors.h"
 #include "opengl/GraphicsGLImpl.h"
-
 #include <stdexcept>
+
 
 namespace CS
 {
@@ -27,19 +30,74 @@ void GraphicsAPI::Initialize()
     }
 }
 
+VertexBuffer GraphicsAPI::CreateVertexBuffer(size_t size)
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
+    descriptor->SetBufferType(GraphicsBufferDescriptor::BufferType::VertexBuffer);
+    descriptor->SetSize(size);
+
+    return VertexBuffer(descriptor);
+}
+
+IndexBuffer GraphicsAPI::CreateIndexBuffer(size_t size)
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
+    descriptor->SetBufferType(GraphicsBufferDescriptor::BufferType::IndexBuffer);
+    descriptor->SetSize(size);
+
+    return IndexBuffer(descriptor);
+}
+
+UniformBuffer GraphicsAPI::CreateUniformBuffer(size_t size)
+{
+    return UniformBuffer();
+}
+
+GraphicsInputAssembly GraphicsAPI::CreateInputAssembly()
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsInputAssemblyDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsInputAssemblyDescriptor>(resourceID);
+
+    return GraphicsInputAssembly(descriptor);
+}
+
+GraphicsPipeline GraphicsAPI::CreatePipeline()
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsPipelineDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsPipelineDescriptor>(resourceID);
+
+    return GraphicsPipeline(descriptor);
+}
+
 Texture GraphicsAPI::CreateTexture()
 {
-    auto resourceID = m_impl->GetResourceCache()->Allocate<TextureDescriptor>(m_impl);
-    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<TextureDescriptor>(resourceID);
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<TextureDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<TextureDescriptor>(resourceID);
+
     return Texture(descriptor);
 }
 
 Texture GraphicsAPI::GetTexture(size_t id) const
 {
-    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<TextureDescriptor>(id);
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto descriptor = resorceCache->GetDescriptor<TextureDescriptor>(id);
     if (!descriptor) {
         return Texture(nullptr);
     }
+
     return Texture(descriptor);
 }
 
@@ -50,15 +108,21 @@ Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
 
 RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
 {
-    auto resourceID = m_impl->GetResourceCache()->Allocate<RenderTargetDescriptor>(m_impl);
-    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<RenderTargetDescriptor>(resourceID);
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<RenderTargetDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<RenderTargetDescriptor>(resourceID);
+
     return RenderTarget(descriptor);
 }
 
 GraphicsCommandBuffer GraphicsAPI::CreateCommandBuffer()
 {
-    auto resourceID = m_impl->GetResourceCache()->Allocate<GraphicsCommandBufferDescriptor>(m_impl);
-    auto descriptor = m_impl->GetResourceCache()->GetDescriptor<GraphicsCommandBufferDescriptor>(resourceID);
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsCommandBufferDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsCommandBufferDescriptor>(resourceID);
+
     return GraphicsCommandBuffer(descriptor);
 }
 

@@ -1,7 +1,12 @@
 #pragma once
 #include "GraphicsCommandBuffer.h"
+#include "GraphicsInputAssembly.h"
+#include "GraphicsPipeline.h"
+#include "IndexBuffer.h"
 #include "RenderTarget.h"
 #include "Texture.h"
+#include "UniformBuffer.h"
+#include "VertexBuffer.h"
 #include <memory>
 
 namespace CS
@@ -19,6 +24,13 @@ public:
 
     void Initialize();
 
+    VertexBuffer CreateVertexBuffer(size_t size);
+    IndexBuffer CreateIndexBuffer(size_t size);
+    UniformBuffer CreateUniformBuffer(size_t size);
+
+    GraphicsInputAssembly CreateInputAssembly();
+    GraphicsPipeline CreatePipeline();
+
     Texture CreateTexture();
     Texture GetTexture(size_t id) const;
     Texture GetColorAttachment(RenderTarget renderTarget) const;
@@ -26,7 +38,6 @@ public:
     RenderTarget CreateRenderTarget(const Size2U& size);
 
     GraphicsCommandBuffer CreateCommandBuffer();
-
     void SubmitCommandBuffer(GraphicsCommandBuffer commandBuffer);
 
 private:

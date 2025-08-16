@@ -4,6 +4,7 @@
 namespace CS
 {
 class View;
+class Scene;
 class RenderTarget;
 class GLRendererBuilder;
 class RenderModuleImpl;
