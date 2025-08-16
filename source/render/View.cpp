@@ -2,6 +2,7 @@
 #include "GraphicsCommandBuffer.h"
 #include "RenderContext.h"
 #include "RenderTarget.h"
+#include "Scene.h"
 #include <optional>
 
 namespace CS
@@ -35,9 +36,20 @@ RenderTarget View::GetRenderTarget()
     return m_impl->m_renderTarget.value();
 }
 
+void View::SetScene(std::shared_ptr<Scene> scene)
+{
+    m_scene = std::move(scene);
+}
+
 void View::Render(RenderContext& context)
 {
-    context.GetCommandBuffer().BeginPass(GetRenderTarget()).Clear(Color(0.0f, 0.0f, 1.0f, 1.0f)).EndPass();
+    auto rtSize = GetRenderTarget().GetSize();
+    auto cmdBuf = context.GetCommandBuffer();
+    cmdBuf.BeginPass(GetRenderTarget())
+        .Clear(Color(61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f))
+        .SetViewport(0, 0, rtSize.Width(), rtSize.Height());
+    m_scene->OnRender(context);
+    cmdBuf.EndPass();
 }
 
 } // namespace CS

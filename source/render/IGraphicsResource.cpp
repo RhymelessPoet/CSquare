@@ -7,12 +7,16 @@ namespace CS
 
 IGraphicsResource::IGraphicsResource(IGraphicsResourceDescriptor* descriptor) noexcept : m_descriptor(descriptor)
 {
-    m_descriptor->AddReference();
+    if (IsValid()) {
+        m_descriptor->AddReference();
+    }
 }
 
 IGraphicsResource::~IGraphicsResource()
 {
-    m_descriptor->Release();
+    if (IsValid()) {
+        m_descriptor->Release();
+    }
 }
 
 IGraphicsResource::IGraphicsResource(const IGraphicsResource& other)
@@ -51,16 +55,25 @@ bool operator==(const IGraphicsResource& lft, const IGraphicsResource& rhs)
 
 size_t IGraphicsResource::GetID() const
 {
+    if (!IsValid()) {
+        return std::numeric_limits<size_t>::max();
+    }
     return m_descriptor->GetID();
 }
 
 bool IGraphicsResource::IsBuild() const
 {
+    if (!IsValid()) {
+        return false;
+    }
     return m_descriptor->IsBuild();
 }
 
 bool IGraphicsResource::Build()
 {
+    if (!IsValid()) {
+        return false;
+    }
     return m_descriptor->Build();
 }
 

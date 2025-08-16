@@ -1,6 +1,7 @@
 #include "RenderModule.h"
 #include "GLRendererBuilder.h"
 #include "Renderer.h"
+#include "Scene.h"
 #include "View.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsResourceCache.h"
@@ -27,7 +28,7 @@ void RenderModule::Initialize() {}
 
 void RenderModule::Update()
 {
-    // m_impl->m_renderer->Render(m_impl->m_view);
+    m_impl->m_view->GetScene()->OnUpdate();
 }
 
 void RenderModule::Render()

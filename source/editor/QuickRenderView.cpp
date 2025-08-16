@@ -1,8 +1,11 @@
 #include "QuickRenderView.h"
 #include "Engine.h"
 #include "GLRendererBuilder.h"
+#include "MeshRenderSystem.h"
+#include "MeshRenderer.h"
 #include "QuickRenderer.h"
 #include "RenderModule.h"
+#include "Scene.h"
 #include "View.h"
 #include "graphics/GraphicsAPI.h"
 
@@ -25,6 +28,12 @@ QuickRenderView::QuickRenderView()
         auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2U(1, 1));
         csRenderTarget.SetColorAttachment(csTexture);
         m_view->SetRenderTarget(csRenderTarget);
+
+        m_scene = std::make_shared<CS::Scene>();
+        m_scene->AddSystem<CS::MeshRenderSystem>(graphicsAPI);
+        m_scene->GetSystem<CS::MeshRenderSystem>().CreateComponent<CS::MeshRenderer>(m_scene->GetRoot());
+
+        m_view->SetScene(m_scene);
     }
 }
 

@@ -3,6 +3,8 @@
 #include "graphics/GraphicsAPI.h"
 #include "graphics/opengl/GraphicsGLImpl.h"
 #include "graphics/opengl/NativeContext.h"
+#include "graphics/opengl/OpenGLContext.h"
+
 
 namespace CS
 {

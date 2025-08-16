@@ -16,6 +16,7 @@ public:
     size_t GetColorAttachment() const;
 
     void SetSize(Size2U size);
+    const Size2U& GetSize() const;
 
 private:
     RenderTarget(RenderTargetDescriptor* descriptor);

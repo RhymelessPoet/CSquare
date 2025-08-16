@@ -4,8 +4,8 @@
 namespace CSEditor
 {
 // static float vertices[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f};
-static float vertices[] = {-1.0f, -1.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f,
-                           -1.0f, 1.0f,  0.0f, 0.0f, 1.0f, 1.0f,  1.0f, 0.0f};
+static float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, 0.0f,
+                           -1.0f, 1.0f,  0.0f, 1.0f, 1.0f, 1.0f,  1.0f, 1.0f};
 
 QShader GetShader(const QString& name)
 {
@@ -50,6 +50,7 @@ QBlitRenderPass::~QBlitRenderPass() {}
 
 void QBlitRenderPass::SetSrcTexture(QRhiTexture* texture, QRhiSampler* sampler)
 {
+    m_pipeline->shaderResourceBindings()->destroy();
     m_pipeline->shaderResourceBindings()->setBindings(
         {QRhiShaderResourceBinding::sampledTexture(0, QRhiShaderResourceBinding::FragmentStage, texture, sampler)});
     m_pipeline->shaderResourceBindings()->create();

@@ -10,8 +10,6 @@ namespace CS
 class TextureDescriptor final : public IGraphicsResourceDescriptor
 {
 public:
-    friend class GraphicsGLImpl;
-
     TextureDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
 
     virtual bool IsBuild() const override;
@@ -21,9 +19,15 @@ public:
     uint32_t GetNativeTexture() const;
 
     void SetNativeTexture(uint32_t texture);
+    void SetExternalTexture(uint32_t textureID);
 
     void SetSize(const Size2U& size);
     Size2U GetSize() const { return m_size; }
+
+    const char* GetData() const { return m_data; }
+    void SetData(const char* data) { m_data = data; }
+
+    bool IsExternal() const { return m_isExternal; }
 
 protected:
     virtual bool build() override;
@@ -38,8 +42,6 @@ private:
 class RenderTargetDescriptor final : public IGraphicsResourceDescriptor
 {
 public:
-    friend class GraphicsGLImpl;
-
     RenderTargetDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
 
     virtual bool IsBuild() const override;
@@ -52,10 +54,12 @@ public:
 
     void SetColorAttachment(size_t textureResourceID);
     TextureDescriptor* GetColorAttachment() const { return m_colorAttachment; }
+    TextureDescriptor* GetDepthAttachment() const { return m_depthAttachment; }
 
     void SetDepthAttachment(size_t textureResourceID);
 
     void SetSize(const Size2U& size);
+    const Size2U& GetSize() const { return m_size; }
 
 protected:
     virtual bool build() override;
