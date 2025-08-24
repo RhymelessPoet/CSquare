@@ -16,8 +16,8 @@ public:
     std::any GetNativeTexture() const;
     void SetNativeTexture(std::any nativeTexture);
 
-    void SetSize(const Size2U& size);
-    Size2U GetSize() const;
+    void SetSize(const Size2u& size);
+    Size2u GetSize() const;
 
 private:
     Texture(TextureDescriptor* descriptor);

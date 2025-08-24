@@ -1,6 +1,7 @@
 #include "GraphicsCommands.h"
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
+#include "ShaderBindingSetDescriptor.h"
 #include "graphics/opengl/GraphicsGLImpl.h"
 
 namespace CS
@@ -36,6 +37,12 @@ bool Command_BindPipeline::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     auto descritpr = graphicsAPI->GetResourceDescriptor<GraphicsPipelineDescriptor>(m_pipeline);
     return graphicsAPI->BindGraphicsPipeline(descritpr);
+}
+
+bool Command_BindShaderBindingSet::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
+{
+    auto descriptor = graphicsAPI->GetResourceDescriptor<ShaderBindingSetDescriptor>(m_shaderBindingSet);
+    return graphicsAPI->BindShaderBindingSet(descriptor);
 }
 
 Command_DrawIndexed::Command_DrawIndexed(uint32_t count, uint32_t indexOffset)

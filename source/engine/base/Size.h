@@ -20,6 +20,6 @@ private:
     DataType m_height{0};
 };
 
-using Size2U = Size2<uint32_t>;
+using Size2u = Size2<uint32_t>;
 
 } // namespace CS

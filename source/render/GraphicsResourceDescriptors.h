@@ -21,8 +21,8 @@ public:
     void SetNativeTexture(uint32_t texture);
     void SetExternalTexture(uint32_t textureID);
 
-    void SetSize(const Size2U& size);
-    Size2U GetSize() const { return m_size; }
+    void SetSize(const Size2u& size);
+    Size2u GetSize() const { return m_size; }
 
     const char* GetData() const { return m_data; }
     void SetData(const char* data) { m_data = data; }
@@ -34,7 +34,7 @@ protected:
 
 private:
     uint32_t m_textureID{0u};
-    Size2U m_size;
+    Size2u m_size;
     const char* m_data{nullptr};
     bool m_isExternal{false};
 };
@@ -58,14 +58,14 @@ public:
 
     void SetDepthAttachment(size_t textureResourceID);
 
-    void SetSize(const Size2U& size);
-    const Size2U& GetSize() const { return m_size; }
+    void SetSize(const Size2u& size);
+    const Size2u& GetSize() const { return m_size; }
 
 protected:
     virtual bool build() override;
 
 private:
-    Size2U m_size;
+    Size2u m_size;
     TextureDescriptor* m_colorAttachment{nullptr};
     TextureDescriptor* m_depthAttachment{nullptr};
     std::optional<uint32_t> m_FBO;

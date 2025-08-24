@@ -18,12 +18,12 @@ size_t RenderTarget::GetColorAttachment() const
     return descriptor<RenderTargetDescriptor>().GetColorAttachment()->GetID();
 }
 
-void RenderTarget::SetSize(Size2U size)
+void RenderTarget::SetSize(Size2u size)
 {
     descriptor<RenderTargetDescriptor>().SetSize(size);
 }
 
-const Size2U& RenderTarget::GetSize() const
+const Size2u& RenderTarget::GetSize() const
 {
     return descriptor<RenderTargetDescriptor>().GetSize();
 }

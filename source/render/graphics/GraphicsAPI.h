@@ -4,6 +4,8 @@
 #include "GraphicsPipeline.h"
 #include "IndexBuffer.h"
 #include "RenderTarget.h"
+#include "ShaderBindingSet.h"
+#include "ShaderBindingSetLayout.h"
 #include "Texture.h"
 #include "UniformBuffer.h"
 #include "VertexBuffer.h"
@@ -35,7 +37,10 @@ public:
     Texture GetTexture(size_t id) const;
     Texture GetColorAttachment(RenderTarget renderTarget) const;
 
-    RenderTarget CreateRenderTarget(const Size2U& size);
+    RenderTarget CreateRenderTarget(const Size2u& size);
+
+    ShaderBindingSetLayout CreateShaderBindingSetLayout();
+    ShaderBindingSet CreateShaderBindingSet(ShaderBindingSetLayout layout);
 
     GraphicsCommandBuffer CreateCommandBuffer();
     void SubmitCommandBuffer(GraphicsCommandBuffer commandBuffer);

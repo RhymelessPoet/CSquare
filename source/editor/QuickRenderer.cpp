@@ -44,7 +44,7 @@ void QuickRenderer::initialize(QRhiCommandBuffer* cb)
             m_graphicsAPI->Initialize();
 
             auto csTexture = m_graphicsAPI->GetColorAttachment(m_renderTarget);
-            csTexture.SetSize(CS::Size2U(img.width(), img.height()));
+            csTexture.SetSize(CS::Size2u(img.width(), img.height()));
             csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
 
             m_renderPass = std::make_unique<QBlitRenderPass>(rhi(), renderTarget()->renderPassDescriptor());
@@ -82,7 +82,7 @@ void QuickRenderer::synchronize(QQuickRhiItem* item)
         m_renderPass->SetSrcTexture(m_texture.get(), m_sampler.get());
 
         auto csTexture = m_graphicsAPI->GetColorAttachment(m_renderTarget);
-        auto csRtSize = CS::Size2U(viewSize.width(), viewSize.height());
+        auto csRtSize = CS::Size2u(viewSize.width(), viewSize.height());
         csTexture.SetSize(csRtSize);
         csTexture.SetNativeTexture(static_cast<uint32_t>(m_texture->nativeTexture().object));
         m_renderTarget.SetSize(csRtSize);

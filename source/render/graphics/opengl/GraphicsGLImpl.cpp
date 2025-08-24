@@ -4,6 +4,7 @@
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsShaderStage.h"
 #include "OpenGLContext.h"
+#include "ShaderBindingSetDescriptor.h"
 #include "graphics/GraphicsResourceCache.h"
 #include "graphics/opengl/glad/include/glad/glad.h"
 
@@ -42,6 +43,24 @@ static GLenum GetIndexFormatType(IndexFormat format)
     return GL_UNSIGNED_INT;
 }
 
+static GLenum GetBufferType(GraphicsBufferDescriptor::BufferType type)
+{
+    switch (type) {
+    case GraphicsBufferDescriptor::BufferType::VertexBuffer:
+        return GL_ARRAY_BUFFER;
+    case GraphicsBufferDescriptor::BufferType::IndexBuffer:
+        return GL_ELEMENT_ARRAY_BUFFER;
+    case GraphicsBufferDescriptor::BufferType::UniformBuffer:
+        return GL_UNIFORM_BUFFER;
+    case GraphicsBufferDescriptor::BufferType::StorageBuffer:
+        return GL_SHADER_STORAGE_BUFFER;
+    case GraphicsBufferDescriptor::BufferType::IndirectBuffer:
+        return GL_DRAW_INDIRECT_BUFFER;
+    default:
+        return GL_ARRAY_BUFFER;
+    }
+}
+
 GraphicsGLImpl::GraphicsGLImpl(std::unique_ptr<OpenGLContext> context,
                                std::shared_ptr<GraphicsResourceCache> resourceCache)
     : m_glContext(std::move(context)), m_resouceCache(resourceCache)
@@ -78,11 +97,16 @@ bool GraphicsGLImpl::UpdateGraphicsBufferData(GraphicsBufferDescriptor* descript
         return false;
     }
 
-    GLenum target =
-        (bufferType == GraphicsBufferDescriptor::BufferType::VertexBuffer) ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER;
-
-    m_glContext->GLBindBuffer(target, buffer).GLBufferData(target, size, data, GL_STATIC_DRAW).GLBindBuffer(target, 0);
-
+    GLenum target = GetBufferType(bufferType);
+    if (target == GL_UNIFORM_BUFFER) {
+        m_glContext->GLBindBuffer(target, buffer)
+            .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
+            .GLBindBuffer(target, 0);
+    } else {
+        m_glContext->GLBindBuffer(target, buffer)
+            .GLBufferData(target, size, data, GL_STATIC_DRAW)
+            .GLBindBuffer(target, 0);
+    }
     return true;
 }
 
@@ -289,6 +313,36 @@ bool GraphicsGLImpl::BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor
 
     m_curentStates.SetPipeline(descriptor);
     return true;
+}
+
+bool GraphicsGLImpl::BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor)
+{
+    if (!descriptor->IsBuild()) {
+        return false;
+    }
+    auto layout = descriptor->GetLayout();
+    auto bindings = layout->GetBindings();
+
+    bool hasError = false;
+    for (const auto& binding : bindings) {
+        if (binding.GetType() == ShaderBinding::Type::UniformBuffer) {
+            auto bindingNum = binding.GetBinding();
+            auto bindingInfo = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::UniformBufferBinding>(bindingNum);
+
+            if (!bindingInfo.has_value()) {
+                hasError = true;
+                continue;
+            }
+            auto& uniformBufferInfo = bindingInfo.value();
+            if (uniformBufferInfo.buffer != nullptr) {
+                auto buffer = uniformBufferInfo.buffer->GetNativeBuffer();
+                m_glContext->GLBindBufferRange(GL_UNIFORM_BUFFER, bindingNum, buffer, uniformBufferInfo.offset,
+                                               uniformBufferInfo.range);
+            }
+        }
+    }
+
+    return !hasError;
 }
 
 bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)

@@ -15,8 +15,8 @@ public:
     void SetColorAttachment(Texture texture);
     size_t GetColorAttachment() const;
 
-    void SetSize(Size2U size);
-    const Size2U& GetSize() const;
+    void SetSize(Size2u size);
+    const Size2u& GetSize() const;
 
 private:
     RenderTarget(RenderTargetDescriptor* descriptor);

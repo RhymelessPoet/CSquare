@@ -119,9 +119,28 @@ OpenGLContext& OpenGLContext::GLBindBuffer(GLenum target, GLuint buffer)
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLBindBufferBase(GLenum target, GLuint index, GLuint buffer)
+{
+    glBindBufferBase(target, index, buffer);
+    return *this;
+}
+
+OpenGLContext&
+OpenGLContext::GLBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
+{
+    glBindBufferRange(target, index, buffer, offset, size);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage)
 {
     glBufferData(target, size, data, usage);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
+{
+    glBufferSubData(target, offset, size, data);
     return *this;
 }
 

@@ -2,6 +2,7 @@
 #include "GraphicsInputAssembly.h"
 #include "GraphicsPipeline.h"
 #include "RenderTarget.h"
+#include "ShaderBindingSet.h"
 #include "base/Color.h"
 #include <optional>
 
@@ -25,6 +26,7 @@ public:
 
     GraphicsCommandBuffer& Bind(GraphicsPipeline pipeline);
     GraphicsCommandBuffer& Bind(GraphicsInputAssembly inputAssembly);
+    GraphicsCommandBuffer& Bind(ShaderBindingSet shaderBindingSet);
     GraphicsCommandBuffer& DrawIndexed(uint32_t count, uint32_t indexOffset);
 
     void ClearBuffer();

@@ -43,7 +43,10 @@ public:
 
     OpenGLContext& GLGenBuffers(GLsizei n, GLuint* buffers);
     OpenGLContext& GLBindBuffer(GLenum target, GLuint buffer);
+    OpenGLContext& GLBindBufferBase(GLenum target, GLuint index, GLuint buffer);
+    OpenGLContext& GLBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
     OpenGLContext& GLBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
+    OpenGLContext& GLBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
     OpenGLContext& GLDeleteBuffers(GLsizei n, const GLuint* buffers);
 
     OpenGLContext& GLBindVertexArray(GLuint array);

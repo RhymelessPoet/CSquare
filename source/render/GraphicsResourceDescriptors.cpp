@@ -51,7 +51,7 @@ void TextureDescriptor::SetExternalTexture(uint32_t textureID)
     m_isExternal = true;
 }
 
-void TextureDescriptor::SetSize(const Size2U& size)
+void TextureDescriptor::SetSize(const Size2u& size)
 {
     m_size = size;
     setDirty();
@@ -118,7 +118,7 @@ void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
     setDirty();
 }
 
-void RenderTargetDescriptor::SetSize(const Size2U& size)
+void RenderTargetDescriptor::SetSize(const Size2u& size)
 {
     m_size = size;
     if (m_colorAttachment != nullptr) {

@@ -5,9 +5,9 @@
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceCache.h"
 #include "GraphicsResourceDescriptors.h"
+#include "ShaderBindingSetDescriptor.h"
 #include "opengl/GraphicsGLImpl.h"
 #include <stdexcept>
-
 
 namespace CS
 {
@@ -56,7 +56,13 @@ IndexBuffer GraphicsAPI::CreateIndexBuffer(size_t size)
 
 UniformBuffer GraphicsAPI::CreateUniformBuffer(size_t size)
 {
-    return UniformBuffer();
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
+    descriptor->SetSize(size);
+
+    return UniformBuffer(descriptor);
 }
 
 GraphicsInputAssembly GraphicsAPI::CreateInputAssembly()
@@ -106,7 +112,7 @@ Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
     return GetTexture(renderTarget.GetColorAttachment());
 }
 
-RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
+RenderTarget GraphicsAPI::CreateRenderTarget(const Size2u& size)
 {
     auto resorceCache = m_impl->GetResourceCache();
 
@@ -114,6 +120,26 @@ RenderTarget GraphicsAPI::CreateRenderTarget(const Size2U& size)
     auto descriptor = resorceCache->GetDescriptor<RenderTargetDescriptor>(resourceID);
 
     return RenderTarget(descriptor);
+}
+
+ShaderBindingSetLayout GraphicsAPI::CreateShaderBindingSetLayout()
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<ShaderBindingSetLayoutDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<ShaderBindingSetLayoutDescriptor>(resourceID);
+
+    return ShaderBindingSetLayout(descriptor);
+}
+
+ShaderBindingSet GraphicsAPI::CreateShaderBindingSet(ShaderBindingSetLayout layout)
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<ShaderBindingSetDescriptor>(m_impl, layout.GetID());
+    auto descriptor = resorceCache->GetDescriptor<ShaderBindingSetDescriptor>(resourceID);
+
+    return ShaderBindingSet(descriptor);
 }
 
 GraphicsCommandBuffer GraphicsAPI::CreateCommandBuffer()

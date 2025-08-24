@@ -7,9 +7,15 @@ layout(location = 0) in vec3 _position;
 layout(location = 1) in vec3 _color;
 layout(location = 0) out vec3 color;
 
+layout(std140, binding = 0) uniform vpMatrix
+{
+    mat4 view;
+    mat4 projection;
+};
+
 void main()
 {
-    gl_Position = vec4(_position.x, _position.y, _position.z, 1.0);
+    gl_Position = projection * view * vec4(_position.x, _position.y, _position.z, 1.0);
     color = _color;
 }
 

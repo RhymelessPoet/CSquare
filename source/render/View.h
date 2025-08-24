@@ -7,6 +7,7 @@ namespace CS
 class ViewImpl;
 class RenderContext;
 class Scene;
+class Camera;
 
 class View final
 {
@@ -19,13 +20,14 @@ public:
     RenderTarget GetRenderTarget();
 
     void SetScene(std::shared_ptr<Scene> scene);
-    std::shared_ptr<Scene> GetScene() const { return m_scene; }
+    std::shared_ptr<Scene> GetScene() const;
+
+    std::shared_ptr<Camera> GetCamera() const;
 
     void Render(RenderContext& context);
 
 private:
     std::unique_ptr<ViewImpl> m_impl;
-    std::shared_ptr<Scene> m_scene;
 };
 
 } // namespace CS

@@ -18,13 +18,13 @@ void Texture::SetNativeTexture(std::any nativeTexture)
     textureDescriptor.SetExternalTexture(std::any_cast<uint32_t>(nativeTexture));
 }
 
-void Texture::SetSize(const Size2U& size)
+void Texture::SetSize(const Size2u& size)
 {
     auto& textureDescriptor = descriptor<TextureDescriptor>();
     textureDescriptor.SetSize(size);
 }
 
-Size2U Texture::GetSize() const
+Size2u Texture::GetSize() const
 {
     return descriptor<TextureDescriptor>().GetSize();
 }

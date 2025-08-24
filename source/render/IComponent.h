@@ -16,6 +16,8 @@ public:
 
     virtual void OnUpdate() = 0;
 
+    virtual bool IsValid() const { return true; }
+
 protected:
     std::shared_ptr<SceneObject> owner() const { return m_owner.lock(); }
     ISystem* system() const { return m_system; }
@@ -33,6 +35,8 @@ public:
     InvalidComponent& operator=(const InvalidComponent&) = delete;
     InvalidComponent(InvalidComponent&&) = delete;
     InvalidComponent& operator=(InvalidComponent&&) = delete;
+
+    virtual bool IsValid() const { return false; }
 
     virtual void OnUpdate() {};
     static InvalidComponent& Instance();

@@ -8,6 +8,7 @@ class GraphicsBufferDescriptor;
 class UniformBuffer final : public IGraphicsResource
 {
 public:
+    friend class GraphicsAPI;
     UniformBuffer(/* args */) = default;
     ~UniformBuffer() = default;
 

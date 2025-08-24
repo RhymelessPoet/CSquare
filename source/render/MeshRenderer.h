@@ -3,6 +3,9 @@
 #include "GraphicsPipeline.h"
 #include "IRenderable.h"
 #include "IndexBuffer.h"
+#include "ShaderBindingSet.h"
+#include "ShaderBindingSetLayout.h"
+#include "UniformBuffer.h"
 #include "VertexBuffer.h"
 #include <memory>
 
@@ -30,10 +33,13 @@ private:
     std::shared_ptr<Mesh> m_mesh;
     IndexBuffer m_indexBuffer;
     VertexBuffer m_vertexBuffer;
+    UniformBuffer m_vpMatrixBuffer;
     GraphicsInputAssembly m_inputAssembly;
     GraphicsPipeline m_pipeline;
     std::shared_ptr<Shader> m_vertShader;
     std::shared_ptr<Shader> m_fragShader;
+    ShaderBindingSetLayout m_shaderBindingSetLayout;
+    ShaderBindingSet m_shaderBindingSet;
     bool m_meshDirty : 1; // Use bit field for memory efficiency
 };
 } // namespace CS

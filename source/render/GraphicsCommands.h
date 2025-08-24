@@ -57,6 +57,17 @@ private:
     size_t m_pipeline{-1u};
 };
 
+class Command_BindShaderBindingSet : public IGraphicsCommand
+{
+public:
+    Command_BindShaderBindingSet(size_t shaderBindingSet) : m_shaderBindingSet(shaderBindingSet) {}
+
+    virtual bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) override;
+
+private:
+    size_t m_shaderBindingSet{-1u};
+};
+
 class Command_SetViewport : public IGraphicsCommand
 {
 public:

@@ -3,7 +3,7 @@
 namespace CS
 {
 
-Shader::Shader(std::string source, Stage stage) : m_source(std::move(source)), m_stage(stage) {}
+Shader::Shader(std::string source, ShaderStage stage) : m_source(std::move(source)), m_stage(stage) {}
 
 Shader::~Shader() {}
 

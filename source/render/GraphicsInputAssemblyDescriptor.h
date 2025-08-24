@@ -7,7 +7,7 @@ namespace CS
 {
 class GraphicsBufferDescriptor;
 
-class GraphicsInputAssemblyDescriptor : public IGraphicsResourceDescriptor
+class GraphicsInputAssemblyDescriptor final : public IGraphicsResourceDescriptor
 {
 public:
     struct VertexInput

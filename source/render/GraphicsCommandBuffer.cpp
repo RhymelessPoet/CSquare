@@ -46,6 +46,12 @@ GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(GraphicsInputAssembly inputAs
     return *this;
 }
 
+GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(ShaderBindingSet shaderBindingSet)
+{
+    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_BindShaderBindingSet>(shaderBindingSet.GetID());
+    return *this;
+}
+
 GraphicsCommandBuffer& GraphicsCommandBuffer::DrawIndexed(uint32_t count, uint32_t indexOffset)
 {
     descriptor<GraphicsCommandBufferDescriptor>().Push<Command_DrawIndexed>(count, indexOffset);

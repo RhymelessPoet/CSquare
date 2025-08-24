@@ -1,4 +1,6 @@
 #include "QuickRenderView.h"
+#include "Camera.h"
+#include "CameraSystem.h"
 #include "Engine.h"
 #include "GLRendererBuilder.h"
 #include "MeshRenderSystem.h"
@@ -6,7 +8,9 @@
 #include "QuickRenderer.h"
 #include "RenderModule.h"
 #include "Scene.h"
+#include "TransformSystem.h"
 #include "View.h"
+#include "base/math/Math.h"
 #include "graphics/GraphicsAPI.h"
 
 namespace CSEditor
@@ -25,15 +29,21 @@ QuickRenderView::QuickRenderView()
 
         auto csTexture = graphicsAPI->CreateTexture();
 
-        auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2U(1, 1));
+        auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2u(1, 1));
         csRenderTarget.SetColorAttachment(csTexture);
         m_view->SetRenderTarget(csRenderTarget);
 
         m_scene = std::make_shared<CS::Scene>();
         m_scene->AddSystem<CS::MeshRenderSystem>(graphicsAPI);
+        m_scene->AddSystem<CS::CameraSystem>();
+        m_scene->AddSystem<CS::TransformSystem>();
         m_scene->GetSystem<CS::MeshRenderSystem>().CreateComponent<CS::MeshRenderer>(m_scene->GetRoot());
 
         m_view->SetScene(m_scene);
+
+        auto camera = m_view->GetCamera();
+        camera->LookAt({0.0f, 0.0f, 3.5f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+        camera->Perspective(CS::Math::AnglesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
     }
 }
 
@@ -48,5 +58,17 @@ QQuickRhiItemRenderer* QuickRenderView::createRenderer()
 
     return new QuickRenderer(graphicsAPI, m_view->GetRenderTarget());
 }
+
+void QuickRenderView::mousePressEvent(QMouseEvent* event) {}
+
+void QuickRenderView::mouseReleaseEvent(QMouseEvent* event) {}
+
+void QuickRenderView::mouseMoveEvent(QMouseEvent* event) {}
+
+void QuickRenderView::wheelEvent(QWheelEvent* event) {}
+
+void QuickRenderView::keyPressEvent(QKeyEvent* event) {}
+
+void QuickRenderView::keyReleaseEvent(QKeyEvent* event) {}
 
 } // namespace CSEditor

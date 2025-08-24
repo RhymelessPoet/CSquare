@@ -10,6 +10,7 @@ class GraphicsPipelineDescriptor;
 class GraphicsInputAssemblyDescriptor;
 class OpenGLContext;
 class GraphicsBufferDescriptor;
+class ShaderBindingSetDescriptor;
 class GraphicsGLImpl
 {
 public:
@@ -56,6 +57,8 @@ public:
     bool IsBuild(const GraphicsPipelineDescriptor* descriptor);
     bool BuildGraphicsPipeline(GraphicsPipelineDescriptor* descriptor);
     bool BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor);
+
+    bool BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor);
 
     bool BuildTexture(TextureDescriptor* descriptor);
     bool UpdateTextureData(TextureDescriptor* descriptor);
