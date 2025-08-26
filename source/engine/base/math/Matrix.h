@@ -296,7 +296,46 @@ Matrix4<T> Translation(const Vector3<T>& translation)
 }
 
 template <typename T>
-Matrix4<T> Rotation(const Vector3<T>& rotation)
+Matrix3<T> Rotation(const Vector3<T>& rotation)
+{
+    // Assuming rotation is in radians and using Euler angles for simplicity
+    Matrix3<T> result;
+    result.SetIdentity();
+
+    T cosX = std::cos(rotation.X());
+    T sinX = std::sin(rotation.X());
+    T cosY = std::cos(rotation.Y());
+    T sinY = std::sin(rotation.Y());
+    T cosZ = std::cos(rotation.Z());
+    T sinZ = std::sin(rotation.Z());
+
+    // Rotation around X
+    result[1][1] = cosX;
+    result[1][2] = -sinX;
+    result[2][1] = sinX;
+    result[2][2] = cosX;
+
+    // Rotation around Y
+    Matrix3<T> rotY;
+    rotY.SetIdentity();
+    rotY[0][0] = cosY;
+    rotY[0][2] = sinY;
+    rotY[2][0] = -sinY;
+    rotY[2][2] = cosY;
+
+    // Rotation around Z
+    Matrix3<T> rotZ;
+    rotZ.SetIdentity();
+    rotZ[0][0] = cosZ;
+    rotZ[0][1] = -sinZ;
+    rotZ[1][0] = sinZ;
+    rotZ[1][1] = cosZ;
+
+    return result * rotY * rotZ;
+}
+
+template <typename T>
+Matrix4<T> RotationToMatrix4(const Vector3<T>& rotation)
 {
     // Assuming rotation is in radians and using Euler angles for simplicity
     Matrix4<T> result;
@@ -335,12 +374,36 @@ Matrix4<T> Rotation(const Vector3<T>& rotation)
 }
 
 template <typename T>
-Matrix4<T> Rotation(const Vector3<T>& axis, T angle)
+Matrix3<T> Rotation(const Vector3<T>& axis, T angle)
+{
+    T cosA = std::cos(angle);
+    T sinA = std::sin(angle);
+    T oneMinusCosA = T(1) - cosA;
+
+    Matrix3<T> result;
+    result.SetIdentity();
+    result[0][0] = cosA + axis.X() * axis.X() * oneMinusCosA;
+    result[0][1] = axis.X() * axis.Y() * oneMinusCosA - axis.Z() * sinA;
+    result[0][2] = axis.X() * axis.Z() * oneMinusCosA + axis.Y() * sinA;
+
+    result[1][0] = axis.Y() * axis.X() * oneMinusCosA + axis.Z() * sinA;
+    result[1][1] = cosA + axis.Y() * axis.Y() * oneMinusCosA;
+    result[1][2] = axis.Y() * axis.Z() * oneMinusCosA - axis.X() * sinA;
+
+    result[2][0] = axis.Z() * axis.X() * oneMinusCosA - axis.Y() * sinA;
+    result[2][1] = axis.Z() * axis.Y() * oneMinusCosA + axis.X() * sinA;
+    result[2][2] = cosA + axis.Z() * axis.Z() * oneMinusCosA;
+
+    return result;
+}
+
+template <typename T>
+Matrix4<T> RotationToMatrix4(const Vector3<T>& axis, T angle)
 {
     // Normalize the axis
     T length = std::sqrt(axis.X() * axis.X() + axis.Y() * axis.Y() + axis.Z() * axis.Z());
     if (length == T(0))
-        return Matrix4<T>::Identity();
+        return Matrix4<T>();
 
     axis /= length;
     T cosA = std::cos(angle);

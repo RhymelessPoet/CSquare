@@ -49,7 +49,7 @@ const Vector3f& Transform::GetPosition() const
 
 void Transform::SetRotation(const Vector3f& rotation)
 {
-    m_rotation = Math::Rotation(rotation);
+    m_rotation = Math::RotationToMatrix4(rotation);
     m_dirty = true;
 }
 

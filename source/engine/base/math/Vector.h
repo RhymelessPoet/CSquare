@@ -27,6 +27,19 @@ public:
         }
     }
 
+    template <typename P>
+        requires std::is_arithmetic_v<P>
+    Vector(std::initializer_list<P> list)
+    {
+        int i = 0;
+        for (auto it = list.begin(); it != list.end() && i < N; ++it, ++i) {
+            m_data[i] = static_cast<P>(*it);
+        }
+        for (; i < N; ++i) {
+            m_data[i] = T();
+        }
+    }
+
     T& operator[](int i) { return m_data[i]; }
 
     const T& operator[](int i) const { return m_data[i]; }
@@ -206,6 +219,12 @@ public:
 private:
     std::array<T, N> m_data;
 };
+
+template <typename T, uint32_t N>
+Vector<T, N> operator*(T lhs, const Vector<T, N>& rhs)
+{
+    return rhs * lhs;
+}
 
 // Type aliases for 2D, 3D, 4D vectors
 template <typename T>

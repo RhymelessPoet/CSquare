@@ -1,5 +1,4 @@
 #include "QuickRenderView.h"
-#include "Camera.h"
 #include "CameraSystem.h"
 #include "Engine.h"
 #include "GLRendererBuilder.h"
@@ -12,6 +11,7 @@
 #include "View.h"
 #include "base/math/Math.h"
 #include "graphics/GraphicsAPI.h"
+#include "utils/CameraManipulator.h"
 
 namespace CSEditor
 {
@@ -41,10 +41,12 @@ QuickRenderView::QuickRenderView()
 
         m_view->SetScene(m_scene);
 
-        auto camera = m_view->GetCamera();
-        camera->LookAt({0.0f, 0.0f, 3.5f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-        camera->Perspective(CS::Math::AnglesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+        m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
+        m_cameraManipulator->LookAt({3.0f, -3.0f, 3.5f}, {0.0f, 0.0f, 0.0f});
     }
+    setAcceptedMouseButtons(Qt::AllButtons);
+    setAcceptHoverEvents(true);
+    setFocus(true);
 }
 
 QuickRenderView::~QuickRenderView() noexcept {}
@@ -59,16 +61,75 @@ QQuickRhiItemRenderer* QuickRenderView::createRenderer()
     return new QuickRenderer(graphicsAPI, m_view->GetRenderTarget());
 }
 
-void QuickRenderView::mousePressEvent(QMouseEvent* event) {}
+void QuickRenderView::mousePressEvent(QMouseEvent* event)
+{
+    m_mouseState.pressedButtons = m_mouseState.pressedButtons | event->button();
+    m_mouseState.pressPos = event->pos();
+    event->accept();
+}
 
-void QuickRenderView::mouseReleaseEvent(QMouseEvent* event) {}
+void QuickRenderView::mouseReleaseEvent(QMouseEvent* event)
+{
+    m_mouseState.pressedButtons = m_mouseState.pressedButtons ^ event->button();
+    event->accept();
+}
 
-void QuickRenderView::mouseMoveEvent(QMouseEvent* event) {}
+void QuickRenderView::mouseMoveEvent(QMouseEvent* event)
+{
+    auto point = event->pos();
+    CS::Vector2f delta{point.x() - m_mouseState.pressPos.x(), point.y() - m_mouseState.pressPos.y()};
 
-void QuickRenderView::wheelEvent(QWheelEvent* event) {}
+    if ((m_mouseState.pressedButtons & Qt::RightButton) != 0) {
+        m_cameraManipulator->RotateTrack(delta);
+    }
+    if ((m_mouseState.pressedButtons & Qt::MiddleButton) != 0) {
+        m_cameraManipulator->FlyMove(delta, 0.01f);
+    }
 
-void QuickRenderView::keyPressEvent(QKeyEvent* event) {}
+    if ((m_mouseState.pressedButtons & Qt::MiddleButton) != 0 && (event->modifiers() & Qt::ControlModifier) != 0) {
+        m_cameraManipulator->AlongAxisMove(delta, 0.01f);
+    }
+
+    m_mouseState.pressPos = point;
+}
+
+void QuickRenderView::wheelEvent(QWheelEvent* event)
+{
+    m_cameraManipulator->Zoom(event->angleDelta().y());
+}
+
+void QuickRenderView::keyPressEvent(QKeyEvent* event)
+{
+    auto key = event->key();
+    bool dollyNear = key == Qt::Key_W || key == Qt::Key_Up;
+    bool dollyFar = key == Qt::Key_S || key == Qt::Key_Down;
+
+    if (dollyNear) {
+        if (event->isAutoRepeat()) {
+            m_cameraManipulator->Dolly(1);
+
+        } else {
+            m_cameraManipulator->Dolly(3);
+        }
+    }
+    if (dollyFar) {
+        if (event->isAutoRepeat()) {
+            m_cameraManipulator->Dolly(-1);
+
+        } else {
+            m_cameraManipulator->Dolly(-3);
+        }
+    }
+}
 
 void QuickRenderView::keyReleaseEvent(QKeyEvent* event) {}
+
+void QuickRenderView::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
+{
+    QQuickRhiItem::geometryChange(newGeometry, oldGeometry);
+    if (m_cameraManipulator != nullptr && newGeometry.height() > 0.0) {
+        m_cameraManipulator->SetViewport(CS::Size2u{newGeometry.width(), newGeometry.height()});
+    }
+}
 
 } // namespace CSEditor
