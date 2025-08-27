@@ -1,12 +1,12 @@
 #include "GraphicsAPI.h"
 #include "GraphicsBufferDescriptor.h"
 #include "GraphicsCommandBufferDescriptor.h"
+#include "GraphicsGLImpl.h"
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceCache.h"
 #include "GraphicsResourceDescriptors.h"
 #include "ShaderBindingSetDescriptor.h"
-#include "opengl/GraphicsGLImpl.h"
 #include <stdexcept>
 
 namespace CS

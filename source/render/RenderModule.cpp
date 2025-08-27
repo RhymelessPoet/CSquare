@@ -1,10 +1,10 @@
 #include "RenderModule.h"
-#include "GLRendererBuilder.h"
-#include "Renderer.h"
-#include "Scene.h"
-#include "View.h"
+#include "graphics/GLRendererBuilder.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsResourceCache.h"
+#include "renderer/Renderer.h"
+#include "scene/Scene.h"
+#include "scene/View.h"
 
 namespace CS
 {

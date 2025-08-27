@@ -1,6 +1,6 @@
 #pragma once
 #include "IGraphicsResourceDescriptor.h"
-#include "Shader.h"
+#include "materials/Shader.h"
 #include <any>
 #include <map>
 

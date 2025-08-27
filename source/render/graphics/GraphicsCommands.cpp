@@ -2,7 +2,7 @@
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
 #include "ShaderBindingSetDescriptor.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 
 namespace CS
 {

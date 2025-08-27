@@ -1,5 +1,5 @@
 #pragma once
-#include "ShaderStage.h"
+#include "graphics/ShaderStage.h"
 #include <string>
 
 namespace CS

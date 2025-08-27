@@ -1,5 +1,5 @@
 #pragma once
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 
 namespace CS
 {

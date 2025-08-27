@@ -1,5 +1,5 @@
 #include "CameraManipulator.h"
-#include "Camera.h"
+#include "scene/Camera.h"
 #include <cassert>
 
 namespace CS

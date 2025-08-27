@@ -1,12 +1,12 @@
 #pragma once
-#include "GraphicsInputAssembly.h"
-#include "GraphicsPipeline.h"
 #include "IRenderable.h"
-#include "IndexBuffer.h"
-#include "ShaderBindingSet.h"
-#include "ShaderBindingSetLayout.h"
-#include "UniformBuffer.h"
-#include "VertexBuffer.h"
+#include "graphics/GraphicsInputAssembly.h"
+#include "graphics/GraphicsPipeline.h"
+#include "graphics/IndexBuffer.h"
+#include "graphics/ShaderBindingSet.h"
+#include "graphics/ShaderBindingSetLayout.h"
+#include "graphics/UniformBuffer.h"
+#include "graphics/VertexBuffer.h"
 #include <memory>
 
 namespace CS

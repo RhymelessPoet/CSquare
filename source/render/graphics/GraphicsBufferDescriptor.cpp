@@ -1,5 +1,5 @@
 #include "GraphicsBufferDescriptor.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 
 namespace CS
 {

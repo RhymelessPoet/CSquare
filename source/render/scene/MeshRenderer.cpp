@@ -1,12 +1,12 @@
 #include "MeshRenderer.h"
 #include "Camera.h"
-#include "GraphicsShaderStage.h"
-#include "Mesh.h"
-#include "RenderContext.h"
-#include "Shader.h"
-#include "VertexInputLayout.h"
 #include "assets/BuiltInShaders.h"
+#include "geometry/Mesh.h"
 #include "graphics/GraphicsAPI.h"
+#include "graphics/GraphicsShaderStage.h"
+#include "graphics/VertexInputLayout.h"
+#include "materials/Shader.h"
+#include "renderer/RenderContext.h"
 
 namespace CS
 {

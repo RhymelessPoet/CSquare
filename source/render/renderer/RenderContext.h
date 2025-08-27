@@ -1,5 +1,5 @@
 #pragma once
-#include "GraphicsCommandBuffer.h"
+#include "graphics/GraphicsCommandBuffer.h"
 #include <memory>
 
 namespace CS

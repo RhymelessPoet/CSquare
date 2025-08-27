@@ -1,8 +1,9 @@
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsShaderStage.h"
-#include "Shader.h"
 #include "VertexInputLayout.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
+#include "materials/Shader.h"
+
 
 namespace CS
 {

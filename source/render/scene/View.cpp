@@ -1,9 +1,9 @@
 #include "View.h"
 #include "Camera.h"
-#include "GraphicsCommandBuffer.h"
-#include "RenderContext.h"
-#include "RenderTarget.h"
 #include "Scene.h"
+#include "graphics/GraphicsCommandBuffer.h"
+#include "graphics/RenderTarget.h"
+#include "renderer/RenderContext.h"
 #include <optional>
 
 namespace CS
