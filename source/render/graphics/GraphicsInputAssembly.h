@@ -16,7 +16,7 @@ public:
     GraphicsInputAssembly(/* args */) = default;
     ~GraphicsInputAssembly() = default;
 
-    void SetVertexInputLayout(std::unique_ptr<VertexInputLayout> inputLayout);
+    void SetVertexInputLayout(std::shared_ptr<VertexInputLayout> inputLayout);
 
     void SetVertexInput(uint32_t binding, VertexBuffer buffer, uint32_t offset);
     void SetIndexBuffer(IndexBuffer indexBuffer, uint16_t);

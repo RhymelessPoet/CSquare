@@ -1,4 +1,5 @@
 #pragma once
+#include "VertexInputFormat.h"
 #include <array>
 #include <map>
 #include <optional>
@@ -16,39 +17,18 @@ enum class IndexFormat
 class VertexInputAttribute
 {
 public:
-    struct Size
-    {
-        uint32_t componentSize{32u};
-        uint32_t componentCount{1u};
-    };
-    enum class Format
-    {
-        Float = 0,
-        Float2,
-        Float3,
-        Float4,
-        Int,
-        Int2,
-        Int3,
-        Int4,
-        UInt,
-        UInt2,
-        UInt3,
-        UInt4,
-        Max
-    };
-    VertexInputAttribute(uint32_t binding, Format format, uint32_t offset)
+    VertexInputAttribute(uint32_t binding, VertexInputFormat format, uint32_t offset)
         : m_binding(binding), m_format(format), m_offset(offset)
     {}
 
     uint32_t GetBinding() const { return m_binding; }
-    Format GetFormat() const { return m_format; }
+    VertexInputFormat GetFormat() const { return m_format; }
     uint32_t GetOffset() const { return m_offset; }
-    Size GetSize() const;
+    VertexFormatSize GetSize() const;
 
 private:
     uint32_t m_binding{0u};
-    Format m_format{Format::Float};
+    VertexInputFormat m_format{VertexInputFormat::Float};
     uint32_t m_offset{0u};
 };
 

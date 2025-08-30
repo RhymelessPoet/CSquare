@@ -3,7 +3,6 @@
 
 namespace CS
 {
-
 class IGraphicsCommand
 {
 public:
@@ -11,6 +10,9 @@ public:
     virtual ~IGraphicsCommand() {}
 
     virtual bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) = 0;
+
+protected:
+    void buildGraphicsResource(IGraphicsResourceDescriptor* descriptor);
 };
 
 } // namespace CS

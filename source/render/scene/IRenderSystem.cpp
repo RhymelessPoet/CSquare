@@ -2,6 +2,6 @@
 
 namespace CS
 {
-IRenderSystem::IRenderSystem(std::shared_ptr<GraphicsAPI> graphicsAPI) : m_graphicsAPI(std::move(graphicsAPI)) {}
+IRenderSystem::IRenderSystem() = default;
 
 } // namespace CS

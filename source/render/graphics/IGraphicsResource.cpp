@@ -22,7 +22,10 @@ IGraphicsResource::~IGraphicsResource()
 IGraphicsResource::IGraphicsResource(const IGraphicsResource& other)
 {
     m_descriptor = other.m_descriptor;
-    m_descriptor->AddReference();
+
+    if (m_descriptor != nullptr) {
+        m_descriptor->AddReference();
+    }
 }
 
 IGraphicsResource& IGraphicsResource::operator=(const IGraphicsResource& other)

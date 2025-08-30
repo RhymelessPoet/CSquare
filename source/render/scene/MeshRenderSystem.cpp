@@ -3,10 +3,6 @@
 
 namespace CS
 {
-MeshRenderSystem::MeshRenderSystem(std::shared_ptr<GraphicsAPI> graphicsAPI) : IRenderSystem(std::move(graphicsAPI)) {}
-
-MeshRenderSystem::~MeshRenderSystem() {}
-
 void MeshRenderSystem::OnUpdate()
 {
     for (auto& component : m_components) {

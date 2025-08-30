@@ -4,7 +4,6 @@
 #include "graphics/GraphicsGLImpl.h"
 #include "materials/Shader.h"
 
-
 namespace CS
 {
 GraphicsPipelineDescriptor::GraphicsPipelineDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI)
@@ -32,7 +31,7 @@ void GraphicsPipelineDescriptor::SetShaderStage(std::unique_ptr<GraphicsShaderSt
     setDirty();
 }
 
-void GraphicsPipelineDescriptor::SetVertexInputLayout(std::unique_ptr<VertexInputLayout> layout)
+void GraphicsPipelineDescriptor::SetVertexInputLayout(std::shared_ptr<VertexInputLayout> layout)
 {
     m_vertexInputLayout = std::move(layout);
     setDirty();

@@ -22,7 +22,7 @@ public:
     void SetShaderStage(std::unique_ptr<GraphicsShaderStage> shaderStage);
     const std::unique_ptr<GraphicsShaderStage>& GetShaderStage(ShaderStage stage);
     const VertexInputLayout& GetVertexInputLayout() const { return *m_vertexInputLayout.get(); }
-    void SetVertexInputLayout(std::unique_ptr<VertexInputLayout> layout);
+    void SetVertexInputLayout(std::shared_ptr<VertexInputLayout> layout);
 
     template <typename PipelineNativeDataType>
     PipelineNativeDataType GetNativePipelineData() const
@@ -40,7 +40,7 @@ protected:
     virtual bool build() override;
 
 private:
-    std::unique_ptr<VertexInputLayout> m_vertexInputLayout;
+    std::shared_ptr<VertexInputLayout> m_vertexInputLayout;
     std::map<ShaderStage, std::unique_ptr<GraphicsShaderStage>> m_shaderStages;
     std::any m_nativePipelineData;
 };

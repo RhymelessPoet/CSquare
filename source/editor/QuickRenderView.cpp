@@ -5,13 +5,11 @@
 #include "base/math/Math.h"
 #include "graphics/GLRendererBuilder.h"
 #include "graphics/GraphicsAPI.h"
-#include "scene/CameraSystem.h"
-#include "scene/MeshRenderSystem.h"
-#include "scene/MeshRenderer.h"
-#include "scene/Scene.h"
-#include "scene/TransformSystem.h"
+
 #include "scene/View.h"
 #include "utils/CameraManipulator.h"
+
+#include "samples/HelloTriangles.h"
 
 namespace CSEditor
 {
@@ -33,13 +31,8 @@ QuickRenderView::QuickRenderView()
         csRenderTarget.SetColorAttachment(csTexture);
         m_view->SetRenderTarget(csRenderTarget);
 
-        m_scene = std::make_shared<CS::Scene>();
-        m_scene->AddSystem<CS::MeshRenderSystem>(graphicsAPI);
-        m_scene->AddSystem<CS::CameraSystem>();
-        m_scene->AddSystem<CS::TransformSystem>();
-        m_scene->GetSystem<CS::MeshRenderSystem>().CreateComponent<CS::MeshRenderer>(m_scene->GetRoot());
-
-        m_view->SetScene(m_scene);
+        m_sample = std::make_unique<CS::HelloTriangles>();
+        m_sample->Initialize(m_view);
 
         m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
         m_cameraManipulator->LookAt({3.0f, -3.0f, 3.5f}, {0.0f, 0.0f, 0.0f});

@@ -14,9 +14,6 @@ public:
     ~IRenderable() = default;
 
     virtual void OnRender(RenderContext& context) = 0;
-
-protected:
-    std::shared_ptr<GraphicsAPI> getGraphicsAPI() const;
 };
 
 } // namespace CS

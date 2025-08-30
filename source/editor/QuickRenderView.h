@@ -7,6 +7,8 @@ class Scene;
 class GraphicsAPI;
 class RenderModule;
 class CameraManipulator;
+class IRenderSample;
+
 } // namespace CS
 namespace CSEditor
 {
@@ -42,7 +44,7 @@ private:
 
     QuickRenderer* m_renderer{nullptr};
     std::shared_ptr<CS::View> m_view;
-    std::shared_ptr<CS::Scene> m_scene;
+    std::unique_ptr<CS::IRenderSample> m_sample;
     std::optional<CS::RenderModule*> m_renderModule;
     std::unique_ptr<CS::CameraManipulator> m_cameraManipulator;
 };

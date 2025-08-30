@@ -18,7 +18,7 @@ GraphicsPipeline& GraphicsPipeline::SetShaderStage(std::unique_ptr<GraphicsShade
     return *this;
 }
 
-GraphicsPipeline& GraphicsPipeline::SetVertexInputLayout(std::unique_ptr<VertexInputLayout> vertexInputLayout)
+GraphicsPipeline& GraphicsPipeline::SetVertexInputLayout(std::shared_ptr<VertexInputLayout> vertexInputLayout)
 {
     if (!IsValid()) {
         return *this;

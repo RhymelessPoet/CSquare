@@ -19,7 +19,7 @@ bool Command_BeginPass::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 
 bool Command_EndPass::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
-    return false;
+    return true;
 }
 
 bool Command_Clear::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
@@ -30,18 +30,21 @@ bool Command_Clear::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 bool Command_BindInputAssembly::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     auto descriptor = graphicsAPI->GetResourceDescriptor<GraphicsInputAssemblyDescriptor>(m_inputAssembly);
+    buildGraphicsResource(descriptor);
     return graphicsAPI->BindGraphicsInputAssembly(descriptor);
 }
 
 bool Command_BindPipeline::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
-    auto descritpr = graphicsAPI->GetResourceDescriptor<GraphicsPipelineDescriptor>(m_pipeline);
-    return graphicsAPI->BindGraphicsPipeline(descritpr);
+    auto descriptor = graphicsAPI->GetResourceDescriptor<GraphicsPipelineDescriptor>(m_pipeline);
+    buildGraphicsResource(descriptor);
+    return graphicsAPI->BindGraphicsPipeline(descriptor);
 }
 
 bool Command_BindShaderBindingSet::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     auto descriptor = graphicsAPI->GetResourceDescriptor<ShaderBindingSetDescriptor>(m_shaderBindingSet);
+    buildGraphicsResource(descriptor);
     return graphicsAPI->BindShaderBindingSet(descriptor);
 }
 

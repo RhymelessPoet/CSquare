@@ -8,13 +8,12 @@
 #include "graphics/opengl/glad/include/glad/glad.h"
 #include "opengl/OpenGLContext.h"
 
-
 namespace CS
 {
 //  GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, and GL_UNSIGNED_INT are accepted by
 //  glVertexAttribPointer and glVertexAttribIPointer. Additionally GL_HALF_FLOAT, GL_FLOAT, GL_DOUBLE, GL_FIXED,
 //  GL_INT_2_10_10_10_REV, GL_UNSIGNED_INT_2_10_10_10_REV and GL_UNSIGNED_INT_10F_11F_11F_REV
-using AttrFormat = VertexInputAttribute::Format;
+using AttrFormat = VertexInputFormat;
 static GLenum GetVertexAttribFormat(AttrFormat format)
 {
     if (format == AttrFormat::Float || format == AttrFormat::Float2 || format == AttrFormat::Float3 ||

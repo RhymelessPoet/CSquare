@@ -1,6 +1,6 @@
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsBufferDescriptor.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 
 namespace CS
 {
@@ -26,7 +26,7 @@ bool GraphicsInputAssemblyDescriptor::IsDirty() const
     return IGraphicsResourceDescriptor::IsDirty();
 }
 
-void GraphicsInputAssemblyDescriptor::SetVertexInputLayout(std::unique_ptr<VertexInputLayout> vertexInputLayout)
+void GraphicsInputAssemblyDescriptor::SetVertexInputLayout(std::shared_ptr<VertexInputLayout> vertexInputLayout)
 {
     m_vertexInputLayout = std::move(vertexInputLayout);
     setDirty();
@@ -79,6 +79,14 @@ void GraphicsInputAssemblyDescriptor::SetIndexBuffer(uint32_t bufferResourceID, 
 
 bool GraphicsInputAssemblyDescriptor::build()
 {
+    for (auto& [vertexBuffer, _] : m_vertexInputs) {
+        if (vertexBuffer != nullptr && !vertexBuffer->IsBuild()) {
+            vertexBuffer->Build();
+        }
+    }
+    if (m_indexBuffer != nullptr && !m_indexBuffer->IsBuild()) {
+        m_indexBuffer->Build();
+    }
     return GetGraphicsAPI()->BuildGraphicsInputAssembly(this);
 }
 

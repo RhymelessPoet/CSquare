@@ -22,7 +22,7 @@ public:
     virtual void Destroy() override;
     virtual bool IsDirty() const override;
 
-    void SetVertexInputLayout(std::unique_ptr<VertexInputLayout> vertexInputLayout);
+    void SetVertexInputLayout(std::shared_ptr<VertexInputLayout> vertexInputLayout);
     const VertexInputLayout& GetVertexInputLayout() const { return *m_vertexInputLayout.get(); }
 
     void SetVertexInput(uint32_t binding, uint32_t bufferResourceID, uint32_t offset);
@@ -48,7 +48,7 @@ protected:
     virtual bool build() override;
 
 private:
-    std::unique_ptr<VertexInputLayout> m_vertexInputLayout;
+    std::shared_ptr<VertexInputLayout> m_vertexInputLayout;
     std::array<VertexInput, VertexInputLayout::MaxBindings + 1u> m_vertexInputs;
     GraphicsBufferDescriptor* m_indexBuffer{nullptr};
     IndexFormat m_format{IndexFormat::UInt16};

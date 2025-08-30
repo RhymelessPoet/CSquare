@@ -7,7 +7,7 @@ GraphicsInputAssembly::GraphicsInputAssembly(GraphicsInputAssemblyDescriptor* de
     : IGraphicsResource(descriptor)
 {}
 
-void GraphicsInputAssembly::SetVertexInputLayout(std::unique_ptr<VertexInputLayout> inputLayout)
+void GraphicsInputAssembly::SetVertexInputLayout(std::shared_ptr<VertexInputLayout> inputLayout)
 {
     descriptor<GraphicsInputAssemblyDescriptor>().SetVertexInputLayout(std::move(inputLayout));
 }

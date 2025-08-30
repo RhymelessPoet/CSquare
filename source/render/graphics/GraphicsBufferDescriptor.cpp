@@ -31,8 +31,10 @@ uint32_t GraphicsBufferDescriptor::GetNativeBuffer() const
 
 bool GraphicsBufferDescriptor::UpdateData(const void* data, size_t size)
 {
-    SetSize(size);
-    return GetGraphicsAPI()->UpdateGraphicsBufferData(this, data);
+    if (IsBuild()) {
+        SetSize(size);
+        return GetGraphicsAPI()->UpdateGraphicsBufferData(this, data);
+    }
 }
 
 bool GraphicsBufferDescriptor::build()

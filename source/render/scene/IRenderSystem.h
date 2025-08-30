@@ -9,15 +9,11 @@ class GraphicsAPI;
 class IRenderSystem : public ISystem
 {
 public:
-    IRenderSystem(std::shared_ptr<GraphicsAPI> graphicsAPI);
+    IRenderSystem();
     virtual ~IRenderSystem() = default;
 
     virtual void OnRender(RenderContext& context) = 0;
-
-    std::shared_ptr<GraphicsAPI> GetGraphicsAPI() const { return m_graphicsAPI; }
-
-private:
-    std::shared_ptr<GraphicsAPI> m_graphicsAPI;
+    ;
 };
 
 } // namespace CS

@@ -1,6 +1,6 @@
 #include "IGraphicsResourceDescriptor.h"
+#include "graphics/GraphicsGLImpl.h"
 #include "graphics/GraphicsResourceCache.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
 
 namespace CS
 {

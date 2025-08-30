@@ -15,7 +15,7 @@ public:
     ~GraphicsPipeline() = default;
 
     GraphicsPipeline& SetShaderStage(std::unique_ptr<GraphicsShaderStage> shaderStage);
-    GraphicsPipeline& SetVertexInputLayout(std::unique_ptr<VertexInputLayout> vertexInputLayout);
+    GraphicsPipeline& SetVertexInputLayout(std::shared_ptr<VertexInputLayout> vertexInputLayout);
 
 private:
     GraphicsPipeline(GraphicsPipelineDescriptor* descriptor);

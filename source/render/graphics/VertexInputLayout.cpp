@@ -3,36 +3,9 @@
 namespace CS
 {
 
-VertexInputAttribute::Size VertexInputAttribute::GetSize() const
+VertexFormatSize VertexInputAttribute::GetSize() const
 {
-    switch (m_format) {
-    case Format::Float:
-        return Size{sizeof(float), 1u};
-    case Format::Float2:
-        return Size{sizeof(float), 2u};
-    case Format::Float3:
-        return Size{sizeof(float), 3u};
-    case Format::Float4:
-        return Size{sizeof(float), 4u};
-    case Format::Int:
-        return Size{sizeof(int), 1u};
-    case Format::Int2:
-        return Size{sizeof(int), 2u};
-    case Format::Int3:
-        return Size{sizeof(int), 3u};
-    case Format::Int4:
-        return Size{sizeof(int), 4u};
-    case Format::UInt:
-        return Size{sizeof(unsigned int), 1u};
-    case Format::UInt2:
-        return Size{sizeof(unsigned int), 2u};
-    case Format::UInt3:
-        return Size{sizeof(unsigned int), 3u};
-    case Format::UInt4:
-        return Size{sizeof(unsigned int), 4u};
-    default:
-        return Size{}; // Invalid format
-    }
+    return VertexInputFormatSize(m_format);
 }
 
 VertexInputLayout& VertexInputLayout::SetBinding(uint32_t binding, const VertexInputBinding& inputBinding)
