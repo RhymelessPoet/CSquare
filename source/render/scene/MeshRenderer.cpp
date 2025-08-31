@@ -11,6 +11,11 @@
 #include "materials/Material.h"
 #include "materials/MaterialComputer.h"
 
+#include "SceneObject.h"
+#include "Transform.h"
+
+#include <iostream>
+
 namespace CS
 {
 
@@ -38,6 +43,10 @@ void MeshRenderer::OnRender(RenderContext& context)
         m_vpMatrixBuffer = graphicsAPI->CreateUniformBuffer(sizeof(float) * 32);
     }
 
+    if (!m_modelMatrixBuffer.IsValid()) {
+        m_modelMatrixBuffer = graphicsAPI->CreateUniformBuffer(sizeof(float) * 16);
+    }
+
     if (!m_inputAssembly.IsValid()) {
         m_inputAssembly = graphicsAPI->CreateInputAssembly();
         m_inputAssembly.SetVertexInput(0u, m_vertexBuffer, 0u);
@@ -49,11 +58,13 @@ void MeshRenderer::OnRender(RenderContext& context)
     if (!m_shaderBindingSetLayout.IsValid()) {
         m_shaderBindingSetLayout = graphicsAPI->CreateShaderBindingSetLayout();
         m_shaderBindingSetLayout.AddBinding({0u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer});
+        m_shaderBindingSetLayout.AddBinding({1u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer});
     }
 
     if (!m_shaderBindingSet.IsValid()) {
         m_shaderBindingSet = graphicsAPI->CreateShaderBindingSet(m_shaderBindingSetLayout);
         m_shaderBindingSet.BindUniformBuffer(0u, m_vpMatrixBuffer, 0u, sizeof(float) * 32);
+        m_shaderBindingSet.BindUniformBuffer(1u, m_modelMatrixBuffer, 0u, sizeof(float) * 16);
     }
 
     if (!m_vertexBuffer.IsBuild()) {
@@ -75,6 +86,20 @@ void MeshRenderer::OnRender(RenderContext& context)
         std::copy(arr1.begin(), arr1.end(), vpMatrix.begin());
         std::copy(arr2.begin(), arr2.end(), vpMatrix.begin() + arr1.size());
         m_vpMatrixBuffer.UpdateData(vpMatrix.data(), vpMatrix.size() * sizeof(float));
+    }
+
+    if (!m_modelMatrixBuffer.IsBuild()) {
+        m_modelMatrixBuffer.Build();
+    }
+
+    auto transform = owner()->GetComponent<Transform>();
+
+    if (transform != nullptr) {
+        const auto modelMatrix = transform->GetWorldMatrix().Transposed();
+
+        const auto& modelArr = modelMatrix.Data();
+
+        m_modelMatrixBuffer.UpdateData(modelArr.data(), modelArr.size() * sizeof(float));
     }
 
     if (m_meshDirty) {

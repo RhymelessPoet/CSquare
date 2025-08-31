@@ -4,6 +4,7 @@
 namespace CS
 {
 class Scene;
+class SceneObject;
 
 class HelloTriangles : public IRenderSample
 {
@@ -12,8 +13,11 @@ public:
 
     virtual void Initialize(std::shared_ptr<View> view) override;
 
+    virtual void OnUpdate() override;
+
 private:
     std::shared_ptr<Scene> m_scene;
+    std::shared_ptr<SceneObject> m_groupRoot;
 };
 
 } // namespace CS

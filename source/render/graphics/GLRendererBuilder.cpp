@@ -1,10 +1,9 @@
 #include "GLRendererBuilder.h"
-#include "Renderer.h"
 #include "graphics/GraphicsAPI.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 #include "graphics/opengl/NativeContext.h"
 #include "graphics/opengl/OpenGLContext.h"
-
+#include "renderer/Renderer.h"
 
 namespace CS
 {

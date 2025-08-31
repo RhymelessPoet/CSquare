@@ -39,8 +39,11 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent* event) override;
     virtual void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
 
+    void onSampleChange();
+
 private:
     MouseState m_mouseState;
+    std::unique_ptr<QTimer> m_timer{nullptr};
 
     QuickRenderer* m_renderer{nullptr};
     std::shared_ptr<CS::View> m_view;

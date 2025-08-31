@@ -99,8 +99,10 @@ bool GraphicsGLImpl::UpdateGraphicsBufferData(GraphicsBufferDescriptor* descript
 
     GLenum target = GetBufferType(bufferType);
     if (target == GL_UNIFORM_BUFFER) {
-        m_glContext->GLBindBuffer(target, buffer)
-            .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
+        m_glContext
+            ->GLBindBuffer(target, buffer)
+            // .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
+            .GLBufferData(target, size, data, GL_DYNAMIC_DRAW)
             .GLBindBuffer(target, 0);
     } else {
         m_glContext->GLBindBuffer(target, buffer)

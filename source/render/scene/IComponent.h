@@ -27,19 +27,4 @@ private:
     ISystem* m_system{nullptr};
 };
 
-class InvalidComponent : public IComponent
-{
-public:
-    InvalidComponent() : IComponent(nullptr) {}
-    InvalidComponent(const InvalidComponent&) = delete;
-    InvalidComponent& operator=(const InvalidComponent&) = delete;
-    InvalidComponent(InvalidComponent&&) = delete;
-    InvalidComponent& operator=(InvalidComponent&&) = delete;
-
-    virtual bool IsValid() const { return false; }
-
-    virtual void OnUpdate() {};
-    static InvalidComponent& Instance();
-};
-
 } // namespace CS

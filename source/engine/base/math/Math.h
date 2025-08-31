@@ -70,7 +70,7 @@ Vector3<T> RotationMatrixToAnglesXYZ(const Matrix4<T>& rotation)
 
 template <typename T>
     requires std::is_floating_point_v<T>
-constexpr inline T AnglesToRadians(T angle)
+constexpr inline T AngleToRadian(T angle)
 {
     return angle / 180.0f * PI<T>;
 }

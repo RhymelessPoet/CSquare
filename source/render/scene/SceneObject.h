@@ -1,11 +1,11 @@
 #pragma once
-#include "IComponent.h"
+#include <cassert>
 #include <memory>
 #include <vector>
 
 namespace CS
 {
-
+class IComponent;
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
@@ -13,14 +13,14 @@ public:
     ~SceneObject();
 
     template <typename T>
-    IComponent& GetComponent()
+    T* GetComponent()
     {
         for (const auto& component : m_components) {
             if (auto castedComponent = dynamic_cast<T*>(component.get())) {
-                return *castedComponent;
+                return castedComponent;
             }
         }
-        return InvalidComponent::Instance();
+        return nullptr;
     }
 
     bool AddComponent(std::unique_ptr<IComponent> component);
@@ -36,5 +36,23 @@ private:
     std::vector<std::shared_ptr<SceneObject>> m_children;
     std::vector<std::unique_ptr<IComponent>> m_components;
 };
+
+template <typename T>
+    requires std::is_base_of_v<IComponent, T>
+inline T& GetComponent(std::shared_ptr<SceneObject>& so)
+{
+    auto component = so->GetComponent<T>();
+    assert(component != nullptr);
+    return *component;
+}
+
+template <typename T>
+    requires std::is_base_of_v<IComponent, T>
+inline const T& GetComponent(const std::shared_ptr<SceneObject>& so)
+{
+    auto component = so->GetComponent<T>();
+    assert(component != nullptr);
+    return *component;
+}
 
 } // namespace CS

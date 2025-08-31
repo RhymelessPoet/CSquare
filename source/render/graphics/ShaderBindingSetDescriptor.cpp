@@ -1,6 +1,6 @@
 #include "ShaderBindingSetDescriptor.h"
 #include "GraphicsBufferDescriptor.h"
-#include "graphics/opengl/GraphicsGLImpl.h"
+#include "graphics/GraphicsGLImpl.h"
 #include <stdexcept>
 
 namespace CS

@@ -16,16 +16,20 @@ Transform::Transform(std::shared_ptr<SceneObject> owner, const Vector3f& positio
 
 void Transform::OnUpdate()
 {
+    Transform* parentTransform = nullptr;
     auto parentSO = owner()->GetParent();
-    if (parentSO != nullptr && parentSO->GetComponent<Transform>().IsValid()) {
-        const auto& parentTransform = dynamic_cast<const Transform&>(parentSO->GetComponent<Transform>());
-        if (m_dirty || parentTransform.IsFresh()) {
-            m_worldMatrix = parentTransform.GetWorldMatrix() * GetLocalModelMatrix();
-            m_dirty = false;
-            m_fresh = true;
-        }
-    } else if (m_dirty) {
+    bool parentTransformIsFresh = false;
+    if (parentSO != nullptr) {
+        parentTransform = parentSO->GetComponent<Transform>();
+        parentTransformIsFresh = parentTransform != nullptr && parentTransform->IsFresh();
+    }
+
+    if (m_dirty || parentTransformIsFresh) {
         m_worldMatrix = GetLocalModelMatrix();
+
+        if (parentTransform != nullptr) {
+            m_worldMatrix = parentTransform->GetWorldMatrix() * m_worldMatrix;
+        }
         m_dirty = false;
         m_fresh = true;
     }

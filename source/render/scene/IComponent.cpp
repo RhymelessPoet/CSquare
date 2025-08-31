@@ -13,10 +13,4 @@ IComponent::~IComponent()
     }
 }
 
-InvalidComponent& InvalidComponent::Instance()
-{
-    static InvalidComponent instance;
-    return instance;
-}
-
 } // namespace CS

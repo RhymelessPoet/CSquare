@@ -7,7 +7,9 @@
 #include "graphics/ShaderBindingSetLayout.h"
 #include "graphics/UniformBuffer.h"
 #include "graphics/VertexBuffer.h"
+#include <array>
 #include <memory>
+
 
 namespace CS
 {
@@ -45,7 +47,10 @@ private:
     IndexBuffer m_indexBuffer;
     VertexBuffer m_vertexBuffer;
     UniformBuffer m_vpMatrixBuffer;
+    UniformBuffer m_modelMatrixBuffer;
     GraphicsInputAssembly m_inputAssembly;
+
+    std::array<float, 16> m_modelData;
 
     std::shared_ptr<Shader> m_vertShader;
     std::shared_ptr<Shader> m_fragShader;

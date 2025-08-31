@@ -1,4 +1,5 @@
 #include "SceneObject.h"
+#include "IComponent.h"
 
 namespace CS
 {

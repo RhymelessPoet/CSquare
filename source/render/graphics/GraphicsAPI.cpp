@@ -60,6 +60,8 @@ UniformBuffer GraphicsAPI::CreateUniformBuffer(size_t size)
 
     auto resourceID = resorceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
     auto descriptor = resorceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
+    descriptor->SetBufferType(GraphicsBufferDescriptor::BufferType::UniformBuffer);
+
     descriptor->SetSize(size);
 
     return UniformBuffer(descriptor);

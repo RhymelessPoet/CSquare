@@ -49,30 +49,22 @@ const Matrix4f& Camera::GetProjectionMatrix() const
 
 inline CameraComponent& Camera::cameraComponent()
 {
-    auto& component = m_sceneObject->GetComponent<CameraComponent>();
-    assert(component.IsValid());
-    return dynamic_cast<CameraComponent&>(component);
+    return GetComponent<CameraComponent>(m_sceneObject);
 }
 
 inline Transform& Camera::transform()
 {
-    auto& component = m_sceneObject->GetComponent<Transform>();
-    assert(component.IsValid());
-    return dynamic_cast<Transform&>(component);
+    return GetComponent<Transform>(m_sceneObject);
 }
 
 inline const CameraComponent& Camera::cameraComponent() const
 {
-    auto& component = m_sceneObject->GetComponent<CameraComponent>();
-    assert(component.IsValid());
-    return dynamic_cast<CameraComponent&>(component);
+    return GetComponent<CameraComponent>(m_sceneObject);
 }
 
 inline const Transform& Camera::transform() const
 {
-    auto& component = m_sceneObject->GetComponent<Transform>();
-    assert(component.IsValid());
-    return dynamic_cast<Transform&>(component);
+    return GetComponent<Transform>(m_sceneObject);
 }
 
 } // namespace CS

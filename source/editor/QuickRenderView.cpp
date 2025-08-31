@@ -11,6 +11,8 @@
 
 #include "samples/HelloTriangles.h"
 
+#include <QTimer>
+
 namespace CSEditor
 {
 
@@ -32,14 +34,15 @@ QuickRenderView::QuickRenderView()
         m_view->SetRenderTarget(csRenderTarget);
 
         m_sample = std::make_unique<CS::HelloTriangles>();
-        m_sample->Initialize(m_view);
-
-        m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
-        m_cameraManipulator->LookAt({3.0f, -3.0f, 3.5f}, {0.0f, 0.0f, 0.0f});
+        m_timer = std::make_unique<QTimer>();
+        onSampleChange();
     }
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setFocus(true);
+
+    m_timer->setInterval(40);
+    m_timer->start();
 }
 
 QuickRenderView::~QuickRenderView() noexcept {}
@@ -123,6 +126,15 @@ void QuickRenderView::geometryChange(const QRectF& newGeometry, const QRectF& ol
     if (m_cameraManipulator != nullptr && newGeometry.height() > 0.0) {
         m_cameraManipulator->SetViewport(CS::Size2u{newGeometry.width(), newGeometry.height()});
     }
+}
+
+void QuickRenderView::onSampleChange()
+{
+    m_sample->Initialize(m_view);
+    connect(m_timer.get(), &QTimer::timeout, [this]() { m_sample->OnUpdate(); });
+
+    m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
+    m_cameraManipulator->LookAt({3.0f, -3.0f, 3.5f}, {0.0f, 0.0f, 0.0f});
 }
 
 } // namespace CSEditor

@@ -40,7 +40,7 @@ void CameraManipulator::Dolly(float delta, float speed)
 void CameraManipulator::Zoom(float delta, float speed)
 {
     m_fovY -= delta * speed;
-    m_fovY = std::clamp(m_fovY, 5.0f, 89.0f);
+    m_fovY = std::clamp(m_fovY, 1.0f, 175.0f);
     UpdateCamera();
 }
 
@@ -111,7 +111,7 @@ void CameraManipulator::UpdateCamera()
 {
     auto _camera = camera();
     _camera->LookAt(m_position, m_center, m_up);
-    _camera->Perspective(Math::AnglesToRadians(m_fovY), m_aspectRatio, m_nearPlane, m_farPlane);
+    _camera->Perspective(Math::AngleToRadian(m_fovY), m_aspectRatio, m_nearPlane, m_farPlane);
 }
 
 inline std::shared_ptr<Camera> CameraManipulator::camera() const
