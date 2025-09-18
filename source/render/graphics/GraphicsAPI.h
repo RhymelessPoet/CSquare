@@ -4,6 +4,7 @@
 #include "GraphicsPipeline.h"
 #include "IndexBuffer.h"
 #include "RenderTarget.h"
+#include "Sampler.h"
 #include "ShaderBindingSet.h"
 #include "ShaderBindingSetLayout.h"
 #include "Texture.h"
@@ -36,6 +37,8 @@ public:
     Texture CreateTexture();
     Texture GetTexture(size_t id) const;
     Texture GetColorAttachment(RenderTarget renderTarget) const;
+
+    Sampler CreateSampler();
 
     RenderTarget CreateRenderTarget(const Size2u& size);
 

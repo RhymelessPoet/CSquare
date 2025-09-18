@@ -1,5 +1,6 @@
 #pragma once
 #include "Vector.h"
+#include <vector>
 
 namespace CS
 {
@@ -60,6 +61,11 @@ public:
     }
 
     const std::array<T, N * N>& Data() const { return m_data; }
+    std::vector<T> ToStdVector() const
+    {
+        auto data = m_data.data();
+        return std::vector<T>(data, data + N * N);
+    }
 
     Matrix<T, N> operator*(const Matrix<T, N>& rhs) const
     {

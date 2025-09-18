@@ -1,15 +1,15 @@
 #pragma once
+#include "MaterialInstance.h"
 #include "graphics/ShaderStage.h"
 #include "graphics/VertexInputFormat.h"
-#include <map>
-#include <memory>
 #include <vector>
 
 namespace CS
 {
-
 class Shader;
-class MaterialComputer;
+class MaterialCompiler;
+class ShaderBindingProperty;
+class ShaderBindingTexture;
 
 class Material : public std::enable_shared_from_this<Material>
 {
@@ -24,21 +24,41 @@ public:
         std::shared_ptr<Material> End();
 
     private:
-        static size_t ID;
+        uint32_t insertUniform(uint32_t binding, uint32_t offset, const ShaderBindingProperty& property);
+        void insertUniformTexture(uint32_t binding, const ShaderBindingTexture& texture);
+
+    private:
+        static uint16_t ID;
+        MaterialInstance::Uniforms m_uniforms;
+        MaterialInstance::Textures m_textures;
         std::shared_ptr<Material> m_material;
     };
     friend class Builder;
 
-    void Compute(MaterialComputer& computer) const;
-    size_t GetID() const { return m_id; }
+    template <typename T>
+    [[nodiscard]] bool SetUniformValue(std::string_view name, T&& value)
+    {
+        return m_defaultInstance->SetUniformValue(name, std::move(value));
+    }
+
+    std::shared_ptr<MaterialInstance> CreateInstance();
+
+    void Compile(MaterialCompiler& compiler) const;
+    uint16_t GetID() const { return m_id; }
+
+    const MaterialInstance& GetDefaultInstance() const { return *m_defaultInstance; }
 
 private:
     Material(/* args */) = default;
+    void createDefaultInstance(MaterialInstance::Uniforms uniforms, MaterialInstance::Textures textures = {});
 
 private:
-    size_t m_id{0u};
+    uint16_t m_id{0u};
+    uint32_t m_instanceID{0u};
+
     std::map<uint32_t, VertexInputFormat> m_attributes;
     std::vector<std::shared_ptr<Shader>> m_shaders;
+    std::unique_ptr<MaterialInstance> m_defaultInstance;
 };
 
 } // namespace CS

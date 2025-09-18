@@ -6,6 +6,7 @@ namespace CS
 class View;
 class RenderContext;
 class GraphicsAPI;
+class GraphicsResourceManager;
 class Renderer
 {
 public:
@@ -19,6 +20,7 @@ public:
 private:
     std::shared_ptr<GraphicsAPI> m_graphicAPI;
     std::unique_ptr<RenderContext> m_renderContext;
+    std::shared_ptr<GraphicsResourceManager> m_resourceManager;
 };
 
 } // namespace CS

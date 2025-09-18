@@ -11,6 +11,7 @@ class Texture final : public IGraphicsResource
 {
 public:
     friend class GraphicsAPI;
+    Texture() = default;
     ~Texture() = default;
 
     std::any GetNativeTexture() const;
@@ -18,6 +19,8 @@ public:
 
     void SetSize(const Size2u& size);
     Size2u GetSize() const;
+
+    void UpdateData(const void* data, const Size2u& size);
 
 private:
     Texture(TextureDescriptor* descriptor);

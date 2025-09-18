@@ -9,7 +9,7 @@ Shader::~Shader() {}
 
 void Shader::AddBinding(const ShaderBinding& binding)
 {
-    m_bindings.emplace(binding.GetBinding(), binding);
+    m_bindings.emplace_back(binding);
 }
 
 } // namespace CS

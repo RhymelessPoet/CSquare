@@ -1,11 +1,10 @@
 #pragma once
 #include <string>
 
-static constexpr std::string_view VertexShader = R"(
+static constexpr std::string_view HDR_Skybox_VS = R"(
 #version 450 core
 layout(location = 0) in vec3 _position;
-layout(location = 1) in vec3 _color;
-layout(location = 0) out vec3 color;
+layout(location = 0) out vec3 world_position;
 
 layout(std140, binding = 0) uniform VPMatrix
 {
@@ -21,16 +20,19 @@ layout(std140, binding = 1) uniform MMatrix
 void main()
 {
     mat4 mvpMatrix = projection * view * model;
-    gl_Position = mvpMatrix * vec4(_position.x, _position.y, _position.z, 1.0);
-    color = _color;
+    vec4 position = vec4(_position.x, _position.y, _position.z, 1.0);
+    gl_Position = position;
+    world_position = inverse(mvpMatrix) * position;
 }
 
 )";
 
-static constexpr std::string_view FragmentShader = R"(
+static constexpr std::string_view HDR_Skybox_FS = R"(
 #version 450 core
 
-layout(location = 0) in vec3 color;
+layout(location = 0) in vec3 world_position;
+layout(binding = 2) uniform sampler2D hdr_texture;
+
 out vec4 FragColor;
 
 void main()

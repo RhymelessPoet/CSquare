@@ -7,7 +7,6 @@
 #include "scene/TransformSystem.h"
 #include "scene/View.h"
 
-#include "assets/BuiltInShaders.h"
 #include "geometry/Mesh.h"
 #include "materials/Material.h"
 #include "materials/Shader.h"
@@ -17,10 +16,52 @@
 
 #include "base/math/Math.h"
 
+static constexpr std::string_view VertexShader = R"(
+#version 450 core
+layout(location = 0) in vec3 _position;
+layout(location = 1) in vec3 _color;
+layout(location = 0) out vec3 color;
+
+layout(std140, binding = 0) uniform VPMatrix
+{
+    mat4 view;
+    mat4 projection;
+};
+
+layout(std140, binding = 1) uniform MMatrix
+{
+    mat4 model;
+};
+
+void main()
+{
+    mat4 mvpMatrix = projection * view * model;
+    gl_Position = mvpMatrix * vec4(_position.x, _position.y, _position.z, 1.0);
+    color = _color;
+}
+
+)";
+
+static constexpr std::string_view FragmentShader = R"(
+#version 450 core
+
+layout(location = 0) in vec3 color;
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(color, 1.0f);
+}
+
+)";
+
 namespace CS
 {
-static const std::vector<float> vertices = {0.0f, 0.5f, 0.0f, 1.0f, 0.0f,  0.0f, -0.5, -0.5f, 0.0f,
-                                            0.0f, 1.0f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  1.0f};
+// clang-format off
+static const std::vector<float> vertices = {0.0f, 0.5f, 0.0f, 1.0f, 0.0f,  0.0f,
+                                            -0.5, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                            0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  1.0f};
+// clang-format on
 
 void HelloTriangles::Initialize(std::shared_ptr<View> view)
 {
@@ -34,11 +75,22 @@ void HelloTriangles::Initialize(std::shared_ptr<View> view)
     auto mesh = std::make_shared<Mesh>(vertices, std::vector<uint32_t>{0u, 1u, 2u});
 
     auto vertShader = std::make_shared<Shader>(std::string(VertexShader), ShaderStage::Vertex);
+
+    auto binding0 = ShaderBinding{0u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    binding0.SetLayout({{"view", 16 * sizeof(float)}, {"projection", 16 * sizeof(float)}});
+    auto binding1 = ShaderBinding{1u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    binding1.SetLayout({{"model", 16 * sizeof(float)}});
+
+    vertShader->AddBinding(binding0);
+    vertShader->AddBinding(binding1);
+
     auto fragShader = std::make_shared<Shader>(std::string(FragmentShader), ShaderStage::Fragment);
 
     // clang-format off
     auto material = Material::Builder()
                     .Begin()
+                    .AddInputAttribute(0u, VertexInputFormat::Float3)
+                    .AddInputAttribute(1u, VertexInputFormat::Float3)
                     .AddShader(vertShader)
                     .AddShader(fragShader)
                     .End();
@@ -59,11 +111,12 @@ void HelloTriangles::Initialize(std::shared_ptr<View> view)
 
     auto& meshRender = CS::GetComponent<CS::MeshRenderer>(m_groupRoot);
 
-    meshRender.SetMaterial(material);
+    auto materialInstance = material->CreateInstance();
+    meshRender.SetMaterial(materialInstance);
     meshRender.SetMesh(mesh);
     meshRender.SetVertexInputLayout(vertexInputLayout);
 
-    constexpr uint32_t tranglesCount = 1000u;
+    constexpr uint32_t tranglesCount = 2500u;
     auto positions = RandomPositions(tranglesCount, {-10.0f, -10.0f, -10.0f}, {10.0f, 10.0f, 10.0f});
 
     for (uint32_t index = 0u; index < tranglesCount; ++index) {
@@ -73,7 +126,7 @@ void HelloTriangles::Initialize(std::shared_ptr<View> view)
         transformSystem.CreateComponent<CS::Transform>(child);
 
         auto& _meshRender = CS::GetComponent<CS::MeshRenderer>(child);
-        _meshRender.SetMaterial(material);
+        _meshRender.SetMaterial(material->CreateInstance());
         _meshRender.SetMesh(mesh);
         _meshRender.SetVertexInputLayout(vertexInputLayout);
 

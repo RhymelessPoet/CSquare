@@ -1,7 +1,9 @@
 #pragma once
 #include <cassert>
 #include <cstdint>
+#include <initializer_list>
 #include <limits>
+
 namespace CS
 {
 
@@ -45,5 +47,56 @@ inline float Size2<DataType>::AspectRatioHW() const
     assert(std::numeric_limits<DataType>::epsilon() < m_width);
     return static_cast<float>(m_height) / m_width;
 }
+
+template <typename DataType>
+    requires std::is_arithmetic_v<DataType>
+class Size3
+{
+public:
+    template <typename P>
+        requires std::is_arithmetic_v<P>
+    Size3(std::initializer_list<P> list)
+    {
+        int i = 0;
+        for (auto it = list.begin(); it != list.end() && i < 3; ++it, ++i) {
+            data[i] = static_cast<P>(*it);
+        }
+    }
+
+    Size3() : x(0), y(0), z(0) {}
+
+    Size2<DataType> XY() const { return Size2<DataType>(x, y); }
+    Size2<DataType> XZ() const { return Size2<DataType>(x, z); }
+    Size2<DataType> YZ() const { return Size2<DataType>(y, z); }
+    union {
+        struct
+        {
+            DataType x;
+            DataType y;
+            DataType z;
+        };
+        struct
+        {
+            DataType u;
+            DataType v;
+            DataType w;
+        };
+        struct
+        {
+            DataType width;
+            DataType height;
+            DataType depth;
+        };
+        struct
+        {
+            DataType width;
+            DataType height;
+            DataType channels;
+        };
+        DataType data[3];
+    };
+};
+
+using Size3U = Size3<uint32_t>;
 
 } // namespace CS

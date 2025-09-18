@@ -57,6 +57,14 @@ void TextureDescriptor::SetSize(const Size2u& size)
     setDirty();
 }
 
+void TextureDescriptor::UpdateData(const void* data)
+{
+    auto graphicsAPI = m_graphicsAPI.lock();
+    if (graphicsAPI != nullptr && !m_isExternal) {
+        graphicsAPI->UpdateTextureData(this, data);
+    }
+}
+
 RenderTargetDescriptor::RenderTargetDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI)
     : IGraphicsResourceDescriptor(id, std::move(graphicsAPI))
 {}
@@ -128,6 +136,63 @@ void RenderTargetDescriptor::SetSize(const Size2u& size)
         m_depthAttachment->SetSize(size);
     }
     setDirty();
+}
+
+SamplerDescriptor::SamplerDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI)
+    : IGraphicsResourceDescriptor(id, std::move(graphicsAPI))
+{}
+
+bool SamplerDescriptor::IsBuild() const
+{
+    return m_samplerID != 0u;
+}
+
+void SamplerDescriptor::Destroy() {}
+
+bool SamplerDescriptor::IsDirty() const
+{
+    return IGraphicsResourceDescriptor::IsDirty();
+}
+
+uint32_t SamplerDescriptor::GetNativeSampler() const
+{
+    return m_samplerID;
+}
+
+void SamplerDescriptor::SetNativeSampler(uint32_t sampler)
+{
+    m_samplerID = sampler;
+}
+
+void SamplerDescriptor::SetAddressModeUV(AddressMode u, AddressMode v)
+{
+    m_u = u;
+    m_v = v;
+    setDirty();
+}
+
+void SamplerDescriptor::SetAddressModeW(AddressMode w)
+{
+    m_w = w;
+    setDirty();
+}
+
+void SamplerDescriptor::SetFilter(FilterMode min, FilterMode mag)
+{
+    m_minFilter = min;
+    m_magFilter = mag;
+    setDirty();
+}
+
+void SamplerDescriptor::SetMipmapFilter(MipmapFilterMode mode)
+{
+    m_mipmapFilter = mode;
+    setDirty();
+}
+
+bool SamplerDescriptor::build()
+{
+    return false;
 }
 
 } // namespace CS

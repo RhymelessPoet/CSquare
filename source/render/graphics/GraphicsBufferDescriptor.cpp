@@ -35,6 +35,7 @@ bool GraphicsBufferDescriptor::UpdateData(const void* data, size_t size)
         SetSize(size);
         return GetGraphicsAPI()->UpdateGraphicsBufferData(this, data);
     }
+    return false;
 }
 
 bool GraphicsBufferDescriptor::build()

@@ -3,7 +3,9 @@
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsShaderStage.h"
+#include "SamplerParameters.h"
 #include "ShaderBindingSetDescriptor.h"
+#include "base/EnumUtils.h"
 #include "graphics/GraphicsResourceCache.h"
 #include "graphics/opengl/glad/include/glad/glad.h"
 #include "opengl/OpenGLContext.h"
@@ -32,7 +34,7 @@ static GLenum GetVertexAttribFormat(AttrFormat format)
     return GL_BYTE;
 }
 
-static GLenum GetIndexFormatType(IndexFormat format)
+static inline GLenum GetIndexFormatType(IndexFormat format)
 {
     if (IndexFormat::UInt16 == format) {
         return GL_UNSIGNED_SHORT;
@@ -43,7 +45,7 @@ static GLenum GetIndexFormatType(IndexFormat format)
     return GL_UNSIGNED_INT;
 }
 
-static GLenum GetBufferType(GraphicsBufferDescriptor::BufferType type)
+static inline GLenum GetBufferType(GraphicsBufferDescriptor::BufferType type)
 {
     switch (type) {
     case GraphicsBufferDescriptor::BufferType::VertexBuffer:
@@ -59,6 +61,33 @@ static GLenum GetBufferType(GraphicsBufferDescriptor::BufferType type)
     default:
         return GL_ARRAY_BUFFER;
     }
+}
+
+static inline GLenum GetSamplerAddressMode(AddressMode mode)
+{
+    std::unordered_map<AddressMode, GLenum> map = {{AddressMode::Repeat, GL_REPEAT},
+                                                   {AddressMode::MirroredRepeat, GL_MIRRORED_REPEAT},
+                                                   {AddressMode::ClampToEdge, GL_CLAMP_TO_EDGE},
+                                                   {AddressMode::ClampToBorder, GL_CLAMP_TO_BORDER}};
+
+    return map[mode];
+}
+
+static inline GLenum GetSamplerMagFilterMode(FilterMode mode)
+{
+    std::unordered_map<FilterMode, GLenum> map = {{FilterMode::Linear, GL_LINEAR}, {FilterMode::Nearest, GL_NEAREST}};
+
+    return map[mode];
+}
+
+static inline GLenum GetSamplerMinFilterMode(MipmapFilterMode mipmapMode, FilterMode mode)
+{
+    using GLEnumArray1D = std::array<GLenum, EnumValue(FilterMode::Max)>;
+    std::array<GLEnumArray1D, EnumValue(MipmapFilterMode::Max) + 1u> map = {
+        GLEnumArray1D{GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR},
+        GLEnumArray1D{GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR}, GLEnumArray1D{GL_NEAREST, GL_LINEAR}};
+
+    return map[EnumValue(mipmapMode)][EnumValue(mode)];
 }
 
 GraphicsGLImpl::GraphicsGLImpl(std::unique_ptr<OpenGLContext> context,
@@ -82,7 +111,7 @@ bool GraphicsGLImpl::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_
 bool GraphicsGLImpl::BuildGraphicsBuffer(GraphicsBufferDescriptor* descriptor)
 {
     GLuint buffer = 0u;
-    m_glContext->GLGenBuffers(1, &buffer);
+    m_glContext->GLGenBuffers(1, &buffer).GLCheck();
     descriptor->SetNativeBuffer(buffer);
     return true;
 }
@@ -99,11 +128,16 @@ bool GraphicsGLImpl::UpdateGraphicsBufferData(GraphicsBufferDescriptor* descript
 
     GLenum target = GetBufferType(bufferType);
     if (target == GL_UNIFORM_BUFFER) {
-        m_glContext
-            ->GLBindBuffer(target, buffer)
-            // .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
-            .GLBufferData(target, size, data, GL_DYNAMIC_DRAW)
-            .GLBindBuffer(target, 0);
+        m_glContext->GLBindBuffer(target, buffer);
+        m_glContext->GLCheck();
+        // .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
+        m_glContext->GLBufferData(target, size, data, GL_DYNAMIC_DRAW);
+
+        m_glContext->GLCheck();
+
+        m_glContext->GLBindBuffer(target, 0);
+
+        m_glContext->GLCheck();
     } else {
         m_glContext->GLBindBuffer(target, buffer)
             .GLBufferData(target, size, data, GL_STATIC_DRAW)
@@ -328,19 +362,9 @@ bool GraphicsGLImpl::BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor
     bool hasError = false;
     for (const auto& binding : bindings) {
         if (binding.GetType() == ShaderBinding::Type::UniformBuffer) {
-            auto bindingNum = binding.GetBinding();
-            auto bindingInfo = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::UniformBufferBinding>(bindingNum);
-
-            if (!bindingInfo.has_value()) {
-                hasError = true;
-                continue;
-            }
-            auto& uniformBufferInfo = bindingInfo.value();
-            if (uniformBufferInfo.buffer != nullptr) {
-                auto buffer = uniformBufferInfo.buffer->GetNativeBuffer();
-                m_glContext->GLBindBufferRange(GL_UNIFORM_BUFFER, bindingNum, buffer, uniformBufferInfo.offset,
-                                               uniformBufferInfo.range);
-            }
+            hasError = !bindUniformBuffer(descriptor, binding);
+        } else if (binding.GetType() == ShaderBinding::Type::SampledTexture) {
+            hasError = !bindSampledTexture(descriptor, binding);
         }
     }
 
@@ -358,22 +382,20 @@ bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        .GLTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureSize.Width(), textureSize.Height(), 0, GL_RGBA,
-                      GL_UNSIGNED_BYTE, descriptor->GetData())
         .GLBindTexture(GL_TEXTURE_2D, 0);
 
     descriptor->SetNativeTexture(textureID);
     return true;
 }
 
-bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor)
+bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void* data)
 {
     GLuint textureID = descriptor->GetNativeTexture();
     auto textureSize = descriptor->GetSize();
 
     m_glContext->GLBindTexture(GL_TEXTURE_2D, textureID)
         .GLTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureSize.Width(), textureSize.Height(), 0, GL_RGBA,
-                      GL_UNSIGNED_BYTE, descriptor->GetData())
+                      GL_UNSIGNED_BYTE, data)
         .GLBindTexture(GL_TEXTURE_2D, 0);
 
     return true;
@@ -384,6 +406,34 @@ bool GraphicsGLImpl::DestroyTexture(TextureDescriptor* descriptor)
     GLuint textureID = descriptor->GetNativeTexture();
     m_glContext->GLBindTexture(GL_TEXTURE_2D, 0).GLDeleteTextures(1, &textureID);
     descriptor->SetNativeTexture(0);
+
+    return true;
+}
+
+bool GraphicsGLImpl::BuildSampler(SamplerDescriptor* descriptor)
+{
+    GLuint samplerID = 0u;
+
+    auto [u, v] = descriptor->GetAddressModeUV();
+    auto w = descriptor->GetAddressModeW();
+    auto [min, mag] = descriptor->GetFilterMode();
+    auto mipmapFilter = descriptor->GetMipmapFilter();
+
+    m_glContext->GLGenSamplers(1, &samplerID)
+        .GLSamplerParameteri(samplerID, GL_TEXTURE_WRAP_S, GetSamplerAddressMode(u))
+        .GLSamplerParameteri(samplerID, GL_TEXTURE_WRAP_T, GetSamplerAddressMode(v))
+        .GLSamplerParameteri(samplerID, GL_TEXTURE_WRAP_R, GetSamplerAddressMode(w))
+        .GLSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, GetSamplerMinFilterMode(mipmapFilter, min))
+        .GLSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, GetSamplerMagFilterMode(mag));
+
+    return true;
+}
+
+bool GraphicsGLImpl::DestroySampler(SamplerDescriptor* descriptor)
+{
+    auto samplerID = descriptor->GetNativeSampler();
+    m_glContext->GLDeleteSamplers(1, &samplerID);
+    descriptor->SetNativeSampler(0);
 
     return true;
 }
@@ -428,6 +478,48 @@ std::shared_ptr<GraphicsResourceCache> GraphicsGLImpl::GetResourceCache()
 IGraphicsResourceDescriptor* GraphicsGLImpl::getIResourceDescriptor(size_t id)
 {
     return GetResourceCache()->GetIDescriptor(id);
+}
+
+bool GraphicsGLImpl::bindUniformBuffer(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding)
+{
+    auto bindingNum = binding.GetBinding();
+    auto bindingInfo = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::UniformBufferBinding>(bindingNum);
+
+    if (!bindingInfo.has_value()) {
+        return false;
+    }
+
+    auto [uniformBuffer, offset, range] = bindingInfo.value();
+    if (uniformBuffer != nullptr) {
+        auto buffer = uniformBuffer->GetNativeBuffer();
+        m_glContext->GLBindBufferRange(GL_UNIFORM_BUFFER, bindingNum, buffer, offset, range);
+        m_glContext->GLCheck();
+        return true;
+    }
+
+    return false;
+}
+
+bool GraphicsGLImpl::bindSampledTexture(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding)
+{
+    auto bindingNum = binding.GetBinding();
+    auto bindingInfo = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::SampledTextureBinding>(bindingNum);
+
+    if (!bindingInfo.has_value()) {
+        return false;
+    }
+
+    auto [texture, sampler] = bindingInfo.value();
+    if (texture != nullptr && sampler != nullptr) {
+        // clang-format off
+        m_glContext->GLActiveTexture(GL_TEXTURE0 + bindingNum)
+                    .GLBindTexture(GL_TEXTURE_2D, texture->GetNativeTexture())
+                    .GLBindSampler(bindingNum, sampler->GetNativeSampler());
+        // clang-format on
+        return true;
+    }
+
+    return false;
 }
 
 GraphicsGLImpl::CurrentStates::~CurrentStates()

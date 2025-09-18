@@ -1,5 +1,6 @@
 #pragma once
 #include "IGraphicsResourceDescriptor.h"
+#include "SamplerParameters.h"
 #include "base/Size.h"
 #include <cstdint>
 #include <optional>
@@ -24,8 +25,7 @@ public:
     void SetSize(const Size2u& size);
     Size2u GetSize() const { return m_size; }
 
-    const char* GetData() const { return m_data; }
-    void SetData(const char* data) { m_data = data; }
+    void UpdateData(const void* data);
 
     bool IsExternal() const { return m_isExternal; }
 
@@ -35,8 +35,43 @@ protected:
 private:
     uint32_t m_textureID{0u};
     Size2u m_size;
-    const char* m_data{nullptr};
     bool m_isExternal{false};
+};
+
+class SamplerDescriptor final : public IGraphicsResourceDescriptor
+{
+public:
+    SamplerDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
+
+    virtual bool IsBuild() const override;
+    virtual void Destroy() override;
+    virtual bool IsDirty() const override;
+
+    uint32_t GetNativeSampler() const;
+    void SetNativeSampler(uint32_t sampler);
+
+    void SetAddressModeUV(AddressMode u, AddressMode v);
+    void SetAddressModeW(AddressMode w);
+    std::pair<AddressMode, AddressMode> GetAddressModeUV() const { return {m_u, m_v}; }
+    AddressMode GetAddressModeW() const { return m_w; }
+
+    void SetFilter(FilterMode min, FilterMode mag);
+    std::pair<FilterMode, FilterMode> GetFilterMode() const { return {m_minFilter, m_magFilter}; }
+
+    void SetMipmapFilter(MipmapFilterMode mode);
+    MipmapFilterMode GetMipmapFilter() const { return m_mipmapFilter; }
+
+protected:
+    virtual bool build() override;
+
+private:
+    uint32_t m_samplerID{0u};
+    AddressMode m_u{AddressMode::Repeat};
+    AddressMode m_v{AddressMode::Repeat};
+    AddressMode m_w{AddressMode::Repeat};
+    FilterMode m_minFilter{FilterMode::Nearest};
+    FilterMode m_magFilter{FilterMode::Nearest};
+    MipmapFilterMode m_mipmapFilter{MipmapFilterMode::Max};
 };
 
 class RenderTargetDescriptor final : public IGraphicsResourceDescriptor

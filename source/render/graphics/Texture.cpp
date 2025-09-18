@@ -29,4 +29,11 @@ Size2u Texture::GetSize() const
     return descriptor<TextureDescriptor>().GetSize();
 }
 
+void Texture::UpdateData(const void* data, const Size2u& size)
+{
+    auto& desc = descriptor<TextureDescriptor>();
+    desc.SetSize(size);
+    desc.UpdateData(data);
+}
+
 } // namespace CS

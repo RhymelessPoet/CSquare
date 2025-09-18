@@ -41,6 +41,12 @@ public:
                                 const void* pixels);
     OpenGLContext& GLDeleteTextures(GLsizei n, const GLuint* textures);
 
+    OpenGLContext& GLGenSamplers(GLsizei n, GLuint* samplers);
+    OpenGLContext& GLSamplerParameteri(GLuint sampler, GLenum pname, GLint param);
+    OpenGLContext& GLDeleteSamplers(GLsizei n, const GLuint* samplers);
+    OpenGLContext& GLBindSampler(GLuint unit, GLuint sampler);
+    OpenGLContext& GLBindSamplers(GLuint first, GLsizei count, const GLuint* samplers);
+
     OpenGLContext& GLGenBuffers(GLsizei n, GLuint* buffers);
     OpenGLContext& GLBindBuffer(GLenum target, GLuint buffer);
     OpenGLContext& GLBindBufferBase(GLenum target, GLuint index, GLuint buffer);
@@ -86,6 +92,8 @@ public:
 
     OpenGLContext& GLDrawArrays(GLenum mode, GLint first, GLsizei count);
     OpenGLContext& GLDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices);
+
+    OpenGLContext& GLCheck();
 
 private:
     std::unique_ptr<INativeContext> m_nativeContext;

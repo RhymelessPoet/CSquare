@@ -1,13 +1,16 @@
 #include "RenderContext.h"
+#include "MaterialCompiler.h"
 #include "graphics/GraphicsAPI.h"
-#include "materials/MaterialComputer.h"
 
 namespace CS
 {
 RenderContext::RenderContext(std::shared_ptr<GraphicsAPI> graphicsAPI)
     : m_graphicsAPI(std::move(graphicsAPI)), m_commandBuffer(m_graphicsAPI->CreateCommandBuffer())
+{}
+
+void RenderContext::SetMaterialCompiler(std::unique_ptr<MaterialCompiler> computer)
 {
-    m_materialComputer = std::make_unique<MaterialComputer>(m_graphicsAPI);
+    m_materialCompiler = std::move(computer);
 }
 
 } // namespace CS

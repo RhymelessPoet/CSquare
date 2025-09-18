@@ -11,6 +11,7 @@ class GraphicsInputAssemblyDescriptor;
 class OpenGLContext;
 class GraphicsBufferDescriptor;
 class ShaderBindingSetDescriptor;
+class ShaderBinding;
 class GraphicsGLImpl
 {
 public:
@@ -61,8 +62,12 @@ public:
     bool BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor);
 
     bool BuildTexture(TextureDescriptor* descriptor);
-    bool UpdateTextureData(TextureDescriptor* descriptor);
+    bool UpdateTextureData(TextureDescriptor* descriptor, const void* data);
     bool DestroyTexture(TextureDescriptor* descriptor);
+
+    bool BuildSampler(SamplerDescriptor* descriptor);
+    bool DestroySampler(SamplerDescriptor* descriptor);
+
     bool Clear(std::optional<Color> color, std::optional<float> depth = std::nullopt);
 
     bool DrawIndexed(uint32_t indexCount,
@@ -81,6 +86,8 @@ public:
 
 private:
     IGraphicsResourceDescriptor* getIResourceDescriptor(size_t id);
+    bool bindUniformBuffer(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding);
+    bool bindSampledTexture(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding);
 
 private:
     std::unique_ptr<OpenGLContext> m_glContext;

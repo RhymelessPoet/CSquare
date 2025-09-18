@@ -114,6 +114,16 @@ Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
     return GetTexture(renderTarget.GetColorAttachment());
 }
 
+Sampler GraphicsAPI::CreateSampler()
+{
+    auto resorceCache = m_impl->GetResourceCache();
+
+    auto resourceID = resorceCache->Allocate<SamplerDescriptor>(m_impl);
+    auto descriptor = resorceCache->GetDescriptor<SamplerDescriptor>(resourceID);
+
+    return Sampler(descriptor);
+}
+
 RenderTarget GraphicsAPI::CreateRenderTarget(const Size2u& size)
 {
     auto resorceCache = m_impl->GetResourceCache();

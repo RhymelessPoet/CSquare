@@ -1,8 +1,8 @@
 #pragma once
 #include "graphics/ShaderBinding.h"
 #include "graphics/ShaderStage.h"
-#include <map>
 #include <string>
+#include <vector>
 
 namespace CS
 {
@@ -18,8 +18,10 @@ public:
 
     void AddBinding(const ShaderBinding& binding);
 
+    const std::vector<ShaderBinding>& GetBindings() const { return m_bindings; }
+
 private:
-    std::map<uint32_t, ShaderBinding> m_bindings;
+    std::vector<ShaderBinding> m_bindings;
     std::string m_source;
     ShaderStage m_stage;
 };

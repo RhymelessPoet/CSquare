@@ -1,4 +1,5 @@
 #pragma once
+#include "base/EnumUtils.h"
 #include <cstdint>
 #include <type_traits>
 
@@ -20,34 +21,34 @@ using ShaderStageFlags = std::underlying_type_t<ShaderStage>;
 
 constexpr inline ShaderStageFlags operator|(ShaderStage lhs, ShaderStage rhs)
 {
-    return static_cast<ShaderStageFlags>(lhs) | static_cast<ShaderStageFlags>(rhs);
+    return EnumValue(lhs) | EnumValue(rhs);
 }
 
 constexpr inline ShaderStageFlags& operator|=(ShaderStageFlags& lhs, ShaderStage rhs)
 {
-    lhs |= static_cast<ShaderStageFlags>(rhs);
+    lhs |= EnumValue(rhs);
     return lhs;
 }
 
 constexpr inline ShaderStageFlags operator|(ShaderStageFlags lhs, ShaderStage rhs)
 {
-    return lhs | static_cast<ShaderStageFlags>(rhs);
+    return lhs | EnumValue(rhs);
 }
 
 constexpr inline ShaderStageFlags operator&(ShaderStage lhs, ShaderStage rhs)
 {
-    return static_cast<ShaderStageFlags>(lhs) & static_cast<ShaderStageFlags>(rhs);
+    return EnumValue(lhs) & EnumValue(rhs);
 }
 
 constexpr inline ShaderStageFlags& operator&=(ShaderStageFlags& lhs, ShaderStage rhs)
 {
-    lhs &= static_cast<ShaderStageFlags>(rhs);
+    lhs &= EnumValue(rhs);
     return lhs;
 }
 
 constexpr inline ShaderStageFlags operator&(ShaderStageFlags lhs, ShaderStage rhs)
 {
-    return lhs & static_cast<ShaderStageFlags>(rhs);
+    return lhs & EnumValue(rhs);
 }
 
 static constexpr inline ShaderStageFlags AllShaderStages = ShaderStage::Vertex | ShaderStage::TessellationControl |

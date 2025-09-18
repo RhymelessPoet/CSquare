@@ -1,0 +1,62 @@
+#pragma once
+#include "base/Macros.h"
+#include "graphics/SamplerParameters.h"
+#include <memory>
+
+namespace CS
+{
+class Image;
+
+class MaterialTexture
+{
+public:
+    MaterialTexture(/* args */);
+    MaterialTexture(AddressMode u,
+                    AddressMode v,
+                    FilterMode minFilter = FilterMode::Linear,
+                    FilterMode magFilter = FilterMode::Linear);
+
+    virtual ~MaterialTexture();
+
+    CS_DEFAULT_COPY_MOVE(MaterialTexture);
+
+    virtual std::unique_ptr<MaterialTexture> Clone() const = 0;
+
+    virtual bool Equals(const MaterialTexture* other) const;
+
+    void SetAddressModeUV(AddressMode u, AddressMode v);
+    std::pair<AddressMode, AddressMode> GetAddressModeUV() const { return {m_u, m_v}; }
+
+    void SetFilter(FilterMode min, FilterMode mag);
+    std::pair<FilterMode, FilterMode> GetFilter() const { return {m_minFilter, m_magFilter}; }
+
+    void SetMipmapFilter(MipmapFilterMode mode);
+    MipmapFilterMode GetMipmapFilter() const { return m_mipmapFilter; }
+
+    bool IsDirty() const { return m_dirty; }
+    void ResetDirty() { m_dirty = false; }
+
+private:
+    AddressMode m_u{AddressMode::Repeat};
+    AddressMode m_v{AddressMode::Repeat};
+    FilterMode m_minFilter{FilterMode::Nearest};
+    FilterMode m_magFilter{FilterMode::Nearest};
+    MipmapFilterMode m_mipmapFilter{MipmapFilterMode::Max};
+    bool m_useMipmaps : 1 {false};
+    bool m_isSRGB : 1 {false};
+    bool m_dirty : 1 {true};
+};
+
+inline bool operator==(const std::unique_ptr<const MaterialTexture>& lhs,
+                       const std::unique_ptr<const MaterialTexture>& rhs)
+{
+    return lhs->Equals(rhs.get());
+}
+
+inline bool operator!=(const std::unique_ptr<const MaterialTexture>& lhs,
+                       const std::unique_ptr<const MaterialTexture>& rhs)
+{
+    return !(lhs == rhs);
+};
+
+} // namespace CS

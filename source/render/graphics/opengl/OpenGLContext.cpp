@@ -1,5 +1,6 @@
 #include "OpenGLContext.h"
 #include "NativeContext.h"
+#include <iostream>
 
 namespace CS
 {
@@ -107,6 +108,36 @@ OpenGLContext& OpenGLContext::GLDeleteTextures(GLsizei n, const GLuint* textures
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLGenSamplers(GLsizei n, GLuint* samplers)
+{
+    glGenSamplers(n, samplers);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLDeleteSamplers(GLsizei n, const GLuint* samplers)
+{
+    glDeleteSamplers(n, samplers);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBindSampler(GLuint unit, GLuint sampler)
+{
+    glBindSampler(unit, sampler);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBindSamplers(GLuint first, GLsizei count, const GLuint* samplers)
+{
+    glBindSamplers(first, count, samplers);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLSamplerParameteri(GLuint sampler, GLenum pname, GLint param)
+{
+    glSamplerParameteri(sampler, pname, param);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLGenBuffers(GLsizei n, GLuint* buffers)
 {
     glGenBuffers(n, buffers);
@@ -140,6 +171,11 @@ OpenGLContext& OpenGLContext::GLBufferData(GLenum target, GLsizeiptr size, const
 
 OpenGLContext& OpenGLContext::GLBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data)
 {
+    GLint alignment;
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
+    if (offset % alignment != 0) {
+        std::cerr << "offset not align " << alignment << std::endl;
+    }
     glBufferSubData(target, offset, size, data);
     return *this;
 }
@@ -339,6 +375,41 @@ OpenGLContext& OpenGLContext::GLDrawArrays(GLenum mode, GLint first, GLsizei cou
 OpenGLContext& OpenGLContext::GLDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices)
 {
     glDrawElements(mode, count, type, indices);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLCheck()
+{
+    GLenum err;
+    auto getErrorString = [](GLenum error) -> const char* {
+        switch (error) {
+        case GL_INVALID_ENUM:
+            return "GL_INVALID_ENUM";
+        case GL_INVALID_VALUE:
+            return "GL_INVALID_VALUE";
+        case GL_INVALID_OPERATION:
+            return "GL_INVALID_OPERATION";
+        case GL_STACK_OVERFLOW:
+            return "GL_STACK_OVERFLOW";
+        case GL_STACK_UNDERFLOW:
+            return "GL_STACK_UNDERFLOW";
+        case GL_OUT_OF_MEMORY:
+            return "GL_OUT_OF_MEMORY";
+#ifdef GL_INVALID_FRAMEBUFFER_OPERATION
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+            return "GL_INVALID_FRAMEBUFFER_OPERATION";
+#endif
+#ifdef GL_CONTEXT_LOST
+        case GL_CONTEXT_LOST:
+            return "GL_CONTEXT_LOST";
+#endif
+        default:
+            return "Unknown OpenGL Error";
+        }
+    };
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error: " << getErrorString(err) << std::endl;
+    }
     return *this;
 }
 

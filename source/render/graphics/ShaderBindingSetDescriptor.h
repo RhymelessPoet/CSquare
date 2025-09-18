@@ -8,6 +8,8 @@
 namespace CS
 {
 class GraphicsBufferDescriptor;
+class TextureDescriptor;
+class SamplerDescriptor;
 
 class ShaderBindingSetLayoutDescriptor final : public IGraphicsResourceDescriptor
 {
@@ -21,6 +23,8 @@ public:
 
     void AddBinding(const ShaderBinding& binding);
     const std::vector<ShaderBinding>& GetBindings() const { return m_bindings; }
+
+    size_t GetBindingSize(size_t binding) const;
 
 private:
     virtual bool build() override;
@@ -39,7 +43,13 @@ public:
         size_t range{0u};
     };
 
-    using BindingInfo = std::variant<UniformBufferBinding>;
+    struct SampledTextureBinding
+    {
+        TextureDescriptor* texture{nullptr};
+        SamplerDescriptor* sampler{nullptr};
+    };
+
+    using BindingInfo = std::variant<UniformBufferBinding, SampledTextureBinding>;
 
     ShaderBindingSetDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI, size_t layoutResourceID);
     ~ShaderBindingSetDescriptor() = default;
@@ -49,6 +59,7 @@ public:
     virtual bool IsDirty() const override;
 
     bool BindUniformBuffer(size_t binding, size_t bufferID, size_t offset, size_t range);
+    bool BindSampledTexture(size_t binding, size_t textureID, size_t samplerID);
 
     ShaderBindingSetLayoutDescriptor* GetLayout() const { return m_layout; }
 

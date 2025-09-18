@@ -27,6 +27,16 @@ void ShaderBindingSetLayoutDescriptor::AddBinding(const ShaderBinding& binding)
     m_bindings.emplace_back(binding);
 }
 
+size_t ShaderBindingSetLayoutDescriptor::GetBindingSize(size_t binding) const
+{
+    for (const auto& b : m_bindings) {
+        if (b.GetBinding() == binding) {
+            return b.GetSize();
+        }
+    }
+    return 0u;
+}
+
 bool ShaderBindingSetLayoutDescriptor::build()
 {
     return false;
@@ -56,7 +66,7 @@ bool ShaderBindingSetDescriptor::IsDirty() const
 bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t bufferID, size_t offset, size_t range)
 {
     if (binding >= m_bindings.size()) {
-        // log error
+        // TODO: log error
         return false;
     }
 
@@ -66,6 +76,26 @@ bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t buffer
     ubBinding.range = range;
 
     m_bindings[binding] = ubBinding;
+    setDirty();
+
+    return true;
+}
+
+bool ShaderBindingSetDescriptor::BindSampledTexture(size_t binding, size_t textureID, size_t samplerID)
+{
+    if (binding >= m_bindings.size()) {
+        // TODO: log error
+        return false;
+    }
+
+    SampledTextureBinding texBinding;
+
+    auto graphicsAPI = GetGraphicsAPI();
+
+    texBinding.texture = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureID);
+    texBinding.sampler = graphicsAPI->GetResourceDescriptor<SamplerDescriptor>(samplerID);
+
+    m_bindings[binding] = texBinding;
     setDirty();
 
     return true;

@@ -1,6 +1,6 @@
 #include "MeshRenderer.h"
 #include "Camera.h"
-#include "assets/BuiltInShaders.h"
+#include "asset/BuiltInShaders.h"
 #include "geometry/Mesh.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsShaderStage.h"
@@ -8,8 +8,8 @@
 #include "materials/Shader.h"
 #include "renderer/RenderContext.h"
 
-#include "materials/Material.h"
-#include "materials/MaterialComputer.h"
+#include "materials/MaterialInstance.h"
+#include "renderer/MaterialCompiler.h"
 
 #include "SceneObject.h"
 #include "Transform.h"
@@ -39,13 +39,6 @@ void MeshRenderer::OnRender(RenderContext& context)
         auto indexBufferSize = m_mesh->GetIndexData().size() * sizeof(uint32_t);
         m_indexBuffer = graphicsAPI->CreateIndexBuffer(indexBufferSize);
     }
-    if (!m_vpMatrixBuffer.IsValid()) {
-        m_vpMatrixBuffer = graphicsAPI->CreateUniformBuffer(sizeof(float) * 32);
-    }
-
-    if (!m_modelMatrixBuffer.IsValid()) {
-        m_modelMatrixBuffer = graphicsAPI->CreateUniformBuffer(sizeof(float) * 16);
-    }
 
     if (!m_inputAssembly.IsValid()) {
         m_inputAssembly = graphicsAPI->CreateInputAssembly();
@@ -55,41 +48,11 @@ void MeshRenderer::OnRender(RenderContext& context)
         m_inputAssembly.SetVertexInputLayout(m_vertexInputLayout);
     }
 
-    if (!m_shaderBindingSetLayout.IsValid()) {
-        m_shaderBindingSetLayout = graphicsAPI->CreateShaderBindingSetLayout();
-        m_shaderBindingSetLayout.AddBinding({0u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer});
-        m_shaderBindingSetLayout.AddBinding({1u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer});
-    }
-
-    if (!m_shaderBindingSet.IsValid()) {
-        m_shaderBindingSet = graphicsAPI->CreateShaderBindingSet(m_shaderBindingSetLayout);
-        m_shaderBindingSet.BindUniformBuffer(0u, m_vpMatrixBuffer, 0u, sizeof(float) * 32);
-        m_shaderBindingSet.BindUniformBuffer(1u, m_modelMatrixBuffer, 0u, sizeof(float) * 16);
-    }
-
     if (!m_vertexBuffer.IsBuild()) {
         m_vertexBuffer.Build();
     }
     if (!m_indexBuffer.IsBuild()) {
         m_indexBuffer.Build();
-    }
-    if (!m_vpMatrixBuffer.IsBuild()) {
-        m_vpMatrixBuffer.Build();
-    }
-    {
-        auto camera = context.GetCamera();
-        std::array<float, 32> vpMatrix;
-        const auto viewMatrix = camera->GetViewMatrix().Transposed();
-        const auto projectionMatrix = camera->GetProjectionMatrix().Transposed();
-        const auto& arr1 = viewMatrix.Data();
-        const auto& arr2 = projectionMatrix.Data();
-        std::copy(arr1.begin(), arr1.end(), vpMatrix.begin());
-        std::copy(arr2.begin(), arr2.end(), vpMatrix.begin() + arr1.size());
-        m_vpMatrixBuffer.UpdateData(vpMatrix.data(), vpMatrix.size() * sizeof(float));
-    }
-
-    if (!m_modelMatrixBuffer.IsBuild()) {
-        m_modelMatrixBuffer.Build();
     }
 
     auto transform = owner()->GetComponent<Transform>();
@@ -97,9 +60,7 @@ void MeshRenderer::OnRender(RenderContext& context)
     if (transform != nullptr) {
         const auto modelMatrix = transform->GetWorldMatrix().Transposed();
 
-        const auto& modelArr = modelMatrix.Data();
-
-        m_modelMatrixBuffer.UpdateData(modelArr.data(), modelArr.size() * sizeof(float));
+        auto noError = m_material->SetUniformValue(std::string_view("model"), modelMatrix.ToStdVector());
     }
 
     if (m_meshDirty) {
@@ -110,13 +71,17 @@ void MeshRenderer::OnRender(RenderContext& context)
         m_meshDirty = false;
     }
 
+    auto& materialCompiler = context.GetMaterialCompiler();
+
+    m_material->Apply(materialCompiler);
+
+    materialCompiler.SetVertexInputLayout(m_vertexInputLayout);
+    auto pipeline = materialCompiler.GetPipeline(*m_material->GetMaterial());
+    auto shaderBindingSet = materialCompiler.GetShaderBindingSet(*m_material);
+
     auto commandBuffer = context.GetCommandBuffer();
 
-    auto& materialComputer = context.GetMaterialComputer();
-    materialComputer.SetVertexInputLayout(m_vertexInputLayout);
-    auto pipeline = materialComputer.GetPipeline(*m_material);
-
-    commandBuffer.Bind(pipeline).Bind(m_inputAssembly).Bind(m_shaderBindingSet).DrawIndexed(3u, 0u);
+    commandBuffer.Bind(pipeline).Bind(m_inputAssembly).Bind(shaderBindingSet).DrawIndexed(3u, 0u);
 }
 
 void MeshRenderer::SetMesh(std::shared_ptr<Mesh> mesh)
