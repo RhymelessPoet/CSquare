@@ -85,6 +85,7 @@ public:
     OpenGLContext& GLUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
     OpenGLContext& GLUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
     OpenGLContext& GLUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+    GLint GLGetUniformLocation(GLuint program, const GLchar* name);
 
     OpenGLContext& GLClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
     OpenGLContext& GLClearDepth(GLfloat depth);

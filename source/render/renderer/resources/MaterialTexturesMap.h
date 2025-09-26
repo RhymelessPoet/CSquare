@@ -27,6 +27,8 @@ public:
     SampledTexture* AllocateTexture(std::string_view name, const ImageTexture& texture);
     SampledTexture* GetTexture(std::string_view name);
 
+    void SetTextureData(std::string_view name, std::shared_ptr<Image> image);
+
     void UpdateTextures();
 
 private:

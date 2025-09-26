@@ -18,7 +18,7 @@ void TextureDescriptor::Destroy()
         m_textureID = 0u;
         m_isExternal = false;
     } else {
-        m_graphicsAPI.lock()->DestroyTexture(this);
+        GetGraphicsAPI()->DestroyTexture(this);
     }
 }
 
@@ -32,7 +32,7 @@ bool TextureDescriptor::build()
     if (m_isExternal) {
         return true; // If it's an external texture, we assume it's already built.
     }
-    return m_graphicsAPI.lock()->BuildTexture(this);
+    return GetGraphicsAPI()->BuildTexture(this);
 }
 
 uint32_t TextureDescriptor::GetNativeTexture() const
@@ -54,12 +54,11 @@ void TextureDescriptor::SetExternalTexture(uint32_t textureID)
 void TextureDescriptor::SetSize(const Size2u& size)
 {
     m_size = size;
-    setDirty();
 }
 
 void TextureDescriptor::UpdateData(const void* data)
 {
-    auto graphicsAPI = m_graphicsAPI.lock();
+    auto graphicsAPI = GetGraphicsAPI();
     if (graphicsAPI != nullptr && !m_isExternal) {
         graphicsAPI->UpdateTextureData(this, data);
     }
@@ -76,7 +75,7 @@ bool RenderTargetDescriptor::IsBuild() const
 
 void RenderTargetDescriptor::Destroy()
 {
-    m_graphicsAPI.lock()->DestroyRenderTarget(this);
+    GetGraphicsAPI()->DestroyRenderTarget(this);
 }
 
 bool RenderTargetDescriptor::IsDirty() const
@@ -89,7 +88,7 @@ bool RenderTargetDescriptor::IsDirty() const
 
 bool RenderTargetDescriptor::build()
 {
-    return m_graphicsAPI.lock()->BuildRenderTarget(this);
+    return GetGraphicsAPI()->BuildRenderTarget(this);
 }
 
 void RenderTargetDescriptor::SetNativeFBO(uint32_t fbo)
@@ -104,7 +103,7 @@ std::optional<uint32_t> RenderTargetDescriptor::GetNativeFBO() const
 
 void RenderTargetDescriptor::SetColorAttachment(size_t textureResourceID)
 {
-    auto graphicsAPI = m_graphicsAPI.lock();
+    auto graphicsAPI = GetGraphicsAPI();
     if (m_colorAttachment != nullptr) {
         m_colorAttachment->Release();
     }
@@ -116,7 +115,7 @@ void RenderTargetDescriptor::SetColorAttachment(size_t textureResourceID)
 
 void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
 {
-    auto graphicsAPI = m_graphicsAPI.lock();
+    auto graphicsAPI = GetGraphicsAPI();
     if (m_depthAttachment != nullptr) {
         m_depthAttachment->Release();
     }
@@ -192,7 +191,8 @@ void SamplerDescriptor::SetMipmapFilter(MipmapFilterMode mode)
 
 bool SamplerDescriptor::build()
 {
-    return false;
+    auto graphicsAPI = GetGraphicsAPI();
+    return graphicsAPI->BuildSampler(this);
 }
 
 } // namespace CS

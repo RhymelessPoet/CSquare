@@ -50,6 +50,20 @@ const MaterialTexture* MaterialInstance::GetTexture(std::string_view name) const
     return nullptr;
 }
 
+MaterialTexture* MaterialInstance::GetInstanceTexture(std::string_view name)
+{
+    auto itr = m_textures.find(std::string(name));
+
+    if (itr != m_textures.end()) {
+        itr->second.dirty = true;
+        return itr->second.texture.get();
+    }
+    if (m_id != 0u) {
+        return GetDefaultInstance().GetInstanceTexture(name);
+    }
+    return nullptr;
+}
+
 void MaterialInstance::Compile(MaterialCompiler& compiler) const
 {
     auto bindingSetLayout = compiler.GetBindingSetLayout(*material());
@@ -59,14 +73,33 @@ void MaterialInstance::Compile(MaterialCompiler& compiler) const
         compiler.SetUniformBuffer(binding, getUniforms(binding));
     }
 
+    for (const auto& pair : m_textures) {
+        compiler.SetTexture(pair);
+    }
+
     compiler.EndMaterialInstance();
 }
 
-void MaterialInstance::Apply(MaterialCompiler& compiler) const
+void MaterialInstance::Apply(MaterialCompiler& compiler)
 {
+    auto materialID = GetMaterialID();
     for (const auto& binding : instancedUniformBindings()) {
         auto uniforms = getUniforms(binding);
-        compiler.Apply(GetMaterialID(), m_id, uniforms);
+        compiler.Apply(materialID, m_id, uniforms);
+
+        for (const auto& [name, _] : uniforms) {
+            auto uniform = getUniform(name);
+            if (uniform == nullptr) {
+                // TODO: log error
+                continue;
+            }
+            uniform->dirty = false;
+        }
+    }
+
+    compiler.Apply(materialID, m_id, m_textures);
+    for (auto& [_, texture] : m_textures) {
+        texture.dirty = false;
     }
 }
 
@@ -85,6 +118,11 @@ bool MaterialInstance::HasInstancedUniform() const
 }
 
 const MaterialInstance& MaterialInstance::GetDefaultInstance() const
+{
+    return material()->GetDefaultInstance();
+}
+
+MaterialInstance& MaterialInstance::GetDefaultInstance()
 {
     return material()->GetDefaultInstance();
 }
@@ -111,6 +149,11 @@ std::shared_ptr<Material> MaterialInstance::material() const
     return _material;
 }
 
+std::shared_ptr<Material> MaterialInstance::material()
+{
+    return std::as_const(*this).material();
+}
+
 std::set<uint32_t> MaterialInstance::instancedUniformBindings() const
 {
     std::set<uint32_t> bindings;
@@ -118,6 +161,7 @@ std::set<uint32_t> MaterialInstance::instancedUniformBindings() const
     for (const auto& [name, uniform] : m_uniforms) {
         bindings.insert(uniform.binding);
     }
+
     return bindings;
 }
 
@@ -150,7 +194,7 @@ void MaterialInstance::instanceUniforms(Uniforms& uniforms, uint32_t binding) co
     }
 }
 
-const MaterialInstance::Uniform* MaterialInstance::getUniform(std::string_view name) const
+MaterialInstance::Uniform* MaterialInstance::getUniform(std::string_view name)
 {
     auto itr = m_uniforms.find(std::string(name));
     if (itr != m_uniforms.end()) {

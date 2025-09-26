@@ -1,4 +1,4 @@
-#include "HelloTriangles.h"
+#include "SHelloTriangles.h"
 #include "scene/CameraSystem.h"
 #include "scene/MeshRenderSystem.h"
 #include "scene/MeshRenderer.h"
@@ -63,7 +63,7 @@ static const std::vector<float> vertices = {0.0f, 0.5f, 0.0f, 1.0f, 0.0f,  0.0f,
                                             0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  1.0f};
 // clang-format on
 
-void HelloTriangles::Initialize(std::shared_ptr<View> view)
+void SHelloTriangles::Initialize(std::shared_ptr<View> view)
 {
     m_scene = std::make_shared<CS::Scene>();
     m_scene->AddSystem<CS::MeshRenderSystem>();
@@ -135,7 +135,7 @@ void HelloTriangles::Initialize(std::shared_ptr<View> view)
     }
 }
 
-void HelloTriangles::OnUpdate()
+void SHelloTriangles::OnUpdate()
 {
     static float Angle = 0.0f;
 

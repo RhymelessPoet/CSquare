@@ -62,7 +62,7 @@ Material::Builder& Material::Builder::AddShader(std::shared_ptr<Shader> shader)
 
 std::shared_ptr<Material> Material::Builder::End()
 {
-    m_material->createDefaultInstance(std::move(m_uniforms));
+    m_material->createDefaultInstance(std::move(m_uniforms), std::move(m_textures));
     m_material->m_id = ++ID;
 
     return m_material;

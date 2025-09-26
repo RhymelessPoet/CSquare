@@ -47,6 +47,7 @@ public:
     uint16_t GetID() const { return m_id; }
 
     const MaterialInstance& GetDefaultInstance() const { return *m_defaultInstance; }
+    MaterialInstance& GetDefaultInstance() { return *m_defaultInstance; }
 
 private:
     Material(/* args */) = default;

@@ -159,6 +159,11 @@ OpenGLContext& OpenGLContext::GLBindBufferBase(GLenum target, GLuint index, GLui
 OpenGLContext&
 OpenGLContext::GLBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
 {
+    GLint alignment;
+    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
+    if (offset % alignment != 0) {
+        std::cerr << "offset not align " << alignment << std::endl;
+    }
     glBindBufferRange(target, index, buffer, offset, size);
     return *this;
 }
@@ -346,6 +351,11 @@ OpenGLContext::GLUniformMatrix4fv(GLint location, GLsizei count, GLboolean trans
 {
     glUniformMatrix4fv(location, count, transpose, value);
     return *this;
+}
+
+GLint OpenGLContext::GLGetUniformLocation(GLuint program, const GLchar* name)
+{
+    return glGetUniformLocation(program, name);
 }
 
 OpenGLContext& OpenGLContext::GLClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)

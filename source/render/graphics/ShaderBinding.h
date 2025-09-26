@@ -1,5 +1,6 @@
 #pragma once
 #include "ShaderStage.h"
+#include "graphics/MaterialTexture.h"
 #include <optional>
 #include <string>
 #include <vector>
@@ -15,8 +16,8 @@ struct ShaderBindingProperty
 
 struct ShaderBindingTexture
 {
+    ShaderBindingTexture(std::string_view name, std::unique_ptr<MaterialTexture> texture);
     ShaderBindingTexture(const ShaderBindingTexture&);
-    ~ShaderBindingTexture();
     ShaderBindingTexture& operator=(const ShaderBindingTexture&);
 
     std::string name;

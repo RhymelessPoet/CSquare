@@ -6,20 +6,28 @@
 #include "scene/Scene.h"
 #include "scene/View.h"
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 namespace CS
 {
 class RenderModuleImpl
 {
 public:
-    std::shared_ptr<View> m_view;
-    std::unique_ptr<Renderer> m_renderer;
-    std::shared_ptr<GraphicsResourceCache> m_resourceCache;
+    std::shared_ptr<View> view;
+    std::unique_ptr<Renderer> renderer;
+    std::shared_ptr<GraphicsResourceCache> resourceCache;
+
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool ready = false;
 };
 
 RenderModule::RenderModule()
 {
     m_impl = std::make_unique<RenderModuleImpl>();
-    m_impl->m_resourceCache = std::make_shared<GraphicsResourceCache>();
+    m_impl->resourceCache = std::make_shared<GraphicsResourceCache>();
 }
 
 RenderModule::~RenderModule() {}
@@ -28,28 +36,36 @@ void RenderModule::Initialize() {}
 
 void RenderModule::Update()
 {
-    m_impl->m_view->GetScene()->OnUpdate();
+    std::unique_lock<std::mutex> lock(m_impl->mtx);
+    m_impl->cv.wait(lock, [=] { return !m_impl->ready; });
+    m_impl->view->GetScene()->OnUpdate();
+    m_impl->ready = true;
 }
 
 void RenderModule::Render()
 {
-    m_impl->m_renderer->Render(m_impl->m_view);
+    std::unique_lock<std::mutex> lock(m_impl->mtx);
+    if (m_impl->ready) {
+        m_impl->ready = false;
+        m_impl->cv.notify_all();
+        m_impl->renderer->Render(m_impl->view);
+    }
 }
 
 std::shared_ptr<View> RenderModule::CreateView()
 {
-    m_impl->m_view = std::make_shared<View>();
-    return m_impl->m_view;
+    m_impl->view = std::make_shared<View>();
+    return m_impl->view;
 }
 
 void RenderModule::CreateRenderer(const GLRendererBuilder& builder)
 {
-    m_impl->m_renderer = builder.Build(m_impl->m_resourceCache);
+    m_impl->renderer = builder.Build(m_impl->resourceCache);
 }
 
 std::shared_ptr<GraphicsAPI> RenderModule::GetGraphicsAPI(std::shared_ptr<View> view) const
 {
-    return m_impl->m_renderer->GetGraphicsAPI();
+    return m_impl->renderer->GetGraphicsAPI();
 }
 
 } // namespace CS

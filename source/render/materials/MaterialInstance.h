@@ -82,9 +82,10 @@ public:
 
     [[nodiscard]] bool SetTexture(std::string_view name, std::unique_ptr<MaterialTexture> texture);
     const MaterialTexture* GetTexture(std::string_view name) const;
+    MaterialTexture* GetInstanceTexture(std::string_view name);
 
     void Compile(MaterialCompiler& compiler) const;
-    void Apply(MaterialCompiler& compiler) const;
+    void Apply(MaterialCompiler& compiler);
 
     uint16_t GetMaterialID() const;
     uint32_t GetID() const { return m_id; }
@@ -92,6 +93,7 @@ public:
     bool HasInstancedUniform() const;
 
     const MaterialInstance& GetDefaultInstance() const;
+    MaterialInstance& GetDefaultInstance();
 
     std::shared_ptr<Material> GetMaterial();
 
@@ -100,16 +102,14 @@ private:
     MaterialInstance(std::shared_ptr<Material> material, uint32_t id);
 
     std::shared_ptr<Material> material() const;
+    std::shared_ptr<Material> material();
 
     std::set<uint32_t> instancedUniformBindings() const;
-
     Uniforms getUniforms(uint32_t binding) const;
-
     Uniforms getSelfUniforms(uint32_t binding) const;
-
     void instanceUniforms(Uniforms& uniforms, uint32_t binding) const;
 
-    const Uniform* getUniform(std::string_view name) const;
+    Uniform* getUniform(std::string_view name);
     const TextureUniform* getTextureUniform(std::string_view name) const;
 
 private:

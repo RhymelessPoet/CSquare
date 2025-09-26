@@ -53,13 +53,13 @@ public:
     // material instance
     MaterialCompiler& BeginMaterialInstance(uint16_t materialID, uint32_t instanceID, ShaderBindingSetLayout layout);
     MaterialCompiler& SetUniformBuffer(uint32_t binding, const MaterialInstance::Uniforms& uniforms);
-    MaterialCompiler& SetTexture(uint32_t binding,
-                                 const std::pair<std::string_view, MaterialInstance::TextureUniform>& uniform);
+    MaterialCompiler& SetTexture(const MaterialInstance::Textures::value_type& uniform);
     void EndMaterialInstance();
 
     ShaderBindingSet GetShaderBindingSet(const MaterialInstance& material);
 
-    void Apply(uint16_t materialID, uint32_t instanceID, MaterialInstance::Uniforms& uniforms);
+    void Apply(uint16_t materialID, uint32_t instanceID, const MaterialInstance::Uniforms& uniforms);
+    void Apply(uint16_t materialID, uint32_t instanceID, const MaterialInstance::Textures& textures);
 
 private:
     void collectShaderbinding(std::map<uint32_t, ShaderBinding>& bindings, ShaderBinding binding);

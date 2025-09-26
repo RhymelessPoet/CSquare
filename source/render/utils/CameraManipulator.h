@@ -41,7 +41,7 @@ private:
     Size2u m_viewport;
     Vector3f m_center;
     Vector3f m_position;
-    Vector3f m_up{0.0f, 0.0f, 1.0f};
+    Vector3f m_up{0.0f, 1.0f, 0.0f};
     float m_fovY{45.0f};
     float m_aspectRatio{1.0f};
     float m_nearPlane{0.1f};

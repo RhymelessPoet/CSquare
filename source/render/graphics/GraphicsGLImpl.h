@@ -76,6 +76,8 @@ public:
                      int32_t vertexOffset = 0,
                      uint32_t firstInstance = 0);
 
+    bool ResetCurrentState();
+
     std::shared_ptr<GraphicsResourceCache> GetResourceCache();
 
     template <typename DescriptorType>

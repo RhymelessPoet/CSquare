@@ -4,7 +4,10 @@
 namespace CS
 {
 
-Image::Image(Path path, ImageFormat format) : m_path(std::move(path)), m_format(format) {}
+Image::Image(Path path, ImageFormat format) : m_path(std::move(path)), m_format(format)
+{
+    m_data = ImageLoader::Load(m_path, m_size, m_format);
+}
 
 Image::~Image() {}
 

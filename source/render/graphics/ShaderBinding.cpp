@@ -4,12 +4,13 @@
 
 namespace CS
 {
+ShaderBindingTexture::ShaderBindingTexture(std::string_view _name, std::unique_ptr<MaterialTexture> _texture)
+    : name(_name), texture(std::move(_texture))
+{}
 
 ShaderBindingTexture::ShaderBindingTexture(const ShaderBindingTexture& other)
     : name(other.name), texture(other.texture ? other.texture->Clone() : nullptr)
 {}
-
-ShaderBindingTexture::~ShaderBindingTexture() = default;
 
 ShaderBindingTexture& ShaderBindingTexture::operator=(const ShaderBindingTexture& other)
 {

@@ -4,12 +4,13 @@
 namespace CS
 {
 class Scene;
-class SceneObject;
+class PanoramicSky;
 
-class HelloTriangles : public IRenderSample
+class SPanoramicHDRSky : public IRenderSample
 {
 public:
-    HelloTriangles(/* args */) = default;
+    SPanoramicHDRSky(/* args */);
+    ~SPanoramicHDRSky();
 
     virtual void Initialize(std::shared_ptr<View> view) override;
 
@@ -17,7 +18,7 @@ public:
 
 private:
     std::shared_ptr<Scene> m_scene;
-    std::shared_ptr<SceneObject> m_groupRoot;
+    std::unique_ptr<PanoramicSky> m_sky;
 };
 
 } // namespace CS

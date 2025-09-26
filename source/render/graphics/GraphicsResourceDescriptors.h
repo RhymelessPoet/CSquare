@@ -69,8 +69,8 @@ private:
     AddressMode m_u{AddressMode::Repeat};
     AddressMode m_v{AddressMode::Repeat};
     AddressMode m_w{AddressMode::Repeat};
-    FilterMode m_minFilter{FilterMode::Nearest};
-    FilterMode m_magFilter{FilterMode::Nearest};
+    FilterMode m_minFilter{FilterMode::Linear};
+    FilterMode m_magFilter{FilterMode::Linear};
     MipmapFilterMode m_mipmapFilter{MipmapFilterMode::Max};
 };
 

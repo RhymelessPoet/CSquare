@@ -101,6 +101,11 @@ target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIR
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_PATH}" "$<TARGET_FILE_DIR:${TARGET_NAME}>/assets"
+    COMMENT "Copying files form ${ASSETS_PATH} to $<TARGET_FILE_DIR:${TARGET_NAME}>"
+)
+
 if(MSVC)
     get_target_property(QT_QMAKE_EXE Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXE}" DIRECTORY)
@@ -119,5 +124,5 @@ if(MSVC)
 endif()
 
 install(TARGETS ${TARGET_NAME}
-    RUNTIME DESTINATION ${PROJECT_BINARY_DIR}
+    RUNTIME DESTINATION ${PROJECT_BINARY_PATH}
 )

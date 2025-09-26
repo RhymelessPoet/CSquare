@@ -23,13 +23,16 @@ MeshRenderer::MeshRenderer(std::shared_ptr<SceneObject> owner) : IRenderable(std
 
 void MeshRenderer::OnUpdate()
 {
-    if (m_mesh == nullptr || m_material == nullptr) {
+    if (m_mesh == nullptr || m_material == nullptr || m_vertexInputLayout == nullptr) {
         return; // No mesh to render
     }
 }
 
 void MeshRenderer::OnRender(RenderContext& context)
 {
+    if (m_vertexInputLayout == nullptr) {
+        return;
+    }
     auto graphicsAPI = context.GetGraphicsAPI();
     if (!m_vertexBuffer.IsValid()) {
         auto vertexBufferSize = m_mesh->GetVertexData().size() * sizeof(float);
@@ -81,7 +84,10 @@ void MeshRenderer::OnRender(RenderContext& context)
 
     auto commandBuffer = context.GetCommandBuffer();
 
-    commandBuffer.Bind(pipeline).Bind(m_inputAssembly).Bind(shaderBindingSet).DrawIndexed(3u, 0u);
+    commandBuffer.Bind(pipeline)
+        .Bind(m_inputAssembly)
+        .Bind(shaderBindingSet)
+        .DrawIndexed(m_mesh->GetIndexData().size(), 0u);
 }
 
 void MeshRenderer::SetMesh(std::shared_ptr<Mesh> mesh)

@@ -40,7 +40,7 @@ void CameraManipulator::Dolly(float delta, float speed)
 void CameraManipulator::Zoom(float delta, float speed)
 {
     m_fovY -= delta * speed;
-    m_fovY = std::clamp(m_fovY, 1.0f, 175.0f);
+    m_fovY = std::clamp(m_fovY, 30.0f, 120.0f);
     UpdateCamera();
 }
 

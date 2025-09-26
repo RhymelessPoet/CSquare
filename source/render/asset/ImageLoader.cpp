@@ -13,6 +13,7 @@ std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3U& imageSiz
 
     if (!FileSystem::exists(absolutePath)) {
         // TODO: log error
+        return std::vector<std::byte>();
     }
 
     int x, y, z;
@@ -31,7 +32,9 @@ std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3U& imageSiz
 
     if (data != nullptr) {
         imageSize = {x, y, z};
-        std::copy(data, data + x * y * z * ChannelByteSize(ChannelType(format)), imageData.begin());
+        auto imageByteSize = x * y * z * ChannelByteSize(ChannelType(format));
+        imageData.resize(imageByteSize);
+        std::copy(data, data + imageByteSize, imageData.begin());
         stbi_image_free(data);
     }
 

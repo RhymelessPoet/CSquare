@@ -130,9 +130,7 @@ MaterialCompiler& MaterialCompiler::SetUniformBuffer(uint32_t binding, const Mat
     return *this;
 }
 
-MaterialCompiler&
-MaterialCompiler::SetTexture(uint32_t binding,
-                             const std::pair<std::string_view, MaterialInstance::TextureUniform>& uniform)
+MaterialCompiler& MaterialCompiler::SetTexture(const MaterialInstance::Textures::value_type& uniform)
 {
     assert(m_materialInstanceStates.has_value());
 
@@ -141,10 +139,9 @@ MaterialCompiler::SetTexture(uint32_t binding,
 
     auto& textureMap = m_resourceManager->GetMaterialTextures();
 
-    auto materialTexture = uniform.second.texture.get();
-    auto imageTexture = dynamic_cast<const ImageTexture*>(materialTexture);
+    auto& [materialTexture, binding, _] = uniform.second;
+    auto imageTexture = dynamic_cast<const ImageTexture*>(materialTexture.get());
     if (imageTexture != nullptr) {
-
         auto sampledTexture = textureMap.AllocateTexture(uniformID, *imageTexture);
         bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
     } else {
@@ -181,7 +178,7 @@ ShaderBindingSet MaterialCompiler::GetShaderBindingSet(const MaterialInstance& m
     return m_resourceManager->GetShaderBindingSet(key.first, key.second);
 }
 
-void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, MaterialInstance::Uniforms& uniforms)
+void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, const MaterialInstance::Uniforms& uniforms)
 {
     auto& generalUniformMemory = m_resourceManager->GetMaterialGeneralUniforms();
 
@@ -192,8 +189,22 @@ void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, MaterialI
         auto uniformSize = ByteSizeOf(uniform.value);
         auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
         generalUniformMemory.SetUniformMemory(uniformID, ToBytes(uniform.value));
+    }
+}
 
-        uniform.dirty = false;
+void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, const MaterialInstance::Textures& textures)
+{
+    auto& texturesMap = m_resourceManager->GetMaterialTextures();
+
+    for (auto& [name, texture] : textures) {
+        if (!texture.dirty) {
+            continue;
+        }
+        auto imageTexture = dynamic_cast<ImageTexture*>(texture.texture.get());
+        if (imageTexture == nullptr) {
+            continue;
+        }
+        texturesMap.SetTextureData(name, imageTexture->GetImage());
     }
 }
 

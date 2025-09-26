@@ -357,7 +357,7 @@ bool GraphicsGLImpl::BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor
         return false;
     }
     auto layout = descriptor->GetLayout();
-    auto bindings = layout->GetBindings();
+    auto& bindings = layout->GetBindings();
 
     bool hasError = false;
     for (const auto& binding : bindings) {
@@ -394,9 +394,9 @@ bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void
     auto textureSize = descriptor->GetSize();
 
     m_glContext->GLBindTexture(GL_TEXTURE_2D, textureID)
-        .GLTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureSize.Width(), textureSize.Height(), 0, GL_RGBA,
-                      GL_UNSIGNED_BYTE, data)
-        .GLBindTexture(GL_TEXTURE_2D, 0);
+        .GLTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, textureSize.Width(), textureSize.Height(), 0, GL_RGB, GL_FLOAT, data)
+        .GLBindTexture(GL_TEXTURE_2D, 0)
+        .GLCheck();
 
     return true;
 }
@@ -425,6 +425,8 @@ bool GraphicsGLImpl::BuildSampler(SamplerDescriptor* descriptor)
         .GLSamplerParameteri(samplerID, GL_TEXTURE_WRAP_R, GetSamplerAddressMode(w))
         .GLSamplerParameteri(samplerID, GL_TEXTURE_MIN_FILTER, GetSamplerMinFilterMode(mipmapFilter, min))
         .GLSamplerParameteri(samplerID, GL_TEXTURE_MAG_FILTER, GetSamplerMagFilterMode(mag));
+
+    descriptor->SetNativeSampler(samplerID);
 
     return true;
 }
@@ -467,6 +469,12 @@ bool GraphicsGLImpl::DrawIndexed(uint32_t indexCount,
     m_glContext->GLDrawElements(GL_TRIANGLES, indexCount, glFormat,
                                 reinterpret_cast<void*>(static_cast<intptr_t>(firstIndex)));
     m_glContext->GLBindVertexArray(0);
+    return true;
+}
+
+bool GraphicsGLImpl::ResetCurrentState()
+{
+    m_curentStates.Reset();
     return true;
 }
 

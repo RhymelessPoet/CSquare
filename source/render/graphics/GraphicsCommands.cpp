@@ -19,7 +19,7 @@ bool Command_BeginPass::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 
 bool Command_EndPass::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
-    return true;
+    return graphicsAPI->ResetCurrentState();
 }
 
 bool Command_Clear::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)

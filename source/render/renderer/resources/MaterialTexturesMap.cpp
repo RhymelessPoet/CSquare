@@ -49,6 +49,16 @@ MaterialTexturesMap::SampledTexture* MaterialTexturesMap::GetTexture(std::string
     return nullptr;
 }
 
+void MaterialTexturesMap::SetTextureData(std::string_view name, std::shared_ptr<Image> image)
+{
+    auto it = m_textures.find(std::string(name));
+    if (it != m_textures.end()) {
+        m_toUpdateImages[std::string(name)] = image;
+    } else {
+        // TODO: log error
+    }
+}
+
 void MaterialTexturesMap::UpdateTextures()
 {
     for (auto& [name, sampledTexture] : m_textures) {
@@ -62,6 +72,7 @@ void MaterialTexturesMap::UpdateTextures()
         auto& image = itr->second;
         sampledTexture.texture.UpdateData(reinterpret_cast<const void*>(image->GetData()), image->GetSize().XY());
     }
+    m_toUpdateImages.clear();
 }
 
 } // namespace CS
