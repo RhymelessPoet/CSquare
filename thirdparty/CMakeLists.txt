@@ -11,3 +11,5 @@ if(NOT TARGET glfw)
     set_target_properties(glfw PROPERTIES FOLDER ${THIRD_PARTY_FOLDER}/glfw)
     set_target_properties(update_mappings PROPERTIES FOLDER ${THIRD_PARTY_FOLDER}/glfw)
 endif()
+
+add_subdirectory(assimp)
