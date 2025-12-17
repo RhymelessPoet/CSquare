@@ -1,7 +1,7 @@
 #include "MeshRenderer.h"
 #include "Camera.h"
 #include "asset/BuiltInShaders.h"
-#include "geometry/Mesh.h"
+#include "geometry/GeometryNode.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsShaderStage.h"
 #include "graphics/VertexInputLayout.h"
@@ -21,34 +21,56 @@ namespace CS
 
 MeshRenderer::MeshRenderer(std::shared_ptr<SceneObject> owner) : IRenderable(std::move(owner)) {}
 
-void MeshRenderer::OnUpdate()
-{
-    if (m_mesh == nullptr || m_material == nullptr || m_vertexInputLayout == nullptr) {
-        return; // No mesh to render
-    }
-}
+void MeshRenderer::OnUpdate() {}
 
 void MeshRenderer::OnRender(RenderContext& context)
 {
-    if (m_vertexInputLayout == nullptr) {
-        return;
+    for (const auto& node : m_geometryNodes) {
+        render(context, node);
     }
+}
+
+void MeshRenderer::AddGeometryNode(std::shared_ptr<GeometryNode> node)
+{
+    m_geometryNodes.push_back(std::move(node));
+}
+
+std::shared_ptr<GeometryNode> MeshRenderer::GetGeometryNode(uint32_t index) const
+{
+    if (index < m_geometryNodes.size()) {
+        return m_geometryNodes[index];
+    }
+    return std::shared_ptr<GeometryNode>();
+}
+
+void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> node)
+{
+    auto mesh = node->GetMesh();
+    auto material = node->GetMaterial();
     auto graphicsAPI = context.GetGraphicsAPI();
     if (!m_vertexBuffer.IsValid()) {
-        auto vertexBufferSize = m_mesh->GetVertexData().size() * sizeof(float);
+        auto vertexBufferSize = mesh->GetVertexBuffer(0u).GetByteSize();
         m_vertexBuffer = graphicsAPI->CreateVertexBuffer(vertexBufferSize);
     }
     if (!m_indexBuffer.IsValid()) {
-        auto indexBufferSize = m_mesh->GetIndexData().size() * sizeof(uint32_t);
+        auto indexBufferSize = mesh->GetIndices<std::byte>().size();
         m_indexBuffer = graphicsAPI->CreateIndexBuffer(indexBufferSize);
     }
 
     if (!m_inputAssembly.IsValid()) {
         m_inputAssembly = graphicsAPI->CreateInputAssembly();
-        m_inputAssembly.SetVertexInput(0u, m_vertexBuffer, 0u);
+        auto vertexInputLayout = node->GetVertexInputLayout();
+        uint32_t offset = 0u;
+        for (uint32_t binding = 0u; binding < vertexInputLayout->MaxBindings; ++binding) {
+            const auto& vertexBinding = vertexInputLayout->GetBinding(binding);
+            if (vertexBinding.has_value()) {
+                m_inputAssembly.SetVertexInput(binding, m_vertexBuffer, offset);
+                offset += vertexBinding.value().GetStride() * mesh->GetVertexCount();
+            }
+        }
         m_inputAssembly.SetIndexBuffer(m_indexBuffer, uint32_t{});
 
-        m_inputAssembly.SetVertexInputLayout(m_vertexInputLayout);
+        m_inputAssembly.SetVertexInputLayout(vertexInputLayout);
     }
 
     if (!m_vertexBuffer.IsBuild()) {
@@ -63,42 +85,31 @@ void MeshRenderer::OnRender(RenderContext& context)
     if (transform != nullptr) {
         const auto modelMatrix = transform->GetWorldMatrix().Transposed();
 
-        auto noError = m_material->SetUniformValue(std::string_view("model"), modelMatrix.ToStdVector());
+        auto noError = material->SetUniformValue(std::string_view("model"), modelMatrix.ToStdVector());
     }
 
     if (m_meshDirty) {
-        auto vertexData = m_mesh->GetVertexData();
-        auto indexData = m_mesh->GetIndexData();
-        m_vertexBuffer.UpdateData(vertexData.data(), vertexData.size() * sizeof(float));
-        m_indexBuffer.UpdateData(indexData.data(), indexData.size() * sizeof(uint32_t));
+        auto vertexData = mesh->GetVertexBufferView(0u);
+        auto indexData = mesh->GetIndices<std::byte>();
+        m_vertexBuffer.UpdateData(vertexData.data(), vertexData.size());
+        m_indexBuffer.UpdateData(indexData.data(), indexData.size());
         m_meshDirty = false;
     }
 
     auto& materialCompiler = context.GetMaterialCompiler();
 
-    m_material->Apply(materialCompiler);
+    material->Apply(materialCompiler);
 
-    materialCompiler.SetVertexInputLayout(m_vertexInputLayout);
-    auto pipeline = materialCompiler.GetPipeline(*m_material->GetMaterial());
-    auto shaderBindingSet = materialCompiler.GetShaderBindingSet(*m_material);
+    materialCompiler.SetVertexInputLayout(node->GetVertexInputLayout());
+    auto pipeline = materialCompiler.GetPipeline(*material->GetMaterial());
+    auto shaderBindingSet = materialCompiler.GetShaderBindingSet(*material);
 
     auto commandBuffer = context.GetCommandBuffer();
 
     commandBuffer.Bind(pipeline)
         .Bind(m_inputAssembly)
         .Bind(shaderBindingSet)
-        .DrawIndexed(m_mesh->GetIndexData().size(), 0u);
-}
-
-void MeshRenderer::SetMesh(std::shared_ptr<Mesh> mesh)
-{
-    m_mesh = std::move(mesh);
-    m_meshDirty = true; // Mark the mesh as dirty to trigger updates in rendering
-}
-
-void MeshRenderer::SetVertexInputLayout(std::shared_ptr<VertexInputLayout> layout)
-{
-    m_vertexInputLayout = std::move(layout);
+        .DrawIndexed(mesh->GetIndices<uint32_t>().size(), 0u);
 }
 
 } // namespace CS

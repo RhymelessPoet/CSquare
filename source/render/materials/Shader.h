@@ -14,7 +14,7 @@ public:
     ~Shader();
 
     ShaderStage GetStage() const { return m_stage; }
-    const std::string& GetSource() const { return m_source; }
+    const std::string_view GetSource() const { return m_source; }
 
     void AddBinding(const ShaderBinding& binding);
 

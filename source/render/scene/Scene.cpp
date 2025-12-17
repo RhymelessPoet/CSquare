@@ -7,7 +7,7 @@ namespace CS
 {
 Scene::Scene()
 {
-    m_root = std::make_shared<SceneObject>();
+    m_root = std::make_shared<SceneObject>("Root");
 }
 
 Scene::~Scene() {}

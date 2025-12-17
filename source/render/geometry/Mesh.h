@@ -1,6 +1,9 @@
 #pragma once
-#include <span>
-#include <vector>
+#include "base/TypeDefine.h"
+#include "base/memory/Buffer.h"
+#include <functional>
+#include <memory>
+#include <string>
 
 namespace CS
 {
@@ -8,16 +11,64 @@ namespace CS
 class Mesh
 {
 public:
-    Mesh(/* args */);
-    Mesh(std::vector<float> vertices, std::vector<uint32_t> indices);
-    ~Mesh();
+    struct Attribute
+    {
+        std::string name;
+        //                   |offset.........end|               or     |offset..............end|
+        // [aaa...........aaa bbb............bbb ccc.......ccc]    [aaabbbccc.............aaabbbccc]
+        uint32_t offset{0u};
+        uint32_t end{0u};
+        uint8_t bufferID{0u};
+        uint8_t componentCount{0u};
+        DataType type{DataType::Unknown};
+    };
+    class Builder
+    {
+    public:
+        Builder();
+        Builder& SetName(std::string_view name);
 
-    std::span<const float> GetVertexData() const;
-    std::span<const uint32_t> GetIndexData() const;
+        Builder& SetVertexCount(uint32_t count);
+
+        Builder& SetIndices(Buffer data, DataType type);
+
+        Builder& AddVertexBuffer(Buffer data);
+
+        Builder& AddAttribute(const Attribute& attribute);
+
+        std::shared_ptr<Mesh> Build();
+
+    private:
+        std::shared_ptr<Mesh> m_mesh;
+    };
+
+    std::string_view GetName() const { return m_name; }
+
+    size_t GetVertexBufferCount() const { return m_vertexBuffers.size(); }
+    std::span<const std::byte> GetVertexBufferView(uint8_t bufferID) const;
+    const Buffer& GetVertexBuffer(uint8_t bufferID) const;
+
+    template <typename T>
+    std::span<const T> GetIndices() const
+    {
+        constexpr auto indexType = type_traits::data_type<T>;
+        if (m_indexType != indexType && DataType::Byte != indexType) {
+            return std::span<const T>();
+        }
+        return m_indices.GetData<T>();
+    }
+
+    uint32_t GetVertexCount() const { return m_vertexCount; }
+
+    void ForEachAttribute(const std::function<void(const Attribute&)>& func) const;
 
 private:
-    std::vector<float> m_vertices;   // Vertex data
-    std::vector<uint32_t> m_indices; // Index data
+    std::string m_name;
+    std::vector<Attribute> m_attributes;
+    std::vector<Buffer> m_vertexBuffers;
+    uint32_t m_vertexCount{0u};
+    Buffer m_indices;
+    DataType m_indexType{DataType::Unknown};
 };
 
 } // namespace CS

@@ -8,6 +8,7 @@ enum class ImageFormat : uint8_t
 {
     RGB8,
     RGBA8,
+    ARGB8,
     RGB32Float,
     RGBA32Float,
     Max
@@ -26,6 +27,7 @@ inline uint32_t Channels(ImageFormat format)
     switch (format) {
     case ImageFormat::RGB8:
         return 3u;
+    case ImageFormat::ARGB8:
     case ImageFormat::RGBA8:
         return 4u;
     case ImageFormat::RGB32Float:

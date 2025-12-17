@@ -9,6 +9,7 @@
 #include "scene/View.h"
 #include "utils/CameraManipulator.h"
 
+#include "samples/SAssetLoad.h"
 #include "samples/SHelloTriangles.h"
 #include "samples/SPanoramicHDRSky.h"
 
@@ -34,7 +35,8 @@ QuickRenderView::QuickRenderView()
         csRenderTarget.SetColorAttachment(csTexture);
         m_view->SetRenderTarget(csRenderTarget);
 
-        m_sample = std::make_unique<CS::SPanoramicHDRSky>();
+        m_sample = std::make_unique<CS::SAssetLoad>();
+        // m_sample = std::make_unique<CS::SPanoramicHDRSky>();
         // m_sample = std::make_unique<CS::SHelloTriangles>();
 
         m_timer = std::make_unique<QTimer>();
@@ -137,7 +139,7 @@ void QuickRenderView::onSampleChange()
     connect(m_timer.get(), &QTimer::timeout, [this]() { m_sample->OnUpdate(); });
 
     m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
-    m_cameraManipulator->LookAt({0.0f, -0.0f, 3.5f}, {0.0f, 0.0f, 0.0f});
+    m_cameraManipulator->LookAt({0.0f, -0.0f, 15.0f}, {0.0f, 0.0f, 0.0f});
 }
 
 } // namespace CSEditor

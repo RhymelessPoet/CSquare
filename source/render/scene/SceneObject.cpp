@@ -4,7 +4,7 @@
 namespace CS
 {
 
-SceneObject::SceneObject() {}
+SceneObject::SceneObject(std::string_view name) : m_name(name) {}
 
 SceneObject::~SceneObject() {}
 

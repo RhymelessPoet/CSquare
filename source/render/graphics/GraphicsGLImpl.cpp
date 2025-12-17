@@ -184,14 +184,17 @@ bool GraphicsGLImpl::BuildGraphicsInputAssembly(GraphicsInputAssemblyDescriptor*
             continue;
         }
 
-        const auto& [vertexBuffer, _] = descriptor->GetVertexInput(bindingNum);
+        const auto& [vertexBuffer, bindingOffset] = descriptor->GetVertexInput(bindingNum);
 
         auto [componentSize, componentCount] = attrValue.GetSize();
         auto format = GetVertexAttribFormat(attrValue.GetFormat());
-        auto offset = attrValue.GetOffset();
+        auto offset = attrValue.GetOffset() + bindingOffset;
 
         auto stride = binding.value().GetStride();
 
+        if (vertexBuffer == nullptr) {
+            continue;
+        }
         m_glContext->GLBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->GetNativeBuffer())
             .GLVertexAttribPointer(location, componentCount, format, false, stride,
                                    reinterpret_cast<void*>(static_cast<intptr_t>(offset)))
@@ -303,14 +306,14 @@ bool GraphicsGLImpl::BuildGraphicsPipeline(GraphicsPipelineDescriptor* descripto
     const auto& fragmentStage = descriptor->GetShaderStage(ShaderStage::Fragment);
 
     if (vertexStage != nullptr) {
-        auto vertexSource = vertexStage->GetShader()->GetSource().c_str();
+        auto vertexSource = vertexStage->GetShader()->GetSource().data();
         m_glContext->GLCreateShader(GL_VERTEX_SHADER, &pipeline.vertexShaderID)
             .GLShaderSource(pipeline.vertexShaderID, 1, &vertexSource, nullptr)
             .GLCompileShader(pipeline.vertexShaderID);
     }
 
     if (fragmentStage != nullptr) {
-        auto fragmentSource = fragmentStage->GetShader()->GetSource().c_str();
+        auto fragmentSource = fragmentStage->GetShader()->GetSource().data();
         m_glContext->GLCreateShader(GL_FRAGMENT_SHADER, &pipeline.fragmentShaderID)
             .GLShaderSource(pipeline.fragmentShaderID, 1, &fragmentSource, nullptr)
             .GLCompileShader(pipeline.fragmentShaderID);

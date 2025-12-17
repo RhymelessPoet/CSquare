@@ -32,10 +32,10 @@ void GraphicsAPI::Initialize()
 
 VertexBuffer GraphicsAPI::CreateVertexBuffer(size_t size)
 {
-    auto resorceCache = m_impl->GetResourceCache();
+    auto resourceCache = m_impl->GetResourceCache();
 
-    auto resourceID = resorceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
-    auto descriptor = resorceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
+    auto resourceID = resourceCache->Allocate<GraphicsBufferDescriptor>(m_impl);
+    auto descriptor = resourceCache->GetDescriptor<GraphicsBufferDescriptor>(resourceID);
     descriptor->SetBufferType(GraphicsBufferDescriptor::BufferType::VertexBuffer);
     descriptor->SetSize(size);
 

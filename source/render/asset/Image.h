@@ -2,6 +2,7 @@
 #include "ImageFormat.h"
 #include "base/FileSystem.h"
 #include "base/Size.h"
+#include <span>
 #include <vector>
 
 namespace CS
@@ -9,18 +10,21 @@ namespace CS
 class Image
 {
 public:
-    Image(Path path, ImageFormat format = ImageFormat::RGBA8);
+    explicit Image(Path path, ImageFormat format = ImageFormat::RGBA8);
+    explicit Image(std::vector<std::byte> data, ImageFormat format = ImageFormat::RGBA8);
     ~Image();
 
     const Size3U& GetSize() const { return m_size; }
     size_t GetByteSize() const { return m_data.size(); }
 
     const std::byte* GetData() const;
+    const std::span<const std::byte> GetDataView() const;
 
     void Load(Path path = {}, ImageFormat format = ImageFormat::RGBA8);
     void Release();
 
 private:
+    std::string m_name;
     ImageFormat m_format{ImageFormat::RGBA8};
     Path m_path;
     Size3U m_size;

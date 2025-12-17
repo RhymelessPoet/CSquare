@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace CS
@@ -9,8 +10,11 @@ class IComponent;
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
-    SceneObject();
+    explicit SceneObject(std::string_view name = "");
     ~SceneObject();
+
+    void SetName(std::string_view name) { m_name = name; }
+    std::string GetName() const { return m_name; }
 
     template <typename T>
     T* GetComponent()
@@ -26,12 +30,13 @@ public:
     bool AddComponent(std::unique_ptr<IComponent> component);
 
     void SetParent(std::shared_ptr<SceneObject> parent);
+    std::shared_ptr<SceneObject> GetParent() const { return m_parent.lock(); }
+
     bool AddChild(std::shared_ptr<SceneObject> child);
     bool RemoveChild(std::shared_ptr<SceneObject> child);
 
-    std::shared_ptr<SceneObject> GetParent() const { return m_parent.lock(); }
-
 private:
+    std::string m_name;
     std::weak_ptr<SceneObject> m_parent;
     std::vector<std::shared_ptr<SceneObject>> m_children;
     std::vector<std::unique_ptr<IComponent>> m_components;

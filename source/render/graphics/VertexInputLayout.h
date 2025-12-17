@@ -56,7 +56,7 @@ using VertexInputRate = VertexInputBinding::InputRate;
 class VertexInputLayout
 {
 public:
-    static constexpr uint32_t MaxBindings = 4u;
+    static constexpr uint32_t MaxBindings = 8u;
     static constexpr uint32_t MaxAttributes = 8u;
 
 public:

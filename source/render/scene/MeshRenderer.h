@@ -18,6 +18,7 @@ class MeshRenderSystem;
 class MaterialInstance;
 class MaterialCompiler;
 class VertexInputLayout;
+class GeometryNode;
 
 class MeshRenderer : public IRenderable
 {
@@ -30,18 +31,14 @@ public:
 
     virtual void OnRender(RenderContext& context) override;
 
-    void SetMesh(std::shared_ptr<Mesh> mesh);
-    std::shared_ptr<Mesh> GetMesh() const { return m_mesh; }
-
-    void SetMaterial(std::shared_ptr<MaterialInstance> material) { m_material = std::move(material); }
-    std::shared_ptr<MaterialInstance>& GetMaterial() { return m_material; }
-
-    void SetVertexInputLayout(std::shared_ptr<VertexInputLayout> layout);
+    void AddGeometryNode(std::shared_ptr<GeometryNode> node);
+    std::shared_ptr<GeometryNode> GetGeometryNode(uint32_t index) const;
 
 private:
-    std::shared_ptr<VertexInputLayout> m_vertexInputLayout;
-    std::shared_ptr<Mesh> m_mesh;
-    std::shared_ptr<MaterialInstance> m_material;
+    void render(RenderContext& context, std::shared_ptr<GeometryNode> node);
+
+private:
+    std::vector<std::shared_ptr<GeometryNode>> m_geometryNodes;
 
     IndexBuffer m_indexBuffer;
     VertexBuffer m_vertexBuffer;

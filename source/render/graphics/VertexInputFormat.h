@@ -1,4 +1,5 @@
 #pragma once
+#include "base/TypeDefine.h"
 #include <cstdint>
 
 namespace CS
@@ -59,6 +60,53 @@ constexpr inline VertexFormatSize VertexInputFormatSize(VertexInputFormat format
         return {sizeof(unsigned int), 4u};
     default:
         return {}; // Invalid format
+    }
+}
+
+constexpr inline VertexInputFormat VertexInputFormatFrom(DataType type, uint32_t componentCount)
+{
+    switch (type) {
+    case DataType::Float32:
+        switch (componentCount) {
+        case 1:
+            return VertexInputFormat::Float;
+        case 2:
+            return VertexInputFormat::Float2;
+        case 3:
+            return VertexInputFormat::Float3;
+        case 4:
+            return VertexInputFormat::Float4;
+        default:
+            return VertexInputFormat::Max;
+        }
+    case DataType::Int32:
+        switch (componentCount) {
+        case 1:
+            return VertexInputFormat::Int;
+        case 2:
+            return VertexInputFormat::Int2;
+        case 3:
+            return VertexInputFormat::Int3;
+        case 4:
+            return VertexInputFormat::Int4;
+        default:
+            return VertexInputFormat::Max;
+        }
+    case DataType::UInt32:
+        switch (componentCount) {
+        case 1:
+            return VertexInputFormat::UInt;
+        case 2:
+            return VertexInputFormat::UInt2;
+        case 3:
+            return VertexInputFormat::UInt3;
+        case 4:
+            return VertexInputFormat::UInt4;
+        default:
+            return VertexInputFormat::Max;
+        }
+    default:
+        return VertexInputFormat::Max;
     }
 }
 

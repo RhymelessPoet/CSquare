@@ -9,6 +9,8 @@ Image::Image(Path path, ImageFormat format) : m_path(std::move(path)), m_format(
     m_data = ImageLoader::Load(m_path, m_size, m_format);
 }
 
+Image::Image(std::vector<std::byte> data, ImageFormat format) : m_data(std::move(data)), m_format(format) {}
+
 Image::~Image() {}
 
 void Image::Load(Path path, ImageFormat format)
@@ -24,6 +26,11 @@ void Image::Load(Path path, ImageFormat format)
 const std::byte* Image::GetData() const
 {
     return m_data.data();
+}
+
+const std::span<const std::byte> Image::GetDataView() const
+{
+    return std::span<const std::byte>(m_data);
 }
 
 } // namespace CS

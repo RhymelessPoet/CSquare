@@ -1,7 +1,9 @@
 #pragma once
+#include "base/Macros.h"
 #include "base/math/Vector.h"
 #include <memory>
 #include <vector>
+
 
 namespace CS
 {

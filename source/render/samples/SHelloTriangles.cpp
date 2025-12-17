@@ -7,7 +7,7 @@
 #include "scene/TransformSystem.h"
 #include "scene/View.h"
 
-#include "geometry/Mesh.h"
+#include "geometry/GeometryNode.h"
 #include "materials/Material.h"
 #include "materials/Shader.h"
 #include "scene/SceneObject.h"
@@ -72,7 +72,14 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
 
     view->SetScene(m_scene);
 
-    auto mesh = std::make_shared<Mesh>(vertices, std::vector<uint32_t>{0u, 1u, 2u});
+    auto mesh =
+        Mesh::Builder()
+            .AddVertexBuffer(vertices)
+            .SetVertexCount(3u)
+            .AddAttribute(Mesh::Attribute{"_position", 0u, 15 * sizeof(float), 0u, 3u, DataType::Float32})
+            .AddAttribute(Mesh::Attribute{"_color", 3 * sizeof(float), 18 * sizeof(float), 0u, 3u, DataType::Float32})
+            .SetIndices(Buffer(std::vector<uint32_t>{0u, 1u, 2u}), DataType::UInt32)
+            .Build();
 
     auto vertShader = std::make_shared<Shader>(std::string(VertexShader), ShaderStage::Vertex);
 
@@ -96,12 +103,6 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
                     .End();
     // clang-format on
 
-    auto vertexInputLayout = std::make_shared<VertexInputLayout>();
-
-    vertexInputLayout->SetBinding(0u, VertexInputBinding{6 * sizeof(float), VertexInputRate::PerVertex})
-        .SetAttribute(0u, VertexInputAttribute{0u, VertexInputFormat::Float3, 0u})
-        .SetAttribute(1u, VertexInputAttribute{0u, VertexInputFormat::Float3, 3 * sizeof(float)});
-
     auto& meshRenderSystem = m_scene->GetSystem<CS::MeshRenderSystem>();
     auto& transformSystem = m_scene->GetSystem<CS::TransformSystem>();
 
@@ -112,9 +113,12 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
     auto& meshRender = CS::GetComponent<CS::MeshRenderer>(m_groupRoot);
 
     auto materialInstance = material->CreateInstance();
-    meshRender.SetMaterial(materialInstance);
-    meshRender.SetMesh(mesh);
-    meshRender.SetVertexInputLayout(vertexInputLayout);
+
+    auto geometryNode = std::make_shared<GeometryNode>(mesh, materialInstance);
+    geometryNode->SetAttributeMap("_position", 0u);
+    geometryNode->SetAttributeMap("_color", 1u);
+
+    meshRender.AddGeometryNode(geometryNode);
 
     constexpr uint32_t tranglesCount = 2500u;
     auto positions = RandomPositions(tranglesCount, {-10.0f, -10.0f, -10.0f}, {10.0f, 10.0f, 10.0f});
@@ -126,9 +130,12 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
         transformSystem.CreateComponent<CS::Transform>(child);
 
         auto& _meshRender = CS::GetComponent<CS::MeshRenderer>(child);
-        _meshRender.SetMaterial(material->CreateInstance());
-        _meshRender.SetMesh(mesh);
-        _meshRender.SetVertexInputLayout(vertexInputLayout);
+
+        auto _geometryNode = std::make_shared<GeometryNode>(mesh, material->CreateInstance());
+        _geometryNode->SetAttributeMap("_position", 0u);
+        _geometryNode->SetAttributeMap("_color", 1u);
+
+        _meshRender.AddGeometryNode(_geometryNode);
 
         auto& _transform = CS::GetComponent<CS::Transform>(child);
         _transform.SetPosition(positions[index]);

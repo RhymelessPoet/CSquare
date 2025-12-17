@@ -1,6 +1,7 @@
 #include "MeshRenderSystem.h"
 #include "Camera.h"
 #include "MeshRenderer.h"
+#include "geometry/GeometryNode.h"
 #include "materials/Material.h"
 #include "renderer/MaterialCompiler.h"
 #include "renderer/RenderContext.h"
@@ -14,7 +15,7 @@ void MeshRenderSystem::OnUpdate()
         if (meshRender != nullptr) {
             meshRender->OnUpdate();
 
-            auto material = meshRender->GetMaterial()->GetMaterial();
+            auto material = meshRender->GetGeometryNode(0u)->GetMaterial()->GetMaterial();
             m_materials[material->GetID()] = material;
         }
     }
@@ -22,12 +23,11 @@ void MeshRenderSystem::OnUpdate()
 
 void MeshRenderSystem::OnRender(RenderContext& context)
 {
+    auto camera = context.GetCamera();
+
+    const auto viewMatrix = camera->GetViewMatrix().Transposed();
+    const auto projectionMatrix = camera->GetProjectionMatrix().Transposed();
     for (auto& [_, material] : m_materials) {
-        auto camera = context.GetCamera();
-
-        const auto viewMatrix = camera->GetViewMatrix().Transposed();
-        const auto projectionMatrix = camera->GetProjectionMatrix().Transposed();
-
         auto noError = material->SetUniformValue(std::string_view("projection"), projectionMatrix.ToStdVector());
         noError = noError && material->SetUniformValue(std::string_view("view"), viewMatrix.ToStdVector());
 

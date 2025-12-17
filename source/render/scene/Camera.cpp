@@ -13,6 +13,7 @@ namespace CS
 Camera::Camera(std::shared_ptr<Scene> scene) : m_scene(std::move(scene))
 {
     m_sceneObject = m_scene->CreateSceneObject();
+    m_sceneObject->SetName("Camera");
     m_scene->GetSystem<CameraSystem>().CreateComponent<CameraComponent>(m_sceneObject);
     m_scene->GetSystem<TransformSystem>().CreateComponent<Transform>(m_sceneObject);
 }

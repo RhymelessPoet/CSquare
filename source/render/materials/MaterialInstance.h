@@ -41,12 +41,12 @@ public:
     using Textures = std::map<std::string, TextureUniform>;
 
     template <typename T>
-        requires type_traits::is_in_variant_v<T, UniformValue>
+        requires type_traits::is_in_variant_v<std::remove_cvref_t<T>, UniformValue>
     [[nodiscard]] bool SetUniformValue(std::string_view name, T&& value)
     {
         auto itr = m_uniforms.find(std::string(name));
         if (itr != m_uniforms.end()) {
-            itr->second.value = std::move(value);
+            itr->second.value = std::forward<T>(value);
             itr->second.dirty = true;
             return true;
         } else if (m_id == 0u) {
@@ -54,7 +54,7 @@ public:
         } else {
             auto uniform = GetDefaultInstance().getUniform(name);
             if (uniform != nullptr) {
-                m_uniforms.emplace(name, Uniform{std::move(value), uniform->binding, uniform->offset, true});
+                m_uniforms.emplace(name, Uniform{std::forward<T>(value), uniform->binding, uniform->offset, true});
                 return true;
             } else {
                 return false;
@@ -97,6 +97,9 @@ public:
 
     std::shared_ptr<Material> GetMaterial();
 
+    void SetName(std::string_view name) { m_name = name; }
+    std::string_view GetName() const { return m_name; }
+
 private:
     MaterialInstance(std::weak_ptr<Material> material, Uniforms uniforms, Textures textures = {});
     MaterialInstance(std::shared_ptr<Material> material, uint32_t id);
@@ -118,6 +121,8 @@ private:
     MaterialPtr m_material;
     Uniforms m_uniforms;
     Textures m_textures;
+
+    std::string m_name;
 };
 
 uint32_t SizeOf(const MaterialInstance::UniformValue& value);
