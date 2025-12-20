@@ -22,9 +22,9 @@ GraphicsCommandBuffer& GraphicsCommandBuffer::EndPass()
     return *this;
 }
 
-GraphicsCommandBuffer& GraphicsCommandBuffer::Clear(std::optional<Color> clearColor)
+GraphicsCommandBuffer& GraphicsCommandBuffer::Clear(std::optional<Color> clearColor, std::optional<float> clearDepth)
 {
-    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_Clear>(clearColor);
+    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_Clear>(clearColor, clearDepth);
     return *this;
 }
 

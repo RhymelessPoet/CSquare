@@ -6,6 +6,22 @@
 
 namespace CS
 {
+static inline TextureFormat GetTextureFormatFromImageFormat(ImageFormat format)
+{
+    switch (format) {
+    case ImageFormat::RGBA8:
+        return TextureFormat::RGBA8Unorm;
+    case ImageFormat::RGB8:
+        return TextureFormat::RGB8Unorm;
+    case ImageFormat::RGB32Float:
+        return TextureFormat::RGB32Float;
+    case ImageFormat::RGBA32Float:
+        return TextureFormat::RGBA32Float;
+    default:
+        return TextureFormat::RGBA8Unorm;
+    }
+}
+
 MaterialTexturesMap::MaterialTexturesMap(std::shared_ptr<GraphicsAPI> graphicsAPI)
     : m_graphicsAPI(std::move(graphicsAPI))
 {}
@@ -70,6 +86,9 @@ void MaterialTexturesMap::UpdateTextures()
             continue;
         }
         auto& image = itr->second;
+        auto format = GetTextureFormatFromImageFormat(image->GetFormat());
+        sampledTexture.texture.SetFormat(format);
+        sampledTexture.texture.Build();
         sampledTexture.texture.UpdateData(reinterpret_cast<const void*>(image->GetData()), image->GetSize().XY());
     }
     m_toUpdateImages.clear();

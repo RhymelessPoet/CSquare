@@ -27,7 +27,9 @@ public:
 class Command_Clear final : public IGraphicsCommand
 {
 public:
-    Command_Clear(std::optional<Color> clearColor) : m_color(clearColor) {}
+    Command_Clear(std::optional<Color> clearColor, std::optional<float> clearDepth)
+        : m_color(clearColor), m_depth(clearDepth)
+    {}
 
     virtual bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) override;
 

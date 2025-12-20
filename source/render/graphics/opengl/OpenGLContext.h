@@ -19,6 +19,8 @@ public:
     OpenGLContext& GLViewport(GLint x, GLint y, GLsizei width, GLsizei height);
     OpenGLContext& GLDisable(GLenum cap);
     OpenGLContext& GLEnable(GLenum cap);
+    OpenGLContext& GLDepthFunc(GLenum func);
+    OpenGLContext& GLDepthMask(GLboolean flag);
 
     OpenGLContext& GLBindFramebuffer(GLenum target, GLuint framebuffer);
     OpenGLContext& GLGenFramebuffers(GLsizei n, GLuint* ids);

@@ -15,6 +15,9 @@ public:
     void SetColorAttachment(Texture texture);
     size_t GetColorAttachment() const;
 
+    void SetDepthStencilAttachment(Texture texture);
+    size_t GetDepthStencilAttachment() const;
+
     void SetSize(Size2u size);
     const Size2u& GetSize() const;
 

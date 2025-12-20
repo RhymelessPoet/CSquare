@@ -23,6 +23,11 @@ void Image::Load(Path path, ImageFormat format)
     m_data = ImageLoader::Load(m_path, m_size, m_format);
 }
 
+void Image::Release()
+{
+    m_data.clear();
+}
+
 const std::byte* Image::GetData() const
 {
     return m_data.data();

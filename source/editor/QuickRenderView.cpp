@@ -30,9 +30,11 @@ QuickRenderView::QuickRenderView()
         auto graphicsAPI = m_renderModule.value()->GetGraphicsAPI(m_view);
 
         auto csTexture = graphicsAPI->CreateTexture();
+        auto depthTexture = graphicsAPI->CreateTexture(CS::TextureFormat::Depth24Stencil8);
 
         auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2u(1, 1));
         csRenderTarget.SetColorAttachment(csTexture);
+        csRenderTarget.SetDepthStencilAttachment(depthTexture);
         m_view->SetRenderTarget(csRenderTarget);
 
         m_sample = std::make_unique<CS::SAssetLoad>();

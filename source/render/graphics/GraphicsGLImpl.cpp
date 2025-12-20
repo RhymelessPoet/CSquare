@@ -2,8 +2,8 @@
 #include "GraphicsBufferDescriptor.h"
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
+#include "GraphicsResourceParameters.h"
 #include "GraphicsShaderStage.h"
-#include "SamplerParameters.h"
 #include "ShaderBindingSetDescriptor.h"
 #include "base/EnumUtils.h"
 #include "graphics/GraphicsResourceCache.h"
@@ -88,6 +88,59 @@ static inline GLenum GetSamplerMinFilterMode(MipmapFilterMode mipmapMode, Filter
         GLEnumArray1D{GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR}, GLEnumArray1D{GL_NEAREST, GL_LINEAR}};
 
     return map[EnumValue(mipmapMode)][EnumValue(mode)];
+}
+
+struct GLFormatMapping
+{
+    GLint internalFormat;
+    GLenum format;
+    GLenum type;
+};
+
+static GLFormatMapping GetGLFormatMapping(TextureFormat format)
+{
+    switch (format) {
+    case TextureFormat::RGBA8Unorm:
+        return {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
+    case TextureFormat::RGB8Unorm:
+        return {GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE};
+    case TextureFormat::BGRA8Unorm:
+        return {GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE};
+    case TextureFormat::RGBA8Srgb:
+        return {GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE};
+    case TextureFormat::RGB32Float:
+        return {GL_RGB32F, GL_RGB, GL_FLOAT};
+    case TextureFormat::RGBA32Float:
+        return {GL_RGBA32F, GL_RGBA, GL_FLOAT};
+    case TextureFormat::Depth24Stencil8:
+        return {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8};
+    default:
+        return {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
+    }
+}
+
+static GLenum GetGLCompareOp(DepthCompareOp op)
+{
+    switch (op) {
+    case DepthCompareOp::Never:
+        return GL_NEVER;
+    case DepthCompareOp::Less:
+        return GL_LESS;
+    case DepthCompareOp::Equal:
+        return GL_EQUAL;
+    case DepthCompareOp::LessEqual:
+        return GL_LEQUAL;
+    case DepthCompareOp::Greater:
+        return GL_GREATER;
+    case DepthCompareOp::NotEqual:
+        return GL_NOTEQUAL;
+    case DepthCompareOp::GreaterEqual:
+        return GL_GEQUAL;
+    case DepthCompareOp::Always:
+        return GL_ALWAYS;
+    default:
+        return GL_LESS;
+    }
 }
 
 GraphicsGLImpl::GraphicsGLImpl(std::unique_ptr<OpenGLContext> context,
@@ -249,9 +302,9 @@ bool GraphicsGLImpl::BuildRenderTarget(RenderTargetDescriptor* descriptor)
     if (colorTexture != nullptr) {
         hasColorAttachment = colorTexture->Build();
     }
-    auto depthTexture = descriptor->GetDepthAttachment();
-    if (depthTexture != nullptr) {
-        hasDepthAttachment = depthTexture->Build();
+    auto depthStencilTexture = descriptor->GetDepthStencilAttachment();
+    if (depthStencilTexture != nullptr) {
+        hasDepthAttachment = depthStencilTexture->Build();
     }
 
     m_glContext->GLGenFramebuffers(1, &fbo).GLBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -261,8 +314,8 @@ bool GraphicsGLImpl::BuildRenderTarget(RenderTargetDescriptor* descriptor)
                                             colorTexture->GetNativeTexture(), 0);
     }
     if (hasDepthAttachment) {
-        m_glContext->GLFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
-                                            depthTexture->GetNativeTexture(), 0);
+        m_glContext->GLFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
+                                            depthStencilTexture->GetNativeTexture(), 0);
     }
     bool condition = m_glContext->GLCheckFramebufferStatus(GL_FRAMEBUFFER);
 
@@ -347,8 +400,16 @@ bool GraphicsGLImpl::BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor
     const auto& pipeline = descriptor->GetNativePipelineData<GLGraphicsPipeline>();
 
     m_glContext->GLUseProgram(pipeline.programID);
-    m_glContext->GLDisable(GL_DEPTH_TEST);
+
+    const auto& [depthCompareOp, depthTest] = descriptor->GetDepthStencilState();
+    if (depthTest) {
+        m_glContext->GLEnable(GL_DEPTH_TEST);
+    } else {
+        m_glContext->GLDisable(GL_DEPTH_TEST);
+    }
     m_glContext->GLDisable(GL_STENCIL_TEST);
+
+    m_glContext->GLDepthFunc(GetGLCompareOp(depthCompareOp));
 
     m_curentStates.SetPipeline(descriptor);
     return true;
@@ -377,7 +438,8 @@ bool GraphicsGLImpl::BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor
 bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)
 {
     GLuint textureID = 0u;
-    auto textureSize = descriptor->GetSize();
+    const auto [width, height] = descriptor->GetSize();
+    auto [internalFormat, format, type] = GetGLFormatMapping(descriptor->GetFormat());
 
     m_glContext->GLGenTextures(1, &textureID)
         .GLBindTexture(GL_TEXTURE_2D, textureID)
@@ -385,6 +447,7 @@ bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         .GLTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        .GLTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, nullptr)
         .GLBindTexture(GL_TEXTURE_2D, 0);
 
     descriptor->SetNativeTexture(textureID);
@@ -394,10 +457,11 @@ bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)
 bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void* data)
 {
     GLuint textureID = descriptor->GetNativeTexture();
-    auto textureSize = descriptor->GetSize();
+    const auto [width, height] = descriptor->GetSize();
+    auto [internalFormat, format, type] = GetGLFormatMapping(descriptor->GetFormat());
 
     m_glContext->GLBindTexture(GL_TEXTURE_2D, textureID)
-        .GLTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, textureSize.Width(), textureSize.Height(), 0, GL_RGB, GL_FLOAT, data)
+        .GLTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data)
         .GLBindTexture(GL_TEXTURE_2D, 0)
         .GLCheck();
 
@@ -407,7 +471,7 @@ bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void
 bool GraphicsGLImpl::DestroyTexture(TextureDescriptor* descriptor)
 {
     GLuint textureID = descriptor->GetNativeTexture();
-    m_glContext->GLBindTexture(GL_TEXTURE_2D, 0).GLDeleteTextures(1, &textureID);
+    m_glContext->GLBindTexture(GL_TEXTURE_2D, 0).GLDeleteTextures(1, &textureID).GLCheck();
     descriptor->SetNativeTexture(0);
 
     return true;
@@ -452,6 +516,7 @@ bool GraphicsGLImpl::Clear(std::optional<Color> color, std::optional<float> dept
     }
     if (depth.has_value()) {
         m_glContext->GLClearDepth(depth.value());
+        m_glContext->GLDepthMask(GL_TRUE);
         mask |= GL_DEPTH_BUFFER_BIT;
     }
     if (mask != 0) {

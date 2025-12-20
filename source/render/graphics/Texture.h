@@ -1,4 +1,5 @@
 #pragma once
+#include "GraphicsResourceParameters.h"
 #include "IGraphicsResource.h"
 #include "base/Size.h"
 #include <any>
@@ -19,6 +20,9 @@ public:
 
     void SetSize(const Size2u& size);
     Size2u GetSize() const;
+
+    void SetFormat(TextureFormat format);
+    TextureFormat GetFormat() const;
 
     void UpdateData(const void* data, const Size2u& size);
 

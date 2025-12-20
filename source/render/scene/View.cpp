@@ -64,8 +64,8 @@ void View::Render(RenderContext& context)
     auto rtSize = GetRenderTarget().GetSize();
     auto cmdBuf = context.GetCommandBuffer();
     cmdBuf.BeginPass(GetRenderTarget())
-        .Clear(Color(61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f))
-        .SetViewport(0, 0, rtSize.Width(), rtSize.Height());
+        .Clear(Color(61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f), 1.0f)
+        .SetViewport(0, 0, rtSize.width, rtSize.height);
     m_impl->m_scene->OnRender(context);
     cmdBuf.EndPass();
 }

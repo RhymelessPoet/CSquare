@@ -8,12 +8,19 @@
 #include "asset/BuiltInShaders.h"
 #include "geometry/GeometryNode.h"
 #include "graphics/VertexInputLayout.h"
+#include "materials/IMaterialConfiguration.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
 #include "materials/Shader.h"
 
 namespace CS
 {
+
+class PanoramicSkyMaterialConfiguration : public IMaterialConfiguration
+{
+public:
+    virtual void Configure(GraphicsPipeline& pipeline) const override { pipeline.SetDepthTest(false); }
+};
 
 // clang-format off
 static const std::vector<float> vertices = {-1.0f, 1.0f, 1.0, 1.0f,
@@ -32,7 +39,7 @@ PanoramicSky::PanoramicSky(std::shared_ptr<Scene> scene) : m_scene(std::move(sce
 
     // clang-format off
     auto material = Material::Builder()
-                    .Begin()
+                    .Begin(std::make_unique<PanoramicSkyMaterialConfiguration>())
                     .AddInputAttribute(0u, VertexInputFormat::Float2)
                     .AddShader(BuiltInShaders::Instance().GetVertexShader("PanoramicSky_VS"))
                     .AddShader(BuiltInShaders::Instance().GetFragmentShader("PanoramicSky_FS"))

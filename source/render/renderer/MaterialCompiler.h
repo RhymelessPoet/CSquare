@@ -16,6 +16,7 @@ class GraphicsAPI;
 class Shader;
 class Material;
 class MaterialInstance;
+class IMaterialConfiguration;
 class MaterialUniformIDCreator;
 class GraphicsResourceManager;
 
@@ -43,6 +44,7 @@ public:
 
     // material
     MaterialCompiler& BeginMaterial();
+    MaterialCompiler& SetConfiguration(const IMaterialConfiguration& configuration);
     MaterialCompiler& SetAttributes(const std::map<uint32_t, VertexInputFormat>& attributes);
     MaterialCompiler& SetShaderStages(const std::vector<std::shared_ptr<Shader>>& shaders);
     void EndMaterial(uint16_t id);

@@ -1,6 +1,7 @@
 #include "BuiltInMaterials.h"
 #include "asset/BuiltInShaders.h"
 #include "materials/Material.h"
+#include "materials/PBRConfiguration.h"
 
 namespace CS
 {
@@ -17,7 +18,7 @@ std::shared_ptr<Material> BuiltInMaterials::createPBRMaterial()
 {
     // clang-format off
     auto material = Material::Builder()
-                    .Begin()
+                    .Begin(std::make_unique<PBRConfiguration>())
                     .AddInputAttribute(0u, VertexInputFormat::Float3)
                     .AddInputAttribute(1u, VertexInputFormat::Float3)
                     .AddInputAttribute(2u, VertexInputFormat::Float3)

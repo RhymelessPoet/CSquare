@@ -5,7 +5,6 @@
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceCache.h"
-#include "GraphicsResourceDescriptors.h"
 #include "ShaderBindingSetDescriptor.h"
 #include <stdexcept>
 
@@ -87,12 +86,15 @@ GraphicsPipeline GraphicsAPI::CreatePipeline()
     return GraphicsPipeline(descriptor);
 }
 
-Texture GraphicsAPI::CreateTexture()
+Texture GraphicsAPI::CreateTexture(TextureFormat format, const Size2u& size)
 {
     auto resorceCache = m_impl->GetResourceCache();
 
     auto resourceID = resorceCache->Allocate<TextureDescriptor>(m_impl);
     auto descriptor = resorceCache->GetDescriptor<TextureDescriptor>(resourceID);
+
+    descriptor->SetFormat(format);
+    descriptor->SetSize(size);
 
     return Texture(descriptor);
 }

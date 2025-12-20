@@ -18,6 +18,17 @@ size_t RenderTarget::GetColorAttachment() const
     return descriptor<RenderTargetDescriptor>().GetColorAttachment()->GetID();
 }
 
+void RenderTarget::SetDepthStencilAttachment(Texture texture)
+{
+    auto& renderTargetDescriptor = descriptor<RenderTargetDescriptor>();
+    renderTargetDescriptor.SetDepthStencilAttachment(texture.GetID());
+}
+
+size_t RenderTarget::GetDepthStencilAttachment() const
+{
+    return descriptor<RenderTargetDescriptor>().GetDepthStencilAttachment()->GetID();
+}
+
 void RenderTarget::SetSize(Size2u size)
 {
     descriptor<RenderTargetDescriptor>().SetSize(size);

@@ -48,8 +48,8 @@ void CameraManipulator::RotateTrack(const Vector2f& delta, float speed)
 {
     // xyz顺序: pitch (X), yaw (Y), roll (Z)
 
-    auto yaw = speed * (-delta.X() / m_viewport.Width());
-    auto pitch = speed * (delta.Y() / m_viewport.Height());
+    auto yaw = speed * (-delta.X() / m_viewport.width);
+    auto pitch = speed * (delta.Y() / m_viewport.height);
 
     Vector3f direction = m_position - m_center;
 
@@ -70,8 +70,8 @@ void CameraManipulator::RotatePose(const Vector2f& delta, float speed)
 {
     // xyz顺序: pitch (X), yaw (Y), roll (Z)
 
-    auto yaw = speed * (-delta.X() / m_viewport.Width());
-    auto pitch = speed * (delta.Y() / m_viewport.Height());
+    auto yaw = speed * (-delta.X() / m_viewport.width);
+    auto pitch = speed * (delta.Y() / m_viewport.height);
 
     Vector3f direction = m_position - m_center;
 

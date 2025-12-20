@@ -1,6 +1,6 @@
 #pragma once
+#include "GraphicsResourceParameters.h"
 #include "IGraphicsResource.h"
-#include "SamplerParameters.h"
 
 namespace CS
 {

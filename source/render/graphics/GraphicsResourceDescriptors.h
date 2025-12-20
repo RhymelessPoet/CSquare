@@ -1,6 +1,6 @@
 #pragma once
+#include "GraphicsResourceParameters.h"
 #include "IGraphicsResourceDescriptor.h"
-#include "SamplerParameters.h"
 #include "base/Size.h"
 #include <cstdint>
 #include <optional>
@@ -22,8 +22,11 @@ public:
     void SetNativeTexture(uint32_t texture);
     void SetExternalTexture(uint32_t textureID);
 
-    void SetSize(const Size2u& size);
+    void SetSize(const Size2u& size, bool toSetDirty = true);
     Size2u GetSize() const { return m_size; }
+
+    void SetFormat(TextureFormat format);
+    TextureFormat GetFormat() const { return m_format; }
 
     void UpdateData(const void* data);
 
@@ -33,8 +36,9 @@ protected:
     virtual bool build() override;
 
 private:
-    uint32_t m_textureID{0u};
     Size2u m_size;
+    uint32_t m_textureID{0u};
+    TextureFormat m_format{TextureFormat::RGBA8Unorm};
     bool m_isExternal{false};
 };
 
@@ -89,9 +93,9 @@ public:
 
     void SetColorAttachment(size_t textureResourceID);
     TextureDescriptor* GetColorAttachment() const { return m_colorAttachment; }
-    TextureDescriptor* GetDepthAttachment() const { return m_depthAttachment; }
 
-    void SetDepthAttachment(size_t textureResourceID);
+    void SetDepthStencilAttachment(size_t textureResourceID);
+    TextureDescriptor* GetDepthStencilAttachment() const { return m_depthStencilAttachment; }
 
     void SetSize(const Size2u& size);
     const Size2u& GetSize() const { return m_size; }
@@ -102,7 +106,7 @@ protected:
 private:
     Size2u m_size;
     TextureDescriptor* m_colorAttachment{nullptr};
-    TextureDescriptor* m_depthAttachment{nullptr};
+    TextureDescriptor* m_depthStencilAttachment{nullptr};
     std::optional<uint32_t> m_FBO;
 };
 

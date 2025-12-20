@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
+#include <tuple>
 
 namespace CS
 {
@@ -15,19 +16,36 @@ public:
     Size2() = default;
     template <typename T>
         requires std::is_arithmetic_v<T>
-    Size2(T width, T height) : m_width(static_cast<T>(width)), m_height(static_cast<T>(height))
+    Size2(T x, T y) : width(static_cast<T>(x)), height(static_cast<T>(y))
     {}
     ~Size2() = default;
-
-    const DataType& Width() const { return m_width; }
-    const DataType& Height() const { return m_height; }
 
     float AspectRatioWH() const;
     float AspectRatioHW() const;
 
-private:
-    DataType m_width{0};
-    DataType m_height{0};
+    union {
+        struct
+        {
+            DataType x;
+            DataType y;
+        };
+        struct
+        {
+            DataType u;
+            DataType v;
+        };
+        struct
+        {
+            DataType width;
+            DataType height;
+        };
+        struct
+        {
+            DataType width;
+            DataType height;
+        };
+        DataType data[2] = {DataType(0), DataType(0)};
+    };
 };
 
 using Size2u = Size2<uint32_t>;
@@ -36,16 +54,16 @@ template <typename DataType>
     requires std::is_arithmetic_v<DataType>
 inline float Size2<DataType>::AspectRatioWH() const
 {
-    assert(std::numeric_limits<DataType>::epsilon() < m_height);
-    return static_cast<float>(m_width) / m_height;
+    assert(std::numeric_limits<DataType>::epsilon() < height);
+    return static_cast<float>(width) / height;
 }
 
 template <typename DataType>
     requires std::is_arithmetic_v<DataType>
 inline float Size2<DataType>::AspectRatioHW() const
 {
-    assert(std::numeric_limits<DataType>::epsilon() < m_width);
-    return static_cast<float>(m_height) / m_width;
+    assert(std::numeric_limits<DataType>::epsilon() < width);
+    return static_cast<float>(height) / width;
 }
 
 template <typename DataType>
@@ -93,10 +111,51 @@ public:
             DataType height;
             DataType channels;
         };
-        DataType data[3];
+        DataType data[3] = {DataType(0), DataType(0), DataType(0)};
     };
 };
 
 using Size3U = Size3<uint32_t>;
 
+// 重载 get 函数
+template <std::size_t Index, typename T>
+decltype(auto) get(const CS::Size2<T>& size)
+{
+    return size.data[Index];
+}
+
+template <std::size_t Index, typename T>
+decltype(auto) get(const CS::Size3<T>& size)
+{
+    return size.data[Index];
+}
+
 } // namespace CS
+
+namespace std
+{
+
+template <typename T>
+struct tuple_size<CS::Size2<T>> : integral_constant<size_t, 2>
+{
+};
+
+template <typename T>
+struct tuple_size<CS::Size3<T>> : integral_constant<size_t, 3>
+{
+};
+
+// 特化 std::tuple_element
+template <size_t Index, typename T>
+struct std::tuple_element<Index, CS::Size2<T>>
+{
+    using type = T;
+};
+
+template <size_t Index, typename T>
+struct std::tuple_element<Index, CS::Size3<T>>
+{
+    using type = T;
+};
+
+} // namespace std

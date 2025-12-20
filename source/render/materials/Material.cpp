@@ -18,6 +18,7 @@ void Material::Compile(MaterialCompiler& compiler) const
 {
     // clang-format off
     compiler.BeginMaterial()
+            .SetConfiguration(*m_configuration)
             .SetAttributes(m_attributes)
             .SetShaderStages(m_shaders)
             .EndMaterial(m_id);
@@ -30,10 +31,12 @@ void Material::createDefaultInstance(MaterialInstance::Uniforms uniforms, Materi
     m_defaultInstance.reset(instance);
 }
 
-Material::Builder& Material::Builder::Begin()
+Material::Builder& Material::Builder::Begin(std::unique_ptr<IMaterialConfiguration> configuration)
 {
     auto material = new Material();
     m_material = std::shared_ptr<Material>(material);
+    m_material->m_configuration = std::move(configuration);
+
     return *this;
 }
 

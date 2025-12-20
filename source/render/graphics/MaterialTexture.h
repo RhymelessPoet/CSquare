@@ -1,6 +1,6 @@
 #pragma once
 #include "base/Macros.h"
-#include "graphics/SamplerParameters.h"
+#include "graphics/GraphicsResourceParameters.h"
 #include <memory>
 
 namespace CS

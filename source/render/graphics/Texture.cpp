@@ -29,10 +29,20 @@ Size2u Texture::GetSize() const
     return descriptor<TextureDescriptor>().GetSize();
 }
 
+void Texture::SetFormat(TextureFormat format)
+{
+    descriptor<TextureDescriptor>().SetFormat(format);
+}
+
+TextureFormat Texture::GetFormat() const
+{
+    return descriptor<TextureDescriptor>().GetFormat();
+}
+
 void Texture::UpdateData(const void* data, const Size2u& size)
 {
     auto& desc = descriptor<TextureDescriptor>();
-    desc.SetSize(size);
+    desc.SetSize(size, false);
     desc.UpdateData(data);
 }
 

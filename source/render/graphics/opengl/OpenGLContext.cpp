@@ -40,6 +40,18 @@ OpenGLContext& OpenGLContext::GLEnable(GLenum cap)
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLDepthFunc(GLenum func)
+{
+    glDepthFunc(func);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLDepthMask(GLboolean flag)
+{
+    glDepthMask(flag);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLBindFramebuffer(GLenum target, GLuint framebuffer)
 {
     glBindFramebuffer(target, framebuffer);

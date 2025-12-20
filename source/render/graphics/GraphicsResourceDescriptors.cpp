@@ -17,7 +17,7 @@ void TextureDescriptor::Destroy()
     if (m_isExternal) {
         m_textureID = 0u;
         m_isExternal = false;
-    } else {
+    } else if (IsBuild()) {
         GetGraphicsAPI()->DestroyTexture(this);
     }
 }
@@ -51,9 +51,18 @@ void TextureDescriptor::SetExternalTexture(uint32_t textureID)
     m_isExternal = true;
 }
 
-void TextureDescriptor::SetSize(const Size2u& size)
+void TextureDescriptor::SetSize(const Size2u& size, bool toSetDirty)
 {
     m_size = size;
+    if (toSetDirty) {
+        setDirty();
+    }
+}
+
+void TextureDescriptor::SetFormat(TextureFormat format)
+{
+    m_format = format;
+    setDirty();
 }
 
 void TextureDescriptor::UpdateData(const void* data)
@@ -81,7 +90,7 @@ void RenderTargetDescriptor::Destroy()
 bool RenderTargetDescriptor::IsDirty() const
 {
     bool colorAttachmentDirty = m_colorAttachment != nullptr && m_colorAttachment->IsDirty();
-    bool depthAttachmentDirty = m_depthAttachment != nullptr && m_depthAttachment->IsDirty();
+    bool depthAttachmentDirty = m_depthStencilAttachment != nullptr && m_depthStencilAttachment->IsDirty();
 
     return IGraphicsResourceDescriptor::IsDirty() || colorAttachmentDirty || depthAttachmentDirty;
 }
@@ -113,15 +122,15 @@ void RenderTargetDescriptor::SetColorAttachment(size_t textureResourceID)
     setDirty();
 }
 
-void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
+void RenderTargetDescriptor::SetDepthStencilAttachment(size_t textureResourceID)
 {
     auto graphicsAPI = GetGraphicsAPI();
-    if (m_depthAttachment != nullptr) {
-        m_depthAttachment->Release();
+    if (m_depthStencilAttachment != nullptr) {
+        m_depthStencilAttachment->Release();
     }
 
-    m_depthAttachment = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureResourceID);
-    m_depthAttachment->AddReference();
+    m_depthStencilAttachment = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureResourceID);
+    m_depthStencilAttachment->AddReference();
     setDirty();
 }
 
@@ -131,8 +140,8 @@ void RenderTargetDescriptor::SetSize(const Size2u& size)
     if (m_colorAttachment != nullptr) {
         m_colorAttachment->SetSize(size);
     }
-    if (m_depthAttachment != nullptr) {
-        m_depthAttachment->SetSize(size);
+    if (m_depthStencilAttachment != nullptr) {
+        m_depthStencilAttachment->SetSize(size);
     }
     setDirty();
 }

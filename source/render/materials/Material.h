@@ -1,4 +1,5 @@
 #pragma once
+#include "IMaterialConfiguration.h"
 #include "MaterialInstance.h"
 #include "graphics/ShaderStage.h"
 #include "graphics/VertexInputFormat.h"
@@ -17,7 +18,7 @@ public:
     class Builder
     {
     public:
-        Builder& Begin();
+        Builder& Begin(std::unique_ptr<IMaterialConfiguration> configuration);
         Builder& AddInputAttribute(uint32_t location, VertexInputFormat format);
         Builder& AddShader(std::shared_ptr<Shader> shader);
 
@@ -57,6 +58,7 @@ private:
     uint16_t m_id{0u};
     uint32_t m_instanceID{0u};
 
+    std::unique_ptr<IMaterialConfiguration> m_configuration;
     std::map<uint32_t, VertexInputFormat> m_attributes;
     std::vector<std::shared_ptr<Shader>> m_shaders;
     std::unique_ptr<MaterialInstance> m_defaultInstance;

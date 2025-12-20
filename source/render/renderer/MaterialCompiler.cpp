@@ -3,6 +3,7 @@
 #include "MaterialUniformIDCreator.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsShaderStage.h"
+#include "materials/IMaterialConfiguration.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
 #include "materials/Shader.h"
@@ -29,6 +30,14 @@ MaterialCompiler& MaterialCompiler::BeginMaterial()
     m_materialStates = MaterialStates{};
     m_materialStates.value().pipeline = m_graphicsAPI->CreatePipeline();
     m_materialStates.value().bindLayout = m_graphicsAPI->CreateShaderBindingSetLayout();
+
+    return *this;
+}
+
+MaterialCompiler& MaterialCompiler::SetConfiguration(const IMaterialConfiguration& configuration)
+{
+    assert(m_materialStates.has_value());
+    configuration.Configure(m_materialStates.value().pipeline);
 
     return *this;
 }

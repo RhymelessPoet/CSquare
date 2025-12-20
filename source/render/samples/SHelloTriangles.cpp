@@ -9,6 +9,7 @@
 
 #include "geometry/GeometryNode.h"
 #include "materials/Material.h"
+#include "materials/PBRConfiguration.h"
 #include "materials/Shader.h"
 #include "scene/SceneObject.h"
 
@@ -95,7 +96,7 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
 
     // clang-format off
     auto material = Material::Builder()
-                    .Begin()
+                    .Begin(std::make_unique<PBRConfiguration>())
                     .AddInputAttribute(0u, VertexInputFormat::Float3)
                     .AddInputAttribute(1u, VertexInputFormat::Float3)
                     .AddShader(vertShader)

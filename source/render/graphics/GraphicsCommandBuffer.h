@@ -21,7 +21,7 @@ public:
     GraphicsCommandBuffer& BeginPass(RenderTarget renderTarget);
     GraphicsCommandBuffer& EndPass();
 
-    GraphicsCommandBuffer& Clear(std::optional<Color> clearColor);
+    GraphicsCommandBuffer& Clear(std::optional<Color> clearColor, std::optional<float> clearDepth = std::nullopt);
     GraphicsCommandBuffer& SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
     GraphicsCommandBuffer& Bind(GraphicsPipeline pipeline);
