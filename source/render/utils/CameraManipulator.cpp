@@ -1,7 +1,6 @@
 #include "CameraManipulator.h"
 #include "scene/Camera.h"
 #include <cassert>
-
 namespace CS
 {
 CameraManipulator::CameraManipulator(std::shared_ptr<Camera> camera, const Size2u& viewport)
@@ -44,23 +43,32 @@ void CameraManipulator::Zoom(float delta, float speed)
     UpdateCamera();
 }
 
+void CameraManipulator::BeginRotate()
+{
+    m_bookmark = Bookmark{m_position, m_center, m_up, m_fovY};
+}
+
 void CameraManipulator::RotateTrack(const Vector2f& delta, float speed)
 {
+    if (!m_bookmark.has_value()) {
+        return;
+    }
     // xyz顺序: pitch (X), yaw (Y), roll (Z)
 
     auto yaw = speed * (-delta.X() / m_viewport.width);
     auto pitch = speed * (delta.Y() / m_viewport.height);
 
-    Vector3f direction = m_position - m_center;
+    const auto& [position, center, up, _] = m_bookmark.value();
+    Vector3f refDirection = position - center;
 
-    auto rotationY = Math::Rotation(m_up.Normalized(), yaw);
-    auto rotationX = Math::Rotation(direction.Cross(m_up).Normalized(), pitch);
+    auto rotationY = Math::Rotation(up.Normalized(), yaw);
+    auto rotationX = Math::Rotation(refDirection.Cross(up).Normalized(), pitch);
     auto rotationMat = rotationY * rotationX;
 
-    Vector3f rotatedDir = rotationMat * direction;
+    Vector3f rotatedDir = rotationMat * (m_position - m_center);
 
     m_position = m_center + rotatedDir;
-    m_up = rotationMat * m_up;
+    // m_up = rotationMat * m_up;
 
     // 更新相机
     UpdateCamera();
@@ -84,6 +92,11 @@ void CameraManipulator::RotatePose(const Vector2f& delta, float speed)
 
     // 更新相机
     UpdateCamera();
+}
+
+void CameraManipulator::EndRotate()
+{
+    m_bookmark.reset();
 }
 
 void CameraManipulator::FlyMove(const Vector2f& delta, float speed)

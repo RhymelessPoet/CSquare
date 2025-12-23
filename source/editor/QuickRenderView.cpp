@@ -66,14 +66,20 @@ QQuickRhiItemRenderer* QuickRenderView::createRenderer()
 
 void QuickRenderView::mousePressEvent(QMouseEvent* event)
 {
-    m_mouseState.pressedButtons = m_mouseState.pressedButtons | event->button();
+    auto button = event->button();
+    m_mouseState.pressedButtons = m_mouseState.pressedButtons | button;
     m_mouseState.pressPos = event->pos();
+
+    if (button == Qt::RightButton) {
+        m_cameraManipulator->BeginRotate();
+    }
     event->accept();
 }
 
 void QuickRenderView::mouseReleaseEvent(QMouseEvent* event)
 {
     m_mouseState.pressedButtons = m_mouseState.pressedButtons ^ event->button();
+    m_cameraManipulator->EndRotate();
     event->accept();
 }
 
@@ -83,7 +89,7 @@ void QuickRenderView::mouseMoveEvent(QMouseEvent* event)
     CS::Vector2f delta{point.x() - m_mouseState.pressPos.x(), point.y() - m_mouseState.pressPos.y()};
 
     if ((m_mouseState.pressedButtons & Qt::RightButton) != 0) {
-        m_cameraManipulator->RotateTrack(delta);
+        m_cameraManipulator->RotateTrack(delta, 3.0f);
     }
     if ((m_mouseState.pressedButtons & Qt::MiddleButton) != 0) {
         m_cameraManipulator->FlyMove(delta, 0.01f);
@@ -141,7 +147,7 @@ void QuickRenderView::onSampleChange()
     connect(m_timer.get(), &QTimer::timeout, [this]() { m_sample->OnUpdate(); });
 
     m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
-    m_cameraManipulator->LookAt({0.0f, -0.0f, 15.0f}, {0.0f, 0.0f, 0.0f});
+    m_cameraManipulator->LookAt({0.0f, 0.0f, 40.0f}, {0.0f, 0.0f, 0.0f});
 }
 
 } // namespace CSEditor

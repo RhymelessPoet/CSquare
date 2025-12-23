@@ -23,7 +23,7 @@ void Camera::LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f&
     auto& _transform = transform();
     _transform.SetPosition(eye);
     auto zAxis = (eye - center).Normalized();
-    Vector3f xAxis = up.Cross(zAxis);
+    Vector3f xAxis = up.Cross(zAxis).Normalized();
     Vector3f yAxis = zAxis.Cross(xAxis);
     _transform.SetRotation(xAxis, yAxis, zAxis);
 }
