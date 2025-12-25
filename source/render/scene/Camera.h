@@ -23,6 +23,8 @@ public:
     Matrix4f GetViewMatrix() const;
     const Matrix4f& GetProjectionMatrix() const;
 
+    const Vector3f& GetPosition() const;
+
 private:
     inline CameraComponent& cameraComponent();
     inline Transform& transform();

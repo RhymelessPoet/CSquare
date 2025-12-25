@@ -10,8 +10,10 @@ namespace CS
 class MaterialTexture;
 struct ShaderBindingProperty
 {
+    ShaderBindingProperty(std::string_view name, uint32_t size) : name(name), size(size) {}
     std::string name;
     uint32_t size;
+    uint32_t offset;
 };
 
 struct ShaderBindingTexture
@@ -56,6 +58,9 @@ public:
     const ShaderBindingTexture& GetTexture() const;
 
 private:
+    static inline uint32_t std140Align(uint32_t baseOffset, uint32_t uniformSize);
+
+private:
     uint32_t m_binding{0};
     std::optional<uint32_t> m_set;
     ShaderStageFlags m_stages{EnumValue(ShaderStage::Vertex)};
@@ -87,10 +92,10 @@ inline bool operator==(const ShaderBinding& lhs, const ShaderBinding& rhs)
     }
 
     for (uint32_t index = 0; index < lProperties.size(); ++index) {
-        auto& [lName, lSize] = lProperties[index];
-        auto& [rName, rSize] = rProperties[index];
+        auto& [lName, lSize, lOffset] = lProperties[index];
+        auto& [rName, rSize, rOffset] = rProperties[index];
 
-        if (lName != rName || lSize != rSize) {
+        if (lName != rName || lSize != rSize || lOffset != rOffset) {
             return false;
         }
     }

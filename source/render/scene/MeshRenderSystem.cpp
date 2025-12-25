@@ -25,11 +25,17 @@ void MeshRenderSystem::OnRender(RenderContext& context)
 {
     auto camera = context.GetCamera();
 
+    const auto& cameraPos = camera->GetPosition();
     const auto viewMatrix = camera->GetViewMatrix().Transposed();
     const auto projectionMatrix = camera->GetProjectionMatrix().Transposed();
     for (auto& [_, material] : m_materials) {
         auto noError = material->SetUniformValue(std::string_view("projection"), projectionMatrix.ToStdVector());
         noError = noError && material->SetUniformValue(std::string_view("view"), viewMatrix.ToStdVector());
+        noError = noError && material->SetUniformValue(std::string_view("camera_position"), cameraPos);
+        noError = noError && material->SetUniformValue(std::string_view("light_direction"),
+                                                       Vector3f{7.0f, 3.0f, 1.0f}.Normalized());
+        noError = noError && material->SetUniformValue(std::string_view("light_color"), Vector3f{1.0f, 1.0f, 1.0f});
+        noError = noError && material->SetUniformValue(std::string_view("light_intensity"), 10.0f);
 
         auto& materialCompiler = context.GetMaterialCompiler();
         material->GetDefaultInstance().Apply(materialCompiler);

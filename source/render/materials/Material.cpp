@@ -53,9 +53,8 @@ Material::Builder& Material::Builder::AddShader(std::shared_ptr<Shader> shader)
         if (binding.GetType() == ShaderBinding::Type::SampledTexture) {
             insertUniformTexture(bindingNum, binding.GetTexture());
         } else if (binding.GetType() == ShaderBinding::Type::UniformBuffer) {
-            uint32_t offset = 0u;
             for (const auto& property : binding.GetLayout()) {
-                offset = insertUniform(bindingNum, offset, property);
+                insertUniform(bindingNum, property);
             }
         }
     }
@@ -71,22 +70,16 @@ std::shared_ptr<Material> Material::Builder::End()
     return m_material;
 }
 
-uint32_t Material::Builder::insertUniform(uint32_t binding, uint32_t offset, const ShaderBindingProperty& property)
+void Material::Builder::insertUniform(uint32_t binding, const ShaderBindingProperty& property)
 {
-    auto itr = m_uniforms.find(property.name);
-
-    if (itr != m_uniforms.end()) {
+    if (auto itr = m_uniforms.find(property.name); itr != m_uniforms.end()) {
         auto& [value, _binding, _offset, _] = itr->second;
-        if (_binding == binding && _offset == offset + property.size) {
-            offset = _offset;
-        } else {
+        if (_binding != binding || _offset != property.offset) {
             // TODO: log error
         }
     } else {
-        m_uniforms.emplace(property.name, MaterialInstance::Uniform{.binding = binding, .offset = offset});
-        offset += property.size;
+        m_uniforms.emplace(property.name, MaterialInstance::Uniform{.binding = binding, .offset = property.offset});
     }
-    return offset;
 }
 
 void Material::Builder::insertUniformTexture(uint32_t binding, const ShaderBindingTexture& texture)
@@ -101,5 +94,4 @@ void Material::Builder::insertUniformTexture(uint32_t binding, const ShaderBindi
         }
     }
 }
-
 } // namespace CS

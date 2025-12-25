@@ -25,7 +25,7 @@ public:
         std::shared_ptr<Material> End();
 
     private:
-        uint32_t insertUniform(uint32_t binding, uint32_t offset, const ShaderBindingProperty& property);
+        void insertUniform(uint32_t binding, const ShaderBindingProperty& property);
         void insertUniformTexture(uint32_t binding, const ShaderBindingTexture& texture);
 
     private:

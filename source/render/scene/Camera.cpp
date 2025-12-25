@@ -48,6 +48,11 @@ const Matrix4f& Camera::GetProjectionMatrix() const
     return cameraComponent().GetProjectionMatrix();
 }
 
+const Vector3f& Camera::GetPosition() const
+{
+    return transform().GetPosition();
+}
+
 inline CameraComponent& Camera::cameraComponent()
 {
     return GetComponent<CameraComponent>(m_sceneObject);
