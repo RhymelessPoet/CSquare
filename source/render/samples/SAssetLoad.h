@@ -11,7 +11,7 @@ class PanoramicSky;
 class SAssetLoad : public IRenderSample
 {
 public:
-    SAssetLoad(/* args */);
+    SAssetLoad(std::shared_ptr<SceneObjectComposer> composer);
     ~SAssetLoad();
 
     CS_DELETE_COPY_MOVE(SAssetLoad)

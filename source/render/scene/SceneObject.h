@@ -35,6 +35,8 @@ public:
     bool AddChild(std::shared_ptr<SceneObject> child);
     bool RemoveChild(std::shared_ptr<SceneObject> child);
 
+    const std::vector<std::shared_ptr<SceneObject>>& GetChildren() const { return m_children; }
+
 private:
     std::string m_name;
     std::weak_ptr<SceneObject> m_parent;

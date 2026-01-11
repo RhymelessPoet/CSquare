@@ -8,6 +8,7 @@ class Scene;
 class SceneObject;
 class Image;
 class MaterialInstance;
+class SceneObjectComposer;
 
 class PanoramicSky
 {

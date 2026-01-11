@@ -6,6 +6,7 @@
 #include "Transform.h"
 #include "TransformSystem.h"
 #include "base/math/Math.h"
+#include "scene/SceneObjectComposer.h"
 #include <cassert>
 
 namespace CS
@@ -14,8 +15,10 @@ Camera::Camera(std::shared_ptr<Scene> scene) : m_scene(std::move(scene))
 {
     m_sceneObject = m_scene->CreateSceneObject();
     m_sceneObject->SetName("Camera");
-    m_scene->GetSystem<CameraSystem>().CreateComponent<CameraComponent>(m_sceneObject);
-    m_scene->GetSystem<TransformSystem>().CreateComponent<Transform>(m_sceneObject);
+
+    auto composer = m_scene->GetComposer();
+    composer->AddComponent<CameraComponent>(m_sceneObject);
+    composer->AddComponent<Transform>(m_sceneObject);
 }
 
 void Camera::LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f& up)

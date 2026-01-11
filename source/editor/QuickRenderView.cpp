@@ -5,6 +5,11 @@
 #include "base/math/Math.h"
 #include "graphics/GLRendererBuilder.h"
 #include "graphics/GraphicsAPI.h"
+#include "scene/CameraSystem.h"
+#include "scene/MeshRenderSystem.h"
+#include "scene/SceneObjectComposer.h"
+#include "scene/SystemGraph.h"
+#include "scene/TransformSystem.h"
 
 #include "scene/View.h"
 #include "utils/CameraManipulator.h"
@@ -22,12 +27,17 @@ QuickRenderView::QuickRenderView()
 {
     m_renderModule = CS::Engine::Instance().GetModule<CS::RenderModule>();
     if (m_renderModule.has_value()) {
-        m_view = m_renderModule.value()->CreateView();
+        auto renderModule = m_renderModule.value();
+        renderModule->GetSystemGraph().AddSystem<CS::MeshRenderSystem>();
+        renderModule->GetSystemGraph().AddSystem<CS::CameraSystem>();
+        renderModule->GetSystemGraph().AddSystem<CS::TransformSystem>();
+
+        m_view = renderModule->CreateView();
 
         CS::GLRendererBuilder rendererBuilder;
-        m_renderModule.value()->CreateRenderer(rendererBuilder);
+        renderModule->CreateRenderer(rendererBuilder);
 
-        auto graphicsAPI = m_renderModule.value()->GetGraphicsAPI(m_view);
+        auto graphicsAPI = renderModule->GetGraphicsAPI(m_view);
 
         auto csTexture = graphicsAPI->CreateTexture();
         auto depthTexture = graphicsAPI->CreateTexture(CS::TextureFormat::Depth24Stencil8);
@@ -37,7 +47,7 @@ QuickRenderView::QuickRenderView()
         csRenderTarget.SetDepthStencilAttachment(depthTexture);
         m_view->SetRenderTarget(csRenderTarget);
 
-        m_sample = std::make_unique<CS::SAssetLoad>();
+        m_sample = std::make_unique<CS::SAssetLoad>(renderModule->GetSOComposer());
         // m_sample = std::make_unique<CS::SPanoramicHDRSky>();
         // m_sample = std::make_unique<CS::SHelloTriangles>();
 

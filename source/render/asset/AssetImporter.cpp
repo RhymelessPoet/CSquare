@@ -6,14 +6,17 @@
 #include "scene/MeshRenderer.h"
 #include "scene/Scene.h"
 #include "scene/SceneObject.h"
+#include "scene/SceneObjectComposer.h"
 #include "scene/Transform.h"
 #include "scene/TransformSystem.h"
 
 namespace CS
 {
-AssetImporter::AssetImporter() : m_scene(std::make_shared<Scene>()) {}
+AssetImporter::AssetImporter(std::shared_ptr<SceneObjectComposer> composer)
+    : m_scene(std::make_shared<Scene>(std::move(composer)))
+{}
 
-AssetImporter::AssetImporter(std::shared_ptr<Scene> scene) : m_scene(scene) {}
+AssetImporter::AssetImporter(std::shared_ptr<Scene> scene) : m_scene(std::move(scene)) {}
 
 std::shared_ptr<SceneObject> AssetImporter::Import(const std::shared_ptr<AssetNode>& assetNode)
 {
@@ -55,15 +58,19 @@ void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std:
 
 MeshRenderer* AssetImporter::createMeshRenderer(std::shared_ptr<SceneObject> sceneObject)
 {
-    auto& meshRenderSystem = m_scene->GetSystem<MeshRenderSystem>();
-    meshRenderSystem.CreateComponent<MeshRenderer>(sceneObject);
+    auto composer = m_scene->GetComposer();
+    if (!composer->AddComponent<MeshRenderer>(sceneObject)) {
+        return nullptr;
+    }
     return sceneObject->GetComponent<MeshRenderer>();
 }
 
 Transform* AssetImporter::createTransform(std::shared_ptr<SceneObject> sceneObject)
 {
-    auto& transformSystem = m_scene->GetSystem<TransformSystem>();
-    transformSystem.CreateComponent<Transform>(sceneObject);
+    auto composer = m_scene->GetComposer();
+    if (!composer->AddComponent<Transform>(sceneObject)) {
+        return nullptr;
+    }
     return sceneObject->GetComponent<Transform>();
 }
 

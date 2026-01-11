@@ -1,4 +1,11 @@
 #include "IRenderSample.h"
+#include "scene/CameraSystem.h"
+#include "scene/MeshRenderSystem.h"
+#include "scene/MeshRenderer.h"
+#include "scene/SceneObjectComposer.h"
+#include "scene/Transform.h"
+#include "scene/TransformSystem.h"
+
 #include <random>
 
 namespace CS
@@ -38,6 +45,18 @@ std::vector<Vector3f> IRenderSample::RandomPositions(uint32_t count, const Vecto
     }
 
     return positions;
+}
+
+IRenderSample::IRenderSample(std::shared_ptr<SceneObjectComposer> composer) : m_composer(composer) {}
+
+bool IRenderSample::createMeshRenderer(std::shared_ptr<SceneObject> object)
+{
+    return m_composer->AddComponent<MeshRenderer>(object);
+}
+
+bool IRenderSample::createTransform(std::shared_ptr<SceneObject> object)
+{
+    return m_composer->AddComponent<Transform>(object);
 }
 
 } // namespace CS

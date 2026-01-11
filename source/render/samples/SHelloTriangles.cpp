@@ -1,10 +1,8 @@
 #include "SHelloTriangles.h"
-#include "scene/CameraSystem.h"
-#include "scene/MeshRenderSystem.h"
 #include "scene/MeshRenderer.h"
 #include "scene/Scene.h"
 #include "scene/Transform.h"
-#include "scene/TransformSystem.h"
+
 #include "scene/View.h"
 
 #include "geometry/GeometryNode.h"
@@ -64,12 +62,11 @@ static const std::vector<float> vertices = {0.0f, 0.5f, 0.0f, 1.0f, 0.0f,  0.0f,
                                             0.5f, -0.5f, 0.0f, 0.0f, 0.0f,  1.0f};
 // clang-format on
 
+SHelloTriangles::SHelloTriangles(std::shared_ptr<SceneObjectComposer> composer) : IRenderSample(std::move(composer)) {}
+
 void SHelloTriangles::Initialize(std::shared_ptr<View> view)
 {
-    m_scene = std::make_shared<CS::Scene>();
-    m_scene->AddSystem<CS::MeshRenderSystem>();
-    m_scene->AddSystem<CS::CameraSystem>();
-    m_scene->AddSystem<CS::TransformSystem>();
+    m_scene = std::make_shared<Scene>(m_composer);
 
     view->SetScene(m_scene);
 
@@ -104,14 +101,11 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
                     .End();
     // clang-format on
 
-    auto& meshRenderSystem = m_scene->GetSystem<CS::MeshRenderSystem>();
-    auto& transformSystem = m_scene->GetSystem<CS::TransformSystem>();
-
     m_groupRoot = m_scene->CreateSceneObject();
-    meshRenderSystem.CreateComponent<CS::MeshRenderer>(m_groupRoot);
-    transformSystem.CreateComponent<CS::Transform>(m_groupRoot);
+    createMeshRenderer(m_groupRoot);
+    createTransform(m_groupRoot);
 
-    auto& meshRender = CS::GetComponent<CS::MeshRenderer>(m_groupRoot);
+    auto& meshRender = GetComponent<MeshRenderer>(m_groupRoot);
 
     auto materialInstance = material->CreateInstance();
 
@@ -127,10 +121,10 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
     for (uint32_t index = 0u; index < tranglesCount; ++index) {
         auto child = m_scene->CreateSceneObject(m_groupRoot);
 
-        meshRenderSystem.CreateComponent<CS::MeshRenderer>(child);
-        transformSystem.CreateComponent<CS::Transform>(child);
+        createMeshRenderer(child);
+        createTransform(child);
 
-        auto& _meshRender = CS::GetComponent<CS::MeshRenderer>(child);
+        auto& _meshRender = GetComponent<MeshRenderer>(child);
 
         auto _geometryNode = std::make_shared<GeometryNode>(mesh, material->CreateInstance());
         _geometryNode->SetAttributeMap("_position", 0u);
@@ -138,7 +132,7 @@ void SHelloTriangles::Initialize(std::shared_ptr<View> view)
 
         _meshRender.AddGeometryNode(_geometryNode);
 
-        auto& _transform = CS::GetComponent<CS::Transform>(child);
+        auto& _transform = GetComponent<Transform>(child);
         _transform.SetPosition(positions[index]);
     }
 }

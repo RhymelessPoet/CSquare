@@ -3,6 +3,7 @@
 #include "MeshRenderer.h"
 #include "Scene.h"
 #include "SceneObject.h"
+#include "SceneObjectComposer.h"
 #include "Transform.h"
 #include "TransformSystem.h"
 #include "asset/BuiltInShaders.h"
@@ -32,8 +33,9 @@ PanoramicSky::PanoramicSky(std::shared_ptr<Scene> scene) : m_scene(std::move(sce
     m_sceneObject = m_scene->CreateSceneObject();
     m_sceneObject->SetName("PanoramicSky");
 
-    m_scene->GetSystem<MeshRenderSystem>().CreateComponent<MeshRenderer>(m_sceneObject);
-    m_scene->GetSystem<TransformSystem>().CreateComponent<Transform>(m_sceneObject);
+    auto composer = m_scene->GetComposer();
+    composer->AddComponent<MeshRenderer>(m_sceneObject);
+    composer->AddComponent<Transform>(m_sceneObject);
 
     auto& meshRenderer = GetComponent<MeshRenderer>(m_sceneObject);
 

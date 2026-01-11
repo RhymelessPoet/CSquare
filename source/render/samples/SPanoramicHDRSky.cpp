@@ -13,16 +13,14 @@
 
 namespace CS
 {
-SPanoramicHDRSky::SPanoramicHDRSky() = default;
+SPanoramicHDRSky::SPanoramicHDRSky(std::shared_ptr<SceneObjectComposer> composer) : IRenderSample(std::move(composer))
+{}
 
 SPanoramicHDRSky::~SPanoramicHDRSky() = default;
 
 void SPanoramicHDRSky::Initialize(std::shared_ptr<View> view)
 {
-    m_scene = std::make_shared<CS::Scene>();
-    m_scene->AddSystem<CS::MeshRenderSystem>();
-    m_scene->AddSystem<CS::CameraSystem>();
-    m_scene->AddSystem<CS::TransformSystem>();
+    m_scene = std::make_shared<CS::Scene>(m_composer);
 
     m_sky = std::make_unique<PanoramicSky>(m_scene);
 

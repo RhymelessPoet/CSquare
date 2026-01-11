@@ -9,7 +9,7 @@ class PanoramicSky;
 class SPanoramicHDRSky : public IRenderSample
 {
 public:
-    SPanoramicHDRSky(/* args */);
+    SPanoramicHDRSky(std::shared_ptr<SceneObjectComposer> composer);
     ~SPanoramicHDRSky();
 
     virtual void Initialize(std::shared_ptr<View> view) override;

@@ -14,11 +14,12 @@ class Mesh;
 class Material;
 class GeometryNode;
 class MaterialInstance;
+class SceneObjectComposer;
 
 class AssetImporter
 {
 public:
-    AssetImporter();
+    AssetImporter(std::shared_ptr<SceneObjectComposer> composer);
     AssetImporter(std::shared_ptr<Scene> scene);
 
     std::shared_ptr<SceneObject> Import(const std::shared_ptr<AssetNode>& assetNode);

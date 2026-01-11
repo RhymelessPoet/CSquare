@@ -9,7 +9,7 @@ class SceneObject;
 class SHelloTriangles : public IRenderSample
 {
 public:
-    SHelloTriangles(/* args */) = default;
+    SHelloTriangles(std::shared_ptr<SceneObjectComposer> composer);
 
     virtual void Initialize(std::shared_ptr<View> view) override;
 
