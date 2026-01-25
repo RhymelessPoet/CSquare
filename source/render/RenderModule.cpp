@@ -7,6 +7,7 @@
 #include "scene/SceneObjectComposer.h"
 #include "scene/SystemGraph.h"
 #include "scene/View.h"
+#include "scene/ViewGraph.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -17,10 +18,10 @@ namespace CS
 class RenderModuleImpl
 {
 public:
-    std::shared_ptr<View> view;
     std::unique_ptr<Renderer> renderer;
     std::shared_ptr<GraphicsResourceCache> resourceCache;
     std::shared_ptr<SystemGraph> systemGraph;
+    std::unique_ptr<ViewGraph> viewGraph;
 
     std::mutex mtx;
     std::condition_variable cv;
@@ -32,6 +33,7 @@ RenderModule::RenderModule()
     m_impl = std::make_unique<RenderModuleImpl>();
     m_impl->resourceCache = std::make_shared<GraphicsResourceCache>();
     m_impl->systemGraph = std::make_shared<SystemGraph>();
+    m_impl->viewGraph = std::make_unique<ViewGraph>();
 }
 
 RenderModule::~RenderModule() {}
@@ -52,14 +54,13 @@ void RenderModule::Render()
     if (m_impl->ready) {
         m_impl->ready = false;
         m_impl->cv.notify_all();
-        m_impl->renderer->Render(m_impl->view);
+        m_impl->renderer->Render(*m_impl->viewGraph);
     }
 }
 
-std::shared_ptr<View> RenderModule::CreateView()
+std::shared_ptr<View> RenderModule::GetMainView()
 {
-    m_impl->view = std::make_shared<View>();
-    return m_impl->view;
+    return m_impl->viewGraph->GetMainView();
 }
 
 SystemGraph& RenderModule::GetSystemGraph()
@@ -80,6 +81,11 @@ std::shared_ptr<SceneObjectComposer> RenderModule::GetSOComposer() const
 std::shared_ptr<GraphicsAPI> RenderModule::GetGraphicsAPI(std::shared_ptr<View> view) const
 {
     return m_impl->renderer->GetGraphicsAPI();
+}
+
+const ViewGraph& RenderModule::GetViewGraph() const
+{
+    return *m_impl->viewGraph;
 }
 
 } // namespace CS

@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace CS
@@ -15,7 +16,7 @@ class IRenderable;
 class Scene : public std::enable_shared_from_this<Scene>
 {
 public:
-    Scene(std::shared_ptr<SceneObjectComposer> composer);
+    Scene(std::shared_ptr<SceneObjectComposer> composer, std::string_view name = "");
     ~Scene();
 
     void OnRender(RenderContext& context);
@@ -32,10 +33,11 @@ private:
     void collectRenderables(std::shared_ptr<SceneObject> object);
 
 private:
+    std::string m_name;
     std::shared_ptr<SceneObject> m_root;
     std::shared_ptr<SceneObjectComposer> m_composer;
     std::map<uint16_t, std::shared_ptr<Material>> m_materials;
-    std::vector<IRenderable*> m_components;
+    std::vector<IRenderable*> m_renderables;
 };
 
 } // namespace CS

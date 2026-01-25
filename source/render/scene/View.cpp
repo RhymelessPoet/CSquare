@@ -8,66 +8,65 @@
 
 namespace CS
 {
-class ViewImpl
+template <>
+struct ImplData<View>
 {
-public:
-    ViewImpl() = default;
-    ~ViewImpl() = default;
+    ImplData(ViewID id) : id(id) {}
+    ImplData(ViewID id, RenderTarget target) : id(id), renderTarget(target) {}
 
-public:
-    std::optional<RenderTarget> m_renderTarget;
-    std::shared_ptr<Scene> m_scene;
-    std::shared_ptr<Camera> m_camera;
+    std::optional<RenderTarget> renderTarget;
+    std::shared_ptr<Scene> scene;
+    std::shared_ptr<Camera> camera;
+    ViewID id;
 };
 
-View::View()
-{
-    m_impl = std::make_unique<ViewImpl>();
-}
+View::View(ConstructorTag, ViewID id) : PImpl<View>(id) {}
 
-View::View(RenderTarget target) : View()
-{
-    m_impl->m_renderTarget = target;
-}
+View::View(ConstructorTag, ViewID id, RenderTarget target) : PImpl<View>(id, target) {}
 
-View::~View() {}
+View::~View() = default;
 
 void View::SetRenderTarget(RenderTarget target)
 {
-    m_impl->m_renderTarget = target;
+    impl().renderTarget = target;
 }
 
 RenderTarget View::GetRenderTarget()
 {
-    return m_impl->m_renderTarget.value();
+    return impl().renderTarget.value();
 }
 
 void View::SetScene(std::shared_ptr<Scene> scene)
 {
-    m_impl->m_scene = std::move(scene);
-    m_impl->m_camera = m_impl->m_scene->CreateCamera();
+    impl().scene = std::move(scene);
+    impl().camera = impl().scene->CreateCamera();
 }
 
 std::shared_ptr<Scene> View::GetScene() const
 {
-    return m_impl->m_scene;
+    return impl().scene;
 }
 
 std::shared_ptr<Camera> View::GetCamera() const
 {
-    return m_impl->m_camera;
+    return impl().camera;
 }
 
 void View::Render(RenderContext& context)
 {
-    context.SetCamera(m_impl->m_camera);
+    context.SetCamera(impl().camera);
     auto rtSize = GetRenderTarget().GetSize();
     auto cmdBuf = context.GetCommandBuffer();
     cmdBuf.BeginPass(GetRenderTarget())
         .Clear(Color(61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f), 1.0f)
         .SetViewport(0, 0, rtSize.width, rtSize.height);
-    m_impl->m_scene->OnRender(context);
+    impl().scene->OnRender(context);
     cmdBuf.EndPass();
+}
+
+ViewID View::GetID() const
+{
+    return impl().id;
 }
 
 } // namespace CS

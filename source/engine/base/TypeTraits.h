@@ -47,6 +47,19 @@ constexpr bool is_vector_v = false;
 template <typename T>
 constexpr bool is_vector_v<std::vector<T>> = true;
 
+template <typename T, template <typename...> typename TargetTemplate>
+struct is_template_instance : std::false_type
+{
+};
+
+template <template <typename...> typename TargetTemplate, typename... Args>
+struct is_template_instance<TargetTemplate<Args...>, TargetTemplate> : std::true_type
+{
+};
+
+template <typename T, template <typename...> typename TargetTemplate>
+constexpr bool is_template_instance_v = is_template_instance<T, TargetTemplate>::value;
+
 } // namespace type_traits
 
 } // namespace CS

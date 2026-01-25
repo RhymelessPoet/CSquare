@@ -16,6 +16,9 @@ public:
     void SetName(std::string_view name) { m_name = name; }
     std::string GetName() const { return m_name; }
 
+    bool IsActive() const { return m_active; }
+    void SetActive(bool active) { m_active = active; }
+
     template <typename T>
     T* GetComponent()
     {
@@ -42,6 +45,7 @@ private:
     std::weak_ptr<SceneObject> m_parent;
     std::vector<std::shared_ptr<SceneObject>> m_children;
     std::vector<std::unique_ptr<IComponent>> m_components;
+    bool m_active{true};
 };
 
 template <typename T>

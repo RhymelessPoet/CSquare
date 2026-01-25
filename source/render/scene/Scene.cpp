@@ -10,7 +10,8 @@
 
 namespace CS
 {
-Scene::Scene(std::shared_ptr<SceneObjectComposer> composer) : m_composer(std::move(composer))
+Scene::Scene(std::shared_ptr<SceneObjectComposer> composer, std::string_view name)
+    : m_composer(std::move(composer)), m_name(name)
 {
     m_root = std::make_shared<SceneObject>("Root");
 }
@@ -20,11 +21,9 @@ Scene::~Scene() {}
 void Scene::OnRender(RenderContext& context)
 {
     collectRenderables(m_root);
-    for (auto component : m_components) {
-        auto meshRender = dynamic_cast<MeshRenderer*>(component);
+    for (auto renderable : m_renderables) {
+        auto meshRender = dynamic_cast<MeshRenderer*>(renderable);
         if (meshRender != nullptr) {
-            meshRender->OnUpdate();
-
             auto material = meshRender->GetGeometryNode(0u)->GetMaterial()->GetMaterial();
             m_materials[material->GetID()] = material;
         }
@@ -51,10 +50,10 @@ void Scene::OnRender(RenderContext& context)
         context.GetCommandBuffer().Bind(shaderBindingSet);
     }
 
-    for (const auto component : m_components) {
-        component->OnRender(context);
+    for (const auto renderable : m_renderables) {
+        renderable->OnRender(context);
     }
-    m_components.clear();
+    m_renderables.clear();
 }
 
 std::shared_ptr<Camera> Scene::CreateCamera()
@@ -76,10 +75,13 @@ std::shared_ptr<SceneObject> Scene::CreateSceneObject(std::shared_ptr<SceneObjec
 void Scene::collectRenderables(std::shared_ptr<SceneObject> object)
 {
     if (auto meshRenderer = object->GetComponent<MeshRenderer>()) {
-        m_components.push_back(meshRenderer);
+        m_renderables.push_back(meshRenderer);
     }
 
     for (const auto& child : object->GetChildren()) {
+        if (!child->IsActive()) {
+            continue;
+        }
         collectRenderables(child);
     }
 }

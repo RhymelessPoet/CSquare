@@ -11,6 +11,7 @@ class RenderModuleImpl;
 class GraphicsAPI;
 class SystemGraph;
 class SceneObjectComposer;
+class ViewGraph;
 
 class RenderModule : public IModule
 {
@@ -25,7 +26,7 @@ public:
 
     void Render();
 
-    std::shared_ptr<View> CreateView();
+    std::shared_ptr<View> GetMainView();
 
     SystemGraph& GetSystemGraph();
     void CreateRenderer(const GLRendererBuilder& builder);
@@ -33,6 +34,8 @@ public:
     std::shared_ptr<SceneObjectComposer> GetSOComposer() const;
 
     std::shared_ptr<GraphicsAPI> GetGraphicsAPI(std::shared_ptr<View> view) const;
+
+    const ViewGraph& GetViewGraph() const;
 
 private:
     std::unique_ptr<RenderModuleImpl> m_impl;

@@ -32,7 +32,7 @@ QuickRenderView::QuickRenderView()
         renderModule->GetSystemGraph().AddSystem<CS::CameraSystem>();
         renderModule->GetSystemGraph().AddSystem<CS::TransformSystem>();
 
-        m_view = renderModule->CreateView();
+        m_view = renderModule->GetMainView();
 
         CS::GLRendererBuilder rendererBuilder;
         renderModule->CreateRenderer(rendererBuilder);

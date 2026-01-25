@@ -1,4 +1,5 @@
 #pragma once
+#include "base/PImpl.h"
 #include "graphics/RenderTarget.h"
 #include <memory>
 
@@ -9,11 +10,19 @@ class RenderContext;
 class Scene;
 class Camera;
 
-class View final
+using ViewID = uint32_t;
+class View final : public PImpl<View>
 {
+private:
+    struct ConstructorTag
+    {
+    };
+
 public:
-    View();
-    View(RenderTarget target);
+    friend class ViewGraph;
+
+    View(ConstructorTag, ViewID id);
+    View(ConstructorTag, ViewID id, RenderTarget target);
     ~View();
 
     void SetRenderTarget(RenderTarget target);
@@ -26,8 +35,14 @@ public:
 
     void Render(RenderContext& context);
 
+    ViewID GetID() const;
+
 private:
-    std::unique_ptr<ViewImpl> m_impl;
+    template <typename... Args>
+    static std::shared_ptr<View> create(Args... args)
+    {
+        return std::make_shared<View>(ConstructorTag{}, std::forward<Args>(args)...);
+    }
 };
 
 } // namespace CS
