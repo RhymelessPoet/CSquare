@@ -155,7 +155,7 @@ void QuickRenderView::keyPressEvent(QKeyEvent* event)
     if (key == Qt::Key_F) {
         FitToScene(false);
     }
-    if (key == Qt::Key_F | Qt::ShiftModifier) {
+    if ((key & Qt::Key_F) != 0 && (event->modifiers() & Qt::ShiftModifier) != 0) {
         FitToScene(true);
     }
 }
