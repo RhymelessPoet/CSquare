@@ -98,4 +98,22 @@ const Matrix4f& Transform::GetWorldMatrix()
     return m_worldMatrix;
 }
 
+OBB Transform::Trans(const AABB& box)
+{
+    const auto& [min, max] = box;
+    auto aabbCenter = box.GetCenter();
+    auto aabbExtents = box.GetSize();
+
+    const Matrix4f& worldMat = GetWorldMatrix();
+
+    auto obbCenter = Math::Transform(worldMat, aabbCenter.Cast<float>());
+
+    std::array<Vector3d, 3> obbAxes = Math::EulerAnglesToAxes<double, float>(GetRotation());
+
+    auto obbExtents = aabbExtents * m_scale.Cast<double>();
+
+    return OBB(obbCenter.Cast<double>(), obbAxes[0], obbAxes[1], obbAxes[2],
+               Size3d{obbExtents.X(), obbExtents.Y(), obbExtents.Z()});
+}
+
 } // namespace CS

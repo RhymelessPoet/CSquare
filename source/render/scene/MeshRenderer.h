@@ -1,12 +1,9 @@
 #pragma once
 #include "IRenderable.h"
 #include "graphics/GraphicsInputAssembly.h"
-#include "graphics/GraphicsPipeline.h"
 #include "graphics/IndexBuffer.h"
-#include "graphics/ShaderBindingSet.h"
-#include "graphics/ShaderBindingSetLayout.h"
-#include "graphics/UniformBuffer.h"
 #include "graphics/VertexBuffer.h"
+#include "utils/OrientedBoundingBox.h"
 #include <array>
 #include <memory>
 
@@ -19,6 +16,7 @@ class MaterialInstance;
 class MaterialCompiler;
 class VertexInputLayout;
 class GeometryNode;
+class OrientedBoundingBox;
 
 class MeshRenderer : public IRenderable
 {
@@ -33,6 +31,9 @@ public:
 
     void AddGeometryNode(std::shared_ptr<GeometryNode> node);
     std::shared_ptr<GeometryNode> GetGeometryNode(uint32_t index) const;
+
+    std::vector<OrientedBoundingBox> GetWorldBoundingBoxes();
+    OrientedBoundingBox GetWorldBoundingBox();
 
 private:
     void render(RenderContext& context, std::shared_ptr<GeometryNode> node);

@@ -1,4 +1,6 @@
 #pragma once
+#include "utils/AxisAlignedBoundingBox.h"
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -29,11 +31,17 @@ public:
 
     std::shared_ptr<SceneObjectComposer> GetComposer() const { return m_composer; }
 
+    const AABB& GetAABB() const { return m_box; }
+    const AABB& GetAABB(bool reCompute = false);
+
 private:
+    void traverseWith(std::shared_ptr<SceneObject> object,
+                      const std::function<void(std::shared_ptr<SceneObject>)>& func);
     void collectRenderables(std::shared_ptr<SceneObject> object);
 
 private:
     std::string m_name;
+    AxisAlignedBoundingBox m_box;
     std::shared_ptr<SceneObject> m_root;
     std::shared_ptr<SceneObjectComposer> m_composer;
     std::map<uint16_t, std::shared_ptr<Material>> m_materials;

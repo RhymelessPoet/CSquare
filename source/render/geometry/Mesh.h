@@ -1,6 +1,7 @@
 #pragma once
 #include "base/TypeDefine.h"
 #include "base/memory/Buffer.h"
+#include "utils/AxisAlignedBoundingBox.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -27,13 +28,11 @@ public:
     public:
         Builder();
         Builder& SetName(std::string_view name);
-
         Builder& SetVertexCount(uint32_t count);
-
         Builder& SetIndices(Buffer data, DataType type);
+        Builder& SetAABB(const AABB& box);
 
         Builder& AddVertexBuffer(Buffer data);
-
         Builder& AddAttribute(const Attribute& attribute);
 
         std::shared_ptr<Mesh> Build();
@@ -43,6 +42,7 @@ public:
     };
 
     std::string_view GetName() const { return m_name; }
+    const AABB& GetAABB() const { return m_box; }
 
     size_t GetVertexBufferCount() const { return m_vertexBuffers.size(); }
     std::span<const std::byte> GetVertexBufferView(uint8_t bufferID) const;
@@ -62,8 +62,11 @@ public:
 
     void ForEachAttribute(const std::function<void(const Attribute&)>& func) const;
 
+    void RecomputeAABB();
+
 private:
     std::string m_name;
+    AABB m_box;
     std::vector<Attribute> m_attributes;
     std::vector<Buffer> m_vertexBuffers;
     uint32_t m_vertexCount{0u};

@@ -6,7 +6,7 @@
 
 namespace CS
 {
-
+class AxisAlignedBoundingBox;
 class Camera;
 
 class CameraManipulator
@@ -42,6 +42,8 @@ public:
 
     void UpdateCamera();
 
+    void FitTo(const AxisAlignedBoundingBox& box);
+
 protected:
     inline std::shared_ptr<Camera> camera() const;
 
@@ -54,7 +56,7 @@ private:
     float m_fovY{45.0f};
     float m_aspectRatio{1.0f};
     float m_nearPlane{0.1f};
-    float m_farPlane{100.0f};
+    float m_farPlane{1000.0f};
 
     std::optional<Bookmark> m_bookmark;
 };

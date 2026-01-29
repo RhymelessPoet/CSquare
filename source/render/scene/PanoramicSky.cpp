@@ -8,6 +8,7 @@
 #include "TransformSystem.h"
 #include "asset/BuiltInShaders.h"
 #include "geometry/GeometryNode.h"
+#include "graphics/GraphicsPipeline.h"
 #include "graphics/VertexInputLayout.h"
 #include "materials/IMaterialConfiguration.h"
 #include "materials/ImageTexture.h"

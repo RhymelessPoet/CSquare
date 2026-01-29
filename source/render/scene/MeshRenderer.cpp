@@ -43,6 +43,28 @@ std::shared_ptr<GeometryNode> MeshRenderer::GetGeometryNode(uint32_t index) cons
     return std::shared_ptr<GeometryNode>();
 }
 
+std::vector<OrientedBoundingBox> MeshRenderer::GetWorldBoundingBoxes()
+{
+    std::vector<OrientedBoundingBox> boxes;
+    auto& trans = transform();
+    for (const auto& node : m_geometryNodes) {
+        auto mesh = node->GetMesh();
+        auto box = trans.Trans(mesh->GetAABB());
+        boxes.push_back(box);
+    }
+    return boxes;
+}
+
+OrientedBoundingBox MeshRenderer::GetWorldBoundingBox()
+{
+    AABB aabb;
+    for (const auto& node : m_geometryNodes) {
+        auto mesh = node->GetMesh();
+        aabb.Include(mesh->GetAABB());
+    }
+    return transform().Trans(aabb);
+}
+
 void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> node)
 {
     auto mesh = node->GetMesh();

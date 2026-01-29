@@ -29,6 +29,7 @@ public:
 
     virtual QQuickRhiItemRenderer* createRenderer() override;
     std::shared_ptr<CS::View> GetView() const { return m_view; }
+    void FitToScene(bool reCompute = false);
 
 protected:
     virtual void mousePressEvent(QMouseEvent* event) override;

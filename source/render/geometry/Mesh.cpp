@@ -23,6 +23,12 @@ Mesh::Builder& Mesh::Builder::SetIndices(Buffer data, DataType type)
     return *this;
 }
 
+Mesh::Builder& Mesh::Builder::SetAABB(const AABB& box)
+{
+    m_mesh->m_box = box;
+    return *this;
+}
+
 Mesh::Builder& Mesh::Builder::AddVertexBuffer(Buffer data)
 {
     m_mesh->m_vertexBuffers.emplace_back(std::move(data));
@@ -37,6 +43,9 @@ Mesh::Builder& Mesh::Builder::AddAttribute(const Attribute& attribute)
 
 std::shared_ptr<Mesh> Mesh::Builder::Build()
 {
+    if (!m_mesh->m_box.IsValid()) {
+        m_mesh->RecomputeAABB();
+    }
     return m_mesh;
 }
 
@@ -62,6 +71,26 @@ void Mesh::ForEachAttribute(const std::function<void(const Attribute&)>& func) c
     for (const auto& attr : m_attributes) {
         func(attr);
     }
+}
+
+void Mesh::RecomputeAABB()
+{
+    AABB box;
+    ForEachAttribute([&](const Attribute& attr) {
+        if (attr.name == "_position") {
+            auto vertexBuffer = GetVertexBuffer(attr.bufferID);
+            auto vertexData = vertexBuffer.GetData<float>();
+            size_t vertexCount = vertexData.size() / attr.componentCount;
+            for (size_t i = 0; i < vertexCount; ++i) {
+                Vector3d position;
+                for (uint8_t j = 0; j < attr.componentCount && j < 3; ++j) {
+                    position[j] = static_cast<double>(vertexData[i * attr.componentCount + j]);
+                }
+                box.Include(position);
+            }
+        }
+    });
+    m_box = box;
 }
 
 } // namespace CS

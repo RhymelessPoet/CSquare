@@ -4,7 +4,7 @@
 
 namespace CS
 {
-std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3U& imageSize, ImageFormat format)
+std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat format)
 {
     auto absolutePath = imagePath;
     if (!imagePath.is_absolute()) {

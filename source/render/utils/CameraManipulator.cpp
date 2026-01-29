@@ -1,6 +1,8 @@
 #include "CameraManipulator.h"
+#include "AxisAlignedBoundingBox.h"
 #include "scene/Camera.h"
 #include <cassert>
+
 namespace CS
 {
 CameraManipulator::CameraManipulator(std::shared_ptr<Camera> camera, const Size2u& viewport)
@@ -125,6 +127,16 @@ void CameraManipulator::UpdateCamera()
     auto _camera = camera();
     _camera->LookAt(m_position, m_center, m_up);
     _camera->Perspective(Math::AngleToRadian(m_fovY), m_aspectRatio, m_nearPlane, m_farPlane);
+}
+
+void CameraManipulator::FitTo(const AABB& box)
+{
+    m_center = box.GetCenter().Cast<float>();
+    auto boxSize = box.GetSize().Cast<float>();
+    auto& [min, max] = box;
+    m_position = m_center + Vector3f{0.0f, 0.0f, boxSize.Z() * 1.5f};
+    m_farPlane = boxSize.Length() * 4.0f;
+    UpdateCamera();
 }
 
 inline std::shared_ptr<Camera> CameraManipulator::camera() const

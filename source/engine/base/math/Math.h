@@ -25,6 +25,25 @@ Vector3<T> Vector3FromSpherical(T radius, T theta, T phi)
     return Vector3<T>({radius * sinTheta * cosPhi, radius * sinTheta * sinPhi, radius * cosTheta});
 }
 
+template <typename T, typename U>
+    requires(std::is_floating_point_v<T>) && (std::is_floating_point_v<U>)
+std::array<Vector3<T>, 3> EulerAnglesToAxes(const Vector3<U>& angles)
+{
+    auto [roll, pitch, yaw] = angles;
+    T sinRoll = std::sin(roll);
+    T cosRoll = std::cos(roll);
+    T sinPitch = std::sin(pitch);
+    T cosPitch = std::cos(pitch);
+    T sinYaw = std::sin(yaw);
+    T cosYaw = std::cos(yaw);
+
+    return {Vector3<T>({cosPitch * cosYaw, cosPitch * sinYaw, -sinPitch}),
+            Vector3<T>({sinRoll * sinPitch * cosYaw - cosRoll * sinYaw, sinRoll * sinPitch * sinYaw + cosRoll * cosYaw,
+                        sinRoll * cosPitch}),
+            Vector3<T>({cosRoll * sinPitch * cosYaw + sinRoll * sinYaw, cosRoll * sinPitch * sinYaw - sinRoll * cosYaw,
+                        cosRoll * cosPitch})};
+}
+
 template <typename T>
     requires(std::is_floating_point_v<T>)
 Vector3<T> AxesToEulerAnglesXYZ(const Vector3<T>& xAxis, const Vector3<T>& yAxis, const Vector3<T>& zAxis)
@@ -73,6 +92,12 @@ template <typename T>
 constexpr inline T AngleToRadian(T angle)
 {
     return angle / 180.0f * PI<T>;
+}
+
+template <typename T, typename U>
+Vector3<T> Transform(const Matrix4<T>& mat, const Vector3<U>& point)
+{
+    return mat * point.Cast<T>() + Vector3<T>({mat[0][3], mat[1][3], mat[2][3]});
 }
 
 } // namespace Math

@@ -14,7 +14,7 @@ public:
     explicit Image(std::vector<std::byte> data, ImageFormat format = ImageFormat::RGBA8);
     ~Image();
 
-    const Size3U& GetSize() const { return m_size; }
+    const Size3u& GetSize() const { return m_size; }
     size_t GetByteSize() const { return m_data.size(); }
 
     const std::byte* GetData() const;
@@ -29,7 +29,7 @@ private:
     std::string m_name;
     ImageFormat m_format{ImageFormat::RGBA8};
     Path m_path;
-    Size3U m_size;
+    Size3u m_size;
     std::vector<std::byte> m_data;
 };
 

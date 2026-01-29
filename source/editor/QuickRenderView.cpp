@@ -11,7 +11,9 @@
 #include "scene/SystemGraph.h"
 #include "scene/TransformSystem.h"
 
+#include "scene/Scene.h"
 #include "scene/View.h"
+
 #include "utils/CameraManipulator.h"
 
 #include "samples/SAssetLoad.h"
@@ -74,6 +76,17 @@ QQuickRhiItemRenderer* QuickRenderView::createRenderer()
     return new QuickRenderer(graphicsAPI, m_view->GetRenderTarget());
 }
 
+void QuickRenderView::FitToScene(bool reCompute)
+{
+    if (m_view == nullptr) {
+        return;
+    }
+    const auto& aabb = m_view->GetScene()->GetAABB(reCompute);
+    if (aabb.IsValid()) {
+        m_cameraManipulator->FitTo(aabb);
+    }
+}
+
 void QuickRenderView::mousePressEvent(QMouseEvent* event)
 {
     auto button = event->button();
@@ -125,19 +138,25 @@ void QuickRenderView::keyPressEvent(QKeyEvent* event)
 
     if (dollyNear) {
         if (event->isAutoRepeat()) {
-            m_cameraManipulator->Dolly(1);
+            m_cameraManipulator->Dolly(5);
 
         } else {
-            m_cameraManipulator->Dolly(3);
+            m_cameraManipulator->Dolly(10);
         }
     }
     if (dollyFar) {
         if (event->isAutoRepeat()) {
-            m_cameraManipulator->Dolly(-1);
+            m_cameraManipulator->Dolly(-5);
 
         } else {
-            m_cameraManipulator->Dolly(-3);
+            m_cameraManipulator->Dolly(-10);
         }
+    }
+    if (key == Qt::Key_F) {
+        FitToScene(false);
+    }
+    if (key == Qt::Key_F | Qt::ShiftModifier) {
+        FitToScene(true);
     }
 }
 
@@ -157,7 +176,7 @@ void QuickRenderView::onSampleChange()
     connect(m_timer.get(), &QTimer::timeout, [this]() { m_sample->OnUpdate(); });
 
     m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
-    m_cameraManipulator->LookAt({0.0f, 0.0f, 40.0f}, {0.0f, 0.0f, 0.0f});
+    FitToScene(true);
 }
 
 } // namespace CSEditor

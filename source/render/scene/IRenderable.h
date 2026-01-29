@@ -6,6 +6,7 @@ namespace CS
 
 class RenderContext;
 class GraphicsAPI;
+class Transform;
 
 class IRenderable : public IComponent
 {
@@ -14,6 +15,10 @@ public:
     ~IRenderable() = default;
 
     virtual void OnRender(RenderContext& context) = 0;
+
+protected:
+    const Transform& transform() const;
+    Transform& transform();
 };
 
 } // namespace CS

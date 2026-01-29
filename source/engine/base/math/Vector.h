@@ -81,7 +81,9 @@ public:
         return result;
     }
 
-    constexpr Vector operator*(T scalar) const
+    template <typename U>
+        requires(std::is_arithmetic_v<U>)
+    constexpr Vector operator*(U scalar) const
     {
         Vector result;
         for (int i = 0; i < N; ++i)
@@ -89,7 +91,19 @@ public:
         return result;
     }
 
-    constexpr Vector operator/(T scalar) const
+    template <typename U>
+        requires(std::is_arithmetic_v<U>)
+    constexpr Vector operator*(Vector<U, N> scalar) const
+    {
+        Vector result;
+        for (int i = 0; i < N; ++i)
+            result.m_data[i] = m_data[i] * scalar.m_data[i];
+        return result;
+    }
+
+    template <typename U>
+        requires(std::is_arithmetic_v<U>)
+    constexpr Vector operator/(U scalar) const
     {
         Vector result;
         for (int i = 0; i < N; ++i)
@@ -200,7 +214,18 @@ public:
             m_data[i] = std::max(minVector.m_data[i], std::min(m_data[i], maxVector.m_data[i]));
     }
 
-    void Fill(const T& value) { std::fill(m_data, m_data + N, value); }
+    void Fill(const T& value) { std::fill(m_data.begin(), m_data.end(), value); }
+
+    template <typename U>
+        requires(std::is_arithmetic_v<U>)
+    Vector<U, N> Cast() const
+    {
+        Vector<U, N> result;
+        for (int i = 0; i < N; ++i) {
+            result[i] = static_cast<U>(m_data[i]);
+        }
+        return result;
+    }
 
     template <std::size_t I>
     const auto& get() const
@@ -217,13 +242,43 @@ public:
     }
 
 private:
-    std::array<T, N> m_data;
+    std::array<T, N> m_data{0};
 };
 
 template <typename T, uint32_t N>
 Vector<T, N> operator*(T lhs, const Vector<T, N>& rhs)
 {
     return rhs * lhs;
+}
+
+template <typename T, uint32_t N, auto Func>
+Vector<T, N> BinaryOperator(const Vector<T, N>& lhs, const Vector<T, N>& rhs)
+{
+    Vector<T, N> result;
+    for (uint32_t i = 0; i < N; ++i) {
+        result[i] = Func(lhs[i], rhs[i]);
+    }
+    return result;
+}
+
+template <typename T, uint32_t N>
+decltype(auto) Min(const Vector<T, N>& lhs, const Vector<T, N>& rhs)
+{
+    Vector<T, N> result;
+    for (uint32_t i = 0; i < N; ++i) {
+        result[i] = std::min(lhs[i], rhs[i]);
+    }
+    return result;
+}
+
+template <typename T, uint32_t N>
+decltype(auto) Max(const Vector<T, N>& lhs, const Vector<T, N>& rhs)
+{
+    Vector<T, N> result;
+    for (uint32_t i = 0; i < N; ++i) {
+        result[i] = std::max(lhs[i], rhs[i]);
+    }
+    return result;
 }
 
 // Type aliases for 2D, 3D, 4D vectors

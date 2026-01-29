@@ -28,7 +28,7 @@ void SAssetLoad::Initialize(std::shared_ptr<View> view)
 
     view->SetScene(m_scene);
 
-    auto assetScene = CS::AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
+    auto assetScene = CS::AssetManager::Instance().GetAssetScene("assets/model/monkeysun/monkeysun.gltf");
 
     AssetImporter importer(m_scene);
     auto sceneObject = importer.Import(assetScene->GetRoot());

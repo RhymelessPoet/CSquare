@@ -10,7 +10,7 @@ namespace CS
 class ImageLoader
 {
 public:
-    static std::vector<std::byte> Load(const Path& imagePath, Size3U& imageSize, ImageFormat format);
+    static std::vector<std::byte> Load(const Path& imagePath, Size3u& imageSize, ImageFormat format);
 };
 
 } // namespace CS

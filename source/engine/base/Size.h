@@ -86,6 +86,21 @@ public:
     Size2<DataType> XY() const { return Size2<DataType>(x, y); }
     Size2<DataType> XZ() const { return Size2<DataType>(x, z); }
     Size2<DataType> YZ() const { return Size2<DataType>(y, z); }
+
+    template <typename T>
+        requires std::is_arithmetic_v<T>
+    friend Size3<T> operator*(const Size3<T>& size, T scalar)
+    {
+        return Size3<T>{size.x * scalar, size.y * scalar, size.z * scalar};
+    }
+
+    template <typename T>
+        requires std::is_arithmetic_v<T>
+    friend Size3<T> operator*(T scalar, const Size3<T>& size)
+    {
+        return size * scalar;
+    }
+
     union {
         struct
         {
@@ -115,7 +130,8 @@ public:
     };
 };
 
-using Size3U = Size3<uint32_t>;
+using Size3u = Size3<uint32_t>;
+using Size3d = Size3<double>;
 
 // 重载 get 函数
 template <std::size_t Index, typename T>

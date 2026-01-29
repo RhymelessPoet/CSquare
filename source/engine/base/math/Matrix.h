@@ -257,13 +257,25 @@ private:
     };
 };
 
-template <typename T, int N>
+template <typename T, uint32_t N>
 constexpr Vector<T, N> operator*(const Matrix<T, N>& m, const Vector<T, N>& v)
 {
     Vector<T, N> result;
     for (int i = 0; i < N; ++i) {
         result[i] = T(0);
         for (int j = 0; j < N; ++j)
+            result[i] += m[i][j] * v[j];
+    }
+    return result;
+}
+
+template <typename T, uint32_t N>
+constexpr Vector<T, N - 1> operator*(const Matrix<T, N>& m, const Vector<T, N - 1>& v)
+{
+    Vector<T, N - 1> result;
+    for (int i = 0; i < N - 1; ++i) {
+        result[i] = T(0);
+        for (int j = 0; j < N - 1; ++j)
             result[i] += m[i][j] * v[j];
     }
     return result;

@@ -20,6 +20,8 @@ public:
 
 protected:
     std::shared_ptr<SceneObject> owner() const { return m_owner.lock(); }
+    std::shared_ptr<SceneObject> owner() { return m_owner.lock(); }
+
     ISystem* system() const { return m_system; }
 
 private:

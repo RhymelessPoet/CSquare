@@ -174,6 +174,11 @@ std::shared_ptr<Mesh> AssimpLoader::parseMesh(const aiMesh* aimesh)
     }
     builder.SetIndices(Buffer(indices), DataType::UInt32).SetVertexCount(aimesh->mNumVertices);
 
+    if (!aimesh->mAABB.mMin.Equal(aimesh->mAABB.mMax)) {
+        builder.SetAABB({{aimesh->mAABB.mMin.x, aimesh->mAABB.mMin.y, aimesh->mAABB.mMin.z},
+                         {aimesh->mAABB.mMax.x, aimesh->mAABB.mMax.y, aimesh->mAABB.mMax.z}});
+    }
+
     return builder.Build();
 }
 

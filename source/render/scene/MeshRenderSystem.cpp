@@ -12,10 +12,12 @@ void MeshRenderSystem::OnUpdate()
 {
     for (auto component : m_components) {
         auto meshRender = dynamic_cast<MeshRenderer*>(component);
-        if (meshRender != nullptr) {
-            meshRender->OnUpdate();
-
-            auto material = meshRender->GetGeometryNode(0u)->GetMaterial()->GetMaterial();
+        if (meshRender == nullptr) {
+            continue;
+        }
+        meshRender->OnUpdate();
+        if (auto go = meshRender->GetGeometryNode(0u); go != nullptr) {
+            auto material = go->GetMaterial()->GetMaterial();
             m_materials[material->GetID()] = material;
         }
     }

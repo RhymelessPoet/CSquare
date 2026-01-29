@@ -23,8 +23,12 @@ void Scene::OnRender(RenderContext& context)
     collectRenderables(m_root);
     for (auto renderable : m_renderables) {
         auto meshRender = dynamic_cast<MeshRenderer*>(renderable);
-        if (meshRender != nullptr) {
-            auto material = meshRender->GetGeometryNode(0u)->GetMaterial()->GetMaterial();
+        if (meshRender == nullptr) {
+            continue;
+        }
+        meshRender->OnUpdate();
+        if (auto go = meshRender->GetGeometryNode(0u); go != nullptr) {
+            auto material = go->GetMaterial()->GetMaterial();
             m_materials[material->GetID()] = material;
         }
     }
@@ -70,6 +74,31 @@ std::shared_ptr<SceneObject> Scene::CreateSceneObject(std::shared_ptr<SceneObjec
         sceneObject->SetParent(m_root);
     }
     return sceneObject;
+}
+
+const AABB& Scene::GetAABB(bool reCompute)
+{
+    if (reCompute) {
+        traverseWith(m_root, [this](std::shared_ptr<SceneObject> object) {
+            if (auto meshRenderer = object->GetComponent<MeshRenderer>()) {
+                auto obb = meshRenderer->GetWorldBoundingBox();
+                m_box.Include(obb);
+            }
+        });
+    }
+    return std::as_const(*this).GetAABB();
+}
+
+void Scene::traverseWith(std::shared_ptr<SceneObject> object,
+                         const std::function<void(std::shared_ptr<SceneObject>)>& func)
+{
+    func(object);
+    for (const auto& child : object->GetChildren()) {
+        if (!child->IsActive()) {
+            continue;
+        }
+        traverseWith(child, func);
+    }
 }
 
 void Scene::collectRenderables(std::shared_ptr<SceneObject> object)

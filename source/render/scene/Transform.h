@@ -1,6 +1,8 @@
 #pragma once
 #include "IComponent.h"
 #include "base/math/Matrix.h"
+#include "utils/AxisAlignedBoundingBox.h"
+#include "utils/OrientedBoundingBox.h"
 
 namespace CS
 {
@@ -33,6 +35,8 @@ public:
     Matrix4f GetLocalModelMatrix() const;
     const Matrix4f& GetWorldMatrix() const;
     const Matrix4f& GetWorldMatrix();
+
+    OBB Trans(const AABB& box);
 
 private:
     Vector3f m_position{0.0f, 0.0f, 0.0f};
