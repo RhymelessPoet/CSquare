@@ -1,10 +1,11 @@
-import QtQuick 2.15
-import QtQuick.Window 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.12
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
 
-import CSEditor.Theme 1.0
-import CSEditor.View 1.0
+import CSEditor.Theme
+import CSEditor.View
+import CSEditor.App
 
 ApplicationWindow {
     id: appWindow
@@ -15,6 +16,7 @@ ApplicationWindow {
     flags: Qt.FramelessWindowHint | Qt.Window
     color: "transparent"
     property int cachedVisibility: Window.Windowed
+    property string projectID: ""
 
     onActiveChanged: {
         if (appWindow.active) {
@@ -23,6 +25,12 @@ ApplicationWindow {
         else {
             cachedVisibility = appWindow.visibility
         }
+    }
+
+    Component.onCompleted: {
+        CSEditor.loadProject();
+        appWindow.projectID = CSEditor.getProjectID();
+        console.log(appWindow.projectID);
     }
 
     // 背景圆角与阴影
@@ -63,17 +71,18 @@ ApplicationWindow {
                     anchors.rightMargin: 5
                     spacing: 2
 
+                    CSSceneHierarchyView {
+                        width: 380
+                        Layout.fillHeight: true
+                    }
+
                     CSQuickRenderView {
                         id: renderView
+                        projectID: appWindow.projectID
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                     }
 
-                    Rectangle {
-                        width: 380
-                        Layout.fillHeight: true
-                        color: CSTheme.surface
-                    }
                 }
             }
 

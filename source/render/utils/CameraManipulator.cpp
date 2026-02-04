@@ -34,6 +34,7 @@ void CameraManipulator::Dolly(float delta, float speed)
     auto newDirection = m_center - position;
     if (newDirection.Dot(direction) > 0.0f && newDirection.Length() > m_nearPlane) {
         m_position = position;
+        m_farPlane = 2.0f * newDirection.Length();
     }
     UpdateCamera();
 }
@@ -72,7 +73,6 @@ void CameraManipulator::RotateTrack(const Vector2f& delta, float speed)
     m_position = m_center + rotatedDir;
     // m_up = rotationMat * m_up;
 
-    // 更新相机
     UpdateCamera();
 }
 
@@ -92,7 +92,6 @@ void CameraManipulator::RotatePose(const Vector2f& delta, float speed)
     m_center = m_position - rotatedDir;
     m_up = rotationMat * m_up;
 
-    // 更新相机
     UpdateCamera();
 }
 
@@ -134,8 +133,8 @@ void CameraManipulator::FitTo(const AABB& box)
     m_center = box.GetCenter().Cast<float>();
     auto boxSize = box.GetSize().Cast<float>();
     auto& [min, max] = box;
-    m_position = m_center + Vector3f{0.0f, 0.0f, boxSize.Z() * 1.5f};
-    m_farPlane = boxSize.Length() * 4.0f;
+    m_position = m_center + Vector3f{0.0f, 0.0f, boxSize.Z() * 6.0f};
+    m_farPlane = boxSize.Length() * 10.0f;
     UpdateCamera();
 }
 

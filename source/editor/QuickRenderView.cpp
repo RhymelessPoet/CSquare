@@ -48,20 +48,10 @@ QuickRenderView::QuickRenderView()
         csRenderTarget.SetColorAttachment(csTexture);
         csRenderTarget.SetDepthStencilAttachment(depthTexture);
         m_view->SetRenderTarget(csRenderTarget);
-
-        m_sample = std::make_unique<CS::SAssetLoad>(renderModule->GetSOComposer());
-        // m_sample = std::make_unique<CS::SPanoramicHDRSky>();
-        // m_sample = std::make_unique<CS::SHelloTriangles>();
-
-        m_timer = std::make_unique<QTimer>();
-        onSampleChange();
     }
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setFocus(true);
-
-    m_timer->setInterval(40);
-    m_timer->start();
 }
 
 QuickRenderView::~QuickRenderView() noexcept {}
@@ -84,6 +74,15 @@ void QuickRenderView::FitToScene(bool reCompute)
     const auto& aabb = m_view->GetScene()->GetAABB(reCompute);
     if (aabb.IsValid()) {
         m_cameraManipulator->FitTo(aabb);
+    }
+}
+
+void QuickRenderView::setProjectID(const QString& projectID)
+{
+    if (!projectID.isEmpty()) {
+        m_cameraManipulator =
+            std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{width(), height()});
+        FitToScene(true);
     }
 }
 
@@ -127,7 +126,11 @@ void QuickRenderView::mouseMoveEvent(QMouseEvent* event)
 
 void QuickRenderView::wheelEvent(QWheelEvent* event)
 {
-    m_cameraManipulator->Zoom(event->angleDelta().y());
+    if ((event->modifiers() & Qt::ShiftModifier) != 0) {
+        m_cameraManipulator->Zoom(event->angleDelta().y());
+    } else {
+        m_cameraManipulator->Dolly(event->angleDelta().y(), 0.01f);
+    }
 }
 
 void QuickRenderView::keyPressEvent(QKeyEvent* event)
@@ -168,15 +171,6 @@ void QuickRenderView::geometryChange(const QRectF& newGeometry, const QRectF& ol
     if (m_cameraManipulator != nullptr && newGeometry.height() > 0.0) {
         m_cameraManipulator->SetViewport(CS::Size2u{newGeometry.width(), newGeometry.height()});
     }
-}
-
-void QuickRenderView::onSampleChange()
-{
-    m_sample->Initialize(m_view);
-    connect(m_timer.get(), &QTimer::timeout, [this]() { m_sample->OnUpdate(); });
-
-    m_cameraManipulator = std::make_unique<CS::CameraManipulator>(m_view->GetCamera(), CS::Size2u{1080, 720});
-    FitToScene(true);
 }
 
 } // namespace CSEditor

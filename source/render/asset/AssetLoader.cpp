@@ -17,6 +17,10 @@ AssetLoader::AssetLoader()
 
 std::shared_ptr<AssetScene> AssetLoader::Load(const Path& path)
 {
+    if (!std::filesystem::exists(path)) {
+        // TODO: log error
+        return nullptr;
+    }
     return impl().loader->Load(path);
 }
 

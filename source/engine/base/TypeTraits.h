@@ -60,6 +60,9 @@ struct is_template_instance<TargetTemplate<Args...>, TargetTemplate> : std::true
 template <typename T, template <typename...> typename TargetTemplate>
 constexpr bool is_template_instance_v = is_template_instance<T, TargetTemplate>::value;
 
+template <typename F, typename Ret, typename... Args>
+concept callable = std::invocable<F, Args...> && std::is_same_v<std::invoke_result_t<F, Args...>, Ret>;
+
 } // namespace type_traits
 
 } // namespace CS

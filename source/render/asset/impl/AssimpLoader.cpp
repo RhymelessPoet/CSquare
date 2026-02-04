@@ -31,6 +31,11 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
 
     const aiScene* aiscene = importer.ReadFile(path.string(), postprocessFlags);
 
+    if (aiscene == nullptr) {
+        std::cerr << "Assimp error: " + std::string(importer.GetErrorString()) << "\n";
+        return nullptr;
+    }
+
     if (aiscene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
         std::cerr << "Assimp error: " + std::string(importer.GetErrorString()) << "\n";
     }

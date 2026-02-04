@@ -17,6 +17,8 @@ class QuickRenderer;
 
 class QuickRenderView : public QQuickRhiItem
 {
+    Q_OBJECT
+    Q_PROPERTY(QString projectID WRITE setProjectID)
 public:
     struct MouseState
     {
@@ -31,6 +33,8 @@ public:
     std::shared_ptr<CS::View> GetView() const { return m_view; }
     void FitToScene(bool reCompute = false);
 
+    Q_INVOKABLE void setProjectID(const QString& projectID);
+
 protected:
     virtual void mousePressEvent(QMouseEvent* event) override;
     virtual void mouseReleaseEvent(QMouseEvent* event) override;
@@ -40,11 +44,8 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent* event) override;
     virtual void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
 
-    void onSampleChange();
-
 private:
     MouseState m_mouseState;
-    std::unique_ptr<QTimer> m_timer{nullptr};
 
     QuickRenderer* m_renderer{nullptr};
     std::shared_ptr<CS::View> m_view;
