@@ -1,11 +1,12 @@
+# Run “Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force” in powershell to Resolve the issue of script execution failure
+
 Param
 (
-    [string]$Qt6_Path = "D:\Qt\6.7.0\msvc2019_64\lib\cmake"
+    [string]$Qt6_Path = "D:\Library\Qt\6.8.3\msvc2022_64\"
 )
 
 # 判断当前是否管理员权限
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-{
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     # 获取当前脚本路径
     $scriptPath = $MyInvocation.MyCommand.Definition
     # 以管理员身份启动新进程并传递参数

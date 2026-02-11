@@ -8,13 +8,15 @@ class UUID;
 
 namespace CSEditor
 {
-
+class TreeModel;
 class ProjectModel : public CS::PImpl<ProjectModel>
 {
 public:
     ProjectModel(/* args */);
 
     const CS::UUID& GetUUID() const;
+    const TreeModel* GetSceneTreeModel() const;
+    TreeModel* GetSceneTreeModel();
 
 private:
     void initializeScene();

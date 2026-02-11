@@ -1,12 +1,26 @@
 #include "QuickTreeModel.h"
+#include "model/TreeModel.h"
+#include "utils/QVariantsAny.h"
 
 namespace CSEditor
 {
 
-QuickTreeModel::QuickTreeModel(QObject* parent) : QAbstractItemModel(parent)
+static inline const TreeNode* getTreeNode(const TreeModel* model, const QModelIndex& index)
 {
-    // 初始化根节点
+    if (!index.isValid() && model != nullptr) {
+        return model->GetRoot();
+    }
+    return reinterpret_cast<TreeNode*>(index.internalPointer());
 }
+
+QuickTreeModel::QuickTreeModel(TreeModel* model, QObject* parent) : m_model(model), QAbstractItemModel(parent)
+{
+    if (m_model != nullptr) {
+        initialize();
+    }
+}
+
+QuickTreeModel::QuickTreeModel(QObject* parent) : QuickTreeModel(nullptr, parent) {}
 
 QuickTreeModel::~QuickTreeModel()
 {
@@ -15,29 +29,64 @@ QuickTreeModel::~QuickTreeModel()
 
 QVariant QuickTreeModel::data(const QModelIndex& index, int role) const
 {
-    if (!index.isValid())
-        return QVariant();
+    auto node = getTreeNode(m_model, index);
+    if (node == nullptr) {
+        return {};
+    }
+    if (role == Qt::DisplayRole) {
+        // 假设 TreeModel 的第一个属性是节点名称（适配 display 角色）
+        auto nameProp = "name";
+        auto nameValue = node->GetProperty(nameProp);
+        return AnyToQVariant(nameValue);
+    }
+    auto roleName = getRoleName(role);
+    auto property = node->GetProperty(roleName);
+    return AnyToQVariant(property);
+}
+
+QVariant QuickTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    return (orientation == Qt::Horizontal && role == Qt::DisplayRole) ? QVariant::fromValue(1000) : QVariant{};
 }
 
 bool QuickTreeModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-    if (!index.isValid())
+    auto node = getTreeNode(m_model, index);
+    if (node == nullptr) {
         return false;
+    }
+    if (role > Qt::UserRole) {
+        auto roleName = getRoleName(role);
+        auto property = QVariantToAny(value);
+        // node->SetProperty(roleName, property);
+    }
 
-    return false;
+    return true;
 }
 
 QModelIndex QuickTreeModel::parent(const QModelIndex& index) const
 {
-    if (!index.isValid())
-        return QModelIndex();
+    auto node = getTreeNode(m_model, index);
 
-    return createIndex(0, 0, nullptr);
+    if (node == nullptr || node == m_model->GetRoot()) {
+        return QModelIndex();
+    }
+
+    auto parent = node->GetParent();
+    if (parent == nullptr || parent == m_model->GetRoot()) {
+        return QModelIndex();
+    }
+
+    return createIndex(IndexOfChildInParent(parent), 0, parent);
 }
 
 int QuickTreeModel::rowCount(const QModelIndex& parent) const
 {
-    return 0;
+    auto parentNode = getTreeNode(m_model, parent);
+    auto count = parentNode != nullptr ? parentNode->GetChildCount() : 0;
+    qDebug() << "查询行数：父索引有效=" << parent.isValid() << "父节点有效=" << (parentNode != nullptr)
+             << "行数=" << count;
+    return count;
 }
 
 int QuickTreeModel::columnCount(const QModelIndex& parent) const
@@ -49,10 +98,20 @@ int QuickTreeModel::columnCount(const QModelIndex& parent) const
 
 QModelIndex QuickTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (column != 0 || row < 0)
+    if (!m_model || column != 0 || row < 0)
         return QModelIndex();
 
-    return QModelIndex();
+    auto parentNode = getTreeNode(m_model, parent);
+
+    if (parentNode == nullptr || row >= parentNode->GetChildCount())
+        return QModelIndex();
+
+    auto childNode = parentNode->GetChild(row);
+
+    auto result = createIndex(row, column, childNode);
+    qDebug() << "创建索引：行=" << row << "列=" << column << "父索引有效=" << parent.isValid()
+             << "结果有效=" << result.isValid();
+    return result;
 }
 
 QHash<int, QByteArray> QuickTreeModel::roleNames() const
@@ -60,20 +119,12 @@ QHash<int, QByteArray> QuickTreeModel::roleNames() const
     return m_roleNames;
 }
 
-QModelIndex QuickTreeModel::rootIndex() const
-{
-    return createIndex(0, 0, nullptr);
-}
-
 QModelIndex QuickTreeModel::addNode(const QString& nodeName, bool active, const QModelIndex& parentIndex)
 {
-    // 通知模型：开始插入行
     beginInsertRows(parentIndex, 0, 0);
 
-    // 通知模型：插入完成
     endInsertRows();
 
-    // 返回新节点的索引
     return createIndex(0, 0, nullptr);
 }
 
@@ -84,10 +135,8 @@ bool QuickTreeModel::removeNode(const QModelIndex& index)
 
     auto row = index.row();
 
-    // 通知模型：开始删除行
     beginRemoveRows(parent(index), row, row);
 
-    // 通知模型：删除完成
     endRemoveRows();
 
     return true;
@@ -111,10 +160,52 @@ bool QuickTreeModel::toggleNodeExpanded(const QModelIndex& index)
 
 void QuickTreeModel::clear()
 {
-    // 通知模型：开始重置
     beginResetModel();
 
-    // 通知模型：重置完成
     endResetModel();
 }
+
+void QuickTreeModel::setModel(TreeModel* model)
+{
+    // clear();
+    beginResetModel();
+    m_model = model;
+
+    initialize();
+
+    endResetModel();
+}
+
+void QuickTreeModel::initialize()
+{
+    assert(m_model != nullptr);
+
+    m_roleNames = QAbstractItemModel::roleNames();
+
+    auto properties = m_model->GetPropertyNames();
+    for (int index = 0; index < properties.size(); ++index) {
+        QByteArray bytes = QByteArray::fromStdString(properties[index].data());
+        m_roleNames.insert(Qt::UserRole + index + 1, bytes);
+    }
+
+    constructNode(QModelIndex(), m_model->GetRoot());
+}
+
+std::string_view QuickTreeModel::getRoleName(int role) const
+{
+    if (auto it = m_roleNames.find(role); it != m_roleNames.end()) {
+        return it->toStdString();
+    }
+    return std::string_view{};
+}
+
+void QuickTreeModel::constructNode(const QModelIndex& parent, const TreeNode* parentNode)
+{
+    for (uint32_t row = 0u; row < parentNode->GetChildCount(); ++row) {
+        auto childNode = parentNode->GetChild(row);
+        auto child = index(row, 0, parent);
+        constructNode(child, childNode);
+    }
+}
+
 } // namespace CSEditor

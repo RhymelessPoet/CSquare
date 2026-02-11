@@ -29,7 +29,7 @@ static std::string GenerateUUID_V4()
             break;
         }
     }
-    uuid[4] = uuid[4] = uuid[4] = uuid[4] = '-';
+    uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
     uuid[14] = '4';
     uuid[19] = "89AB"[dis8(gen)];
 

@@ -19,8 +19,10 @@ public:
     ProjectID CreateProject(const CS::Path& path = {});
     bool SaveProject(ProjectID id);
 
+    ProjectModel* GetProject(ProjectID id);
+
 private:
-    std::unordered_map<std::string_view, std::unique_ptr<ProjectModel>> m_projects;
+    std::unordered_map<ProjectID, std::unique_ptr<ProjectModel>> m_projects;
 };
 
 } // namespace CSEditor

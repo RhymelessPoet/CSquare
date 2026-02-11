@@ -1,6 +1,7 @@
 #include "ProjectModel.h"
 #include "Engine.h"
 #include "RenderModule.h"
+#include "SceneTreeModel.h"
 #include "asset/AssetImporter.h"
 #include "asset/AssetLoader.h"
 #include "asset/AssetManager.h"
@@ -8,10 +9,11 @@
 #include "asset/Image.h"
 #include "base/utils/UUID.h"
 #include "scene/PanoramicSky.h"
-#include "scene/Scene.h"
 #include "scene/View.h"
+#include <unordered_map>
 
 using namespace CS;
+
 template <>
 struct ImplData<CSEditor::ProjectModel>
 {
@@ -19,8 +21,9 @@ struct ImplData<CSEditor::ProjectModel>
 
     std::shared_ptr<Scene> scene;
     std::unique_ptr<PanoramicSky> sky;
-};
 
+    CSEditor::TreeModel sceneTree;
+};
 namespace CSEditor
 {
 
@@ -34,11 +37,22 @@ ProjectModel::ProjectModel() : ImplBase()
         renderModule->GetMainView()->SetScene(impl().scene);
     }
     initializeScene();
+    createSceneTreeModel();
 }
 
 const CS::UUID& ProjectModel::GetUUID() const
 {
     return impl().uuid;
+}
+
+const TreeModel* ProjectModel::GetSceneTreeModel() const
+{
+    return &(impl().sceneTree);
+}
+
+TreeModel* ProjectModel::GetSceneTreeModel()
+{
+    return &(impl().sceneTree);
 }
 
 void ProjectModel::initializeScene()
@@ -57,6 +71,9 @@ void ProjectModel::initializeScene()
     }
 }
 
-void ProjectModel::createSceneTreeModel() {}
+void ProjectModel::createSceneTreeModel()
+{
+    impl().sceneTree = CSEditor::MakeSceneTreeModel(impl().scene);
+}
 
 } // namespace CSEditor

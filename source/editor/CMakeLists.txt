@@ -5,6 +5,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Core Qml Quick QuickControls2 Gui ShaderTools)
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+message(STATUS "QT VERSION: ${Qt6_VERSION}")
+message(STATUS "QT PATH: ${Qt6_DIR}")
 
 file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -43,6 +46,8 @@ endforeach()
 
 # message(STATUS "QML文件列表: ${ICON_FILES}")
 set(QML_MODULE CSQML)
+
+qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_library(${QML_MODULE} STATIC)
 qt_add_qml_module(

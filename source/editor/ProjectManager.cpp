@@ -21,4 +21,12 @@ bool ProjectManager::SaveProject(ProjectID id)
     return false;
 }
 
+ProjectModel* ProjectManager::GetProject(ProjectID id)
+{
+    if (auto it = m_projects.find(id); it != m_projects.end()) {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
 } // namespace CSEditor

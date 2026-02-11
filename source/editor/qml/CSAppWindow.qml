@@ -30,7 +30,6 @@ ApplicationWindow {
     Component.onCompleted: {
         CSEditor.loadProject();
         appWindow.projectID = CSEditor.getProjectID();
-        console.log(appWindow.projectID);
     }
 
     // 背景圆角与阴影
@@ -72,8 +71,10 @@ ApplicationWindow {
                     spacing: 2
 
                     CSSceneHierarchyView {
-                        width: 380
-                        Layout.fillHeight: true
+                        id: sceneHierarchyView
+                        Layout.preferredWidth: 380  // 首选宽度 380
+                        Layout.minimumWidth: 200    // 最小宽度
+                        Layout.fillHeight: true     // 高度填充
                     }
 
                     CSQuickRenderView {

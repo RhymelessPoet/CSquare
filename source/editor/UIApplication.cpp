@@ -16,9 +16,9 @@ UIApplication::UIApplication(int argc, char* argv[]) : QGuiApplication(argc, arg
     qmlRegisterType<CSEditor::QuickRenderView>("CSEditor.View", 1, 0, "CSQuickRenderView");
     qmlRegisterType<CSEditor::QuickTreeModel>("CSEditor.Model", 1, 0, "CSQuickTreeModel");
 
-    CSEditor::QEditor editor;
+    CSEditor::QEditor* editor = new CSEditor::QEditor();
     qmlRegisterSingletonType<CSEditor::QEditor>("CSEditor.App", 1, 0, "CSEditor",
-                                                [&](QQmlEngine* engine, QJSEngine* scriptEngine) { return &editor; });
+                                                [=](QQmlEngine* engine, QJSEngine* scriptEngine) { return editor; });
 
     qmlRegisterSingletonType(QStringLiteral("qrc:/CSQML/qml/CSThemePalette.qml"), "CSEditor.Theme", 1, 0, "CSTheme");
 
