@@ -100,6 +100,8 @@ public:
     void SetName(std::string_view name) { m_name = name; }
     std::string_view GetName() const { return m_name; }
 
+    std::shared_ptr<MaterialInstance> Clone() const;
+
 private:
     MaterialInstance(std::weak_ptr<Material> material, Uniforms uniforms, Textures textures = {});
     MaterialInstance(std::shared_ptr<Material> material, uint32_t id);

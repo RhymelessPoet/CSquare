@@ -5,6 +5,18 @@
 
 namespace CS
 {
+std::shared_ptr<MaterialInstance> MaterialInstance::Clone() const
+{
+    auto clonedInstance = material()->CreateInstance();
+    clonedInstance->m_uniforms = m_uniforms;
+    for (const auto& [name, textureUniform] : m_textures) {
+        clonedInstance->m_textures.emplace(
+            name, TextureUniform{textureUniform.texture->Clone(), textureUniform.binding, textureUniform.dirty});
+    }
+    clonedInstance->m_name = m_name;
+    return clonedInstance;
+}
+
 MaterialInstance::MaterialInstance(std::weak_ptr<Material> material, Uniforms uniforms, Textures textures)
     : m_material(std::move(material)), m_uniforms(std::move(uniforms)), m_textures(std::move(textures))
 {}

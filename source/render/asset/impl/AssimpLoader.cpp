@@ -2,6 +2,7 @@
 #include "asset/AssetNode.h"
 #include "asset/AssetScene.h"
 #include "asset/BuiltInMaterials.h"
+#include "base/math/Math.h"
 #include "geometry/Mesh.h"
 #include "materials/Material.h"
 #include <cassert>
@@ -206,11 +207,12 @@ void AssimpLoader::parseNode(const aiNode* node,
     assetNode->SetName(node->mName.C_Str());
 
     auto transform = node->mTransformation;
-    aiVector3D position, rotation, scale;
+    aiVector3D position, scale;
+    aiQuaternion rotation;
     transform.Decompose(scale, rotation, position);
 
     assetNode->SetPosition({position.x, position.y, position.z});
-    assetNode->SetRotation({rotation.x, rotation.y, rotation.z});
+    assetNode->SetRotation(Math::ToEulerAnglesXYZ(Quaternion{rotation.x, rotation.y, rotation.z, rotation.w}));
     assetNode->SetScale({scale.x, scale.y, scale.z});
 
     for (uint32_t index = 0u; index < node->mNumMeshes; ++index) {

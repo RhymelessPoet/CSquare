@@ -388,7 +388,7 @@ Matrix4<T> RotationToMatrix4(const Vector3<T>& rotation)
     rotZ[1][0] = sinZ;
     rotZ[1][1] = cosZ;
 
-    return result * rotY * rotZ;
+    return rotZ * rotY * result;
 }
 
 template <typename T>

@@ -1,5 +1,6 @@
 #pragma once
 #include "Matrix.h"
+#include "Quaternion.h"
 #include "Vector.h"
 #include <cmath>
 
@@ -98,6 +99,30 @@ template <typename T, typename U>
 Vector3<T> Transform(const Matrix4<T>& mat, const Vector3<U>& point)
 {
     return mat * point.Cast<T>() + Vector3<T>({mat[0][3], mat[1][3], mat[2][3]});
+}
+
+template <typename T>
+    requires std::is_floating_point_v<T>
+Vector3<T> ToEulerAnglesXYZ(const Quaternion<T>& q)
+{
+    // xyz顺序: roll (X), pitch (Y), yaw (Z)
+    T sinRollCosPitch = 2.0f * (q.w * q.x + q.y * q.z);
+    T cosRollCosPitch = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+    T roll = std::atan2(sinRollCosPitch, cosRollCosPitch);
+
+    T sinPitch = 2.0f * (q.w * q.y - q.z * q.x);
+    T pitch;
+    if (std::abs(sinPitch) >= 1.0f) {
+        pitch = std::copysign(static_cast<T>(Math::PI<T> / 2), sinPitch); // use 90 degrees if out of range
+    } else {
+        pitch = std::asin(sinPitch);
+    }
+
+    T sinYawCosPitch = 2.0f * (q.w * q.z + q.x * q.y);
+    T cosYawCosPitch = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+    T yaw = std::atan2(sinYawCosPitch, cosYawCosPitch);
+
+    return Vector3<T>({roll, pitch, yaw});
 }
 
 } // namespace Math

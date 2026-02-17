@@ -2,6 +2,7 @@
 #include "asset/AssetNode.h"
 #include "asset/AssetScene.h"
 #include "geometry/GeometryNode.h"
+#include "materials/MaterialInstance.h"
 #include "scene/MeshRenderSystem.h"
 #include "scene/MeshRenderer.h"
 #include "scene/Scene.h"
@@ -76,7 +77,7 @@ Transform* AssetImporter::createTransform(std::shared_ptr<SceneObject> sceneObje
 std::shared_ptr<GeometryNode> AssetImporter::createGeometryNode(std::shared_ptr<Mesh> mesh,
                                                                 std::shared_ptr<MaterialInstance> material)
 {
-    auto node = std::make_shared<GeometryNode>(mesh, std::move(material));
+    auto node = std::make_shared<GeometryNode>(mesh, material->Clone());
     uint32_t location = 0;
     mesh->ForEachAttribute(
         [&](const Mesh::Attribute& attribute) { node->SetAttributeMap(attribute.name, location++); });
