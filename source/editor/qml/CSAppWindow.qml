@@ -40,16 +40,22 @@ ApplicationWindow {
         color: CSTheme.background
         layer.enabled: true
 
+        border.pixelAligned: false
+        border.color: CSTheme.primaryBorder
+        border.width: 0.5
+
         states: [
             State {
                 when: appWindow.visibility === Window.Maximized
-                PropertyChanges { target: background; radius: 0 }
+                PropertyChanges { target: background; radius: 0; border.width: 0.0 }
             }
         ]
 
         ColumnLayout {
             spacing: 2
             anchors.fill: parent
+            anchors.leftMargin: background.border.width
+            anchors.rightMargin: background.border.width
             
             CSTitleBar {
                 id: titleBar
@@ -62,19 +68,20 @@ ApplicationWindow {
                 id: studio
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+
                 color: CSTheme.surface
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 5
+                    anchors.leftMargin: 2
                     anchors.rightMargin: 5
-                    spacing: 2
+                    spacing: 3
 
                     CSSceneHierarchyView {
                         id: sceneHierarchyView
-                        Layout.preferredWidth: 380  // 首选宽度 380
-                        Layout.minimumWidth: 200    // 最小宽度
-                        Layout.fillHeight: true     // 高度填充
+                        Layout.preferredWidth: 380
+                        Layout.minimumWidth: 200
+                        Layout.fillHeight: true
                     }
 
                     CSQuickRenderView {

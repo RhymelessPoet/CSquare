@@ -51,14 +51,15 @@ QVariant QuickTreeModel::headerData(int section, Qt::Orientation orientation, in
 
 bool QuickTreeModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
-    auto node = getTreeNode(m_model, index);
+    auto constNode = getTreeNode(m_model, index);
+    auto node = m_model->GetEditableNode(constNode);
     if (node == nullptr) {
         return false;
     }
     if (role > Qt::UserRole) {
         auto roleName = getRoleName(role);
         auto property = QVariantToAny(value);
-        // node->SetProperty(roleName, property);
+        node->SetProperty(roleName, property);
     }
 
     return true;
@@ -84,33 +85,30 @@ int QuickTreeModel::rowCount(const QModelIndex& parent) const
 {
     auto parentNode = getTreeNode(m_model, parent);
     auto count = parentNode != nullptr ? parentNode->GetChildCount() : 0;
-    qDebug() << "查询行数：父索引有效=" << parent.isValid() << "父节点有效=" << (parentNode != nullptr)
-             << "行数=" << count;
     return count;
 }
 
 int QuickTreeModel::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent);
-    // 固定为 1 列（适配 TreeView 单列展示）
     return 1;
 }
 
 QModelIndex QuickTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
-    if (!m_model || column != 0 || row < 0)
-        return QModelIndex();
+    if (!hasIndex(row, column, parent) || m_model == nullptr) {
+        return QModelIndex{};
+    }
 
     auto parentNode = getTreeNode(m_model, parent);
 
     if (parentNode == nullptr || row >= parentNode->GetChildCount())
-        return QModelIndex();
+        return QModelIndex{};
 
     auto childNode = parentNode->GetChild(row);
 
     auto result = createIndex(row, column, childNode);
-    qDebug() << "创建索引：行=" << row << "列=" << column << "父索引有效=" << parent.isValid()
-             << "结果有效=" << result.isValid();
+
     return result;
 }
 
@@ -188,15 +186,15 @@ void QuickTreeModel::initialize()
         m_roleNames.insert(Qt::UserRole + index + 1, bytes);
     }
 
-    constructNode(QModelIndex(), m_model->GetRoot());
+    // constructNode(QModelIndex(), m_model->GetRoot());
 }
 
-std::string_view QuickTreeModel::getRoleName(int role) const
+std::string QuickTreeModel::getRoleName(int role) const
 {
     if (auto it = m_roleNames.find(role); it != m_roleNames.end()) {
         return it->toStdString();
     }
-    return std::string_view{};
+    return std::string{};
 }
 
 void QuickTreeModel::constructNode(const QModelIndex& parent, const TreeNode* parentNode)

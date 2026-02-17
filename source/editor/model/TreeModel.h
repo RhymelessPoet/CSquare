@@ -21,7 +21,7 @@ struct TreeExtendStrategy
 {
     using ExtendedPropertiesTuple = std::tuple<ExtendedProperties...>;
     std::vector<std::string_view> GetPropertyNames() const { return {}; }
-    void Initialize(ExtendedPropertiesTuple& props) {}
+    void Initialize(const TreeNodeType& node, ExtendedPropertiesTuple& props) {}
     void Insert(const TreeNodeType& node, const TreeNode* external_node) {}
     void Remove(const TreeNodeType& node) {}
     const TreeNode* Get(const TreeNodeType& node) const { return nullptr; }
@@ -29,6 +29,12 @@ struct TreeExtendStrategy
     GetProperty(const TreeNodeType& node, const ExtendedPropertiesTuple& props, std::string_view property) const
     {
         return std::any{};
+    }
+
+    bool
+    SetProperty(TreeNodeType& node, ExtendedPropertiesTuple& props, std::string_view property, const std::any& value)
+    {
+        return false;
     }
 };
 
@@ -64,6 +70,8 @@ public:
         return m_impl ? m_impl->GetPropertyNames() : std::vector<std::string_view>{};
     }
 
+    TreeNode* GetEditableNode(const TreeNode* node) const { return const_cast<TreeNode*>(node); }
+
 private:
     class TreeModelConcept
     {
@@ -90,7 +98,7 @@ private:
             TreeNodeExternal(ExtStrategy extStrategy, UnderlyingNodeType node)
                 : m_extStrategy(std::move(extStrategy)), m_node(std::move(node))
             {
-                m_extStrategy.Initialize(m_extProps);
+                m_extStrategy.Initialize(m_node, m_extProps);
                 m_extStrategy.Insert(m_node, this);
             }
 
@@ -139,6 +147,10 @@ private:
             std::any GetProperty(std::string_view property) const override
             {
                 return m_extStrategy.GetProperty(m_node, m_extProps, property);
+            }
+            bool SetProperty(std::string_view property, const std::any& value) override
+            {
+                return m_extStrategy.SetProperty(m_node, m_extProps, property, value);
             }
 
             std::any GetUnderlyingNode() const override { return m_node; }

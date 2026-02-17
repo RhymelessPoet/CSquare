@@ -51,7 +51,6 @@ void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std:
     const auto& children = assetNode->GetChildren();
     for (const auto& childAssetNode : children) {
         auto childSceneObject = m_scene->CreateSceneObject(sceneObject);
-        sceneObject->AddChild(childSceneObject);
         importNode(childAssetNode, childSceneObject);
     }
 }

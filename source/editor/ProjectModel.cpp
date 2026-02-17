@@ -61,7 +61,9 @@ void ProjectModel::initializeScene()
     auto image = std::make_shared<Image>("assets/hdr/moonrise_puresky_4k.hdr", ImageFormat::RGB32Float);
     impl().sky->SetImage(image);
 
-    auto assetScene = AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
+    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
+    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/monkeysun/monkeysun.gltf");
+    auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/room/room.gltf");
 
     if (assetScene != nullptr) {
         AssetImporter importer(impl().scene);

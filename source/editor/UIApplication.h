@@ -1,6 +1,12 @@
 #pragma once
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <memory>
+
+namespace CSEditor
+{
+class QEditor;
+} // namespace CSEditor
 
 namespace CS
 {
@@ -14,6 +20,7 @@ public:
 
 private:
     QQmlApplicationEngine m_qmlEngine;
+    std::unique_ptr<CSEditor::QEditor> m_editor;
 };
 
 } // namespace CS

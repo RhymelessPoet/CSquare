@@ -37,7 +37,7 @@ public:
 
 private:
     void initialize();
-    std::string_view getRoleName(int role) const;
+    std::string getRoleName(int role) const;
     void constructNode(const QModelIndex& parent, const TreeNode* parentNode);
 
 private:

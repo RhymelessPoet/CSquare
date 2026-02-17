@@ -31,6 +31,8 @@ Button {
     contentItem: Image {
         id: icon
         source: ""
+        sourceSize.width: 20
+        sourceSize.height: 20
         fillMode: Image.PreserveAspectFit
     }
 

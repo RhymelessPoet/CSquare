@@ -89,14 +89,14 @@ public:
 
     template <typename T>
         requires std::is_arithmetic_v<T>
-    friend Size3<T> operator*(const Size3<T>& size, T scalar)
+    friend Size3<DataType> operator*(const Size3<DataType>& size, T scalar)
     {
-        return Size3<T>{size.x * scalar, size.y * scalar, size.z * scalar};
+        return Size3<DataType>{size.x * scalar, size.y * scalar, size.z * scalar};
     }
 
     template <typename T>
         requires std::is_arithmetic_v<T>
-    friend Size3<T> operator*(T scalar, const Size3<T>& size)
+    friend Size3<DataType> operator*(T scalar, const Size3<DataType>& size)
     {
         return size * scalar;
     }

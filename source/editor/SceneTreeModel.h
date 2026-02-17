@@ -1,5 +1,7 @@
 #pragma once
 #include "model/TreeModel.h"
+#include "scene/CameraComponent.h"
+#include "scene/MeshRenderer.h"
 #include "scene/Scene.h"
 #include "scene/SceneObject.h"
 #include <unordered_map>
@@ -43,13 +45,25 @@ struct TreeOperationStrategy<std::shared_ptr<CS::Scene>, std::shared_ptr<CS::Sce
 };
 
 template <>
-struct TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, bool>
+struct TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, std::string>
 {
-    using ExtendedPropertiesTuple = std::tuple<bool, bool>;
+    using ExtendedPropertiesTuple = std::tuple<bool, std::string>;
 
     std::vector<std::string_view> GetPropertyNames() const { return PropertyNames; }
 
-    void Initialize(ExtendedPropertiesTuple& props) {}
+    void Initialize(const std::shared_ptr<CS::SceneObject>& node, ExtendedPropertiesTuple& props)
+    {
+        std::get<0>(props) = false;
+        if (node->GetComponent<CS::CameraComponent>() != nullptr) {
+            std::get<1>(props) = "camera";
+        } else if (node->GetComponent<CS::MeshRenderer>() != nullptr) {
+            std::get<1>(props) = "model";
+        } else if (!node->GetChildren().empty()) {
+            std::get<1>(props) = "group";
+        } else {
+            std::get<1>(props) = "invalid";
+        }
+    }
 
     void Insert(const std::shared_ptr<CS::SceneObject>& so, const TreeNode* node) { Nodes.emplace(so.get(), node); }
 
@@ -74,18 +88,57 @@ struct TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, bool>
         if (property == "active") {
             return std::any{node->IsActive()};
         }
+        if (property == "object_type") {
+            return std::any(std::get<1>(props));
+        }
         return std::any{};
+    }
+
+    bool SetProperty(std::shared_ptr<CS::SceneObject>& node,
+                     ExtendedPropertiesTuple& props,
+                     std::string_view property,
+                     const std::any& value)
+    {
+        return setProperty(node, property, value) || setProperty(props, property, value);
+    }
+
+private:
+    bool setProperty(std::shared_ptr<CS::SceneObject>& node, std::string_view property, const std::any& value)
+    {
+        if (property == "name") {
+            if (value.type() == typeid(std::string)) {
+                node->SetName(std::any_cast<std::string>(value));
+                return true;
+            }
+        } else if (property == "active") {
+            if (value.type() == typeid(bool)) {
+                node->SetActive(std::any_cast<bool>(value));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool setProperty(ExtendedPropertiesTuple& props, std::string_view property, const std::any& value)
+    {
+        if (property == "expand") {
+            if (value.type() == typeid(bool)) {
+                std::get<0>(props) = std::any_cast<bool>(value);
+                return true;
+            }
+        }
+        return false;
     }
 
 private:
     static inline std::unordered_map<CS::SceneObject*, const TreeNode*> Nodes;
-    static inline std::vector<std::string_view> PropertyNames{"expand", "name", "active"};
+    static inline std::vector<std::string_view> PropertyNames{"expand", "name", "active", "object_type"};
 };
-using SceneTreeExtendStrategy = TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, bool>;
+using SceneTreeExtendStrategy = TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, std::string>;
 
 static inline TreeModel MakeSceneTreeModel(const std::shared_ptr<CS::Scene>& scene)
 {
-    return TreeModel(scene, std::shared_ptr<CS::SceneObject>{}, SceneTreeExtendStrategy{}, bool{}, bool{});
+    return TreeModel(scene, std::shared_ptr<CS::SceneObject>{}, SceneTreeExtendStrategy{}, bool{}, std::string{});
 }
 
 } // namespace CSEditor

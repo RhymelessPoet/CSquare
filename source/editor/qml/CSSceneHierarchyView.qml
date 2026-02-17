@@ -8,74 +8,103 @@ import CSEditor.App
 
 TreeView {
     id: treeView
-    anchors.fill: parent
-    anchors.margins: 10
     clip: true
+    boundsBehavior: Flickable.StopAtBounds
+    boundsMovement: Flickable.StopAtBounds
+
     selectionModel: ItemSelectionModel {}
     model: CSEditor.sceneTree
-    delegate: TreeViewDelegate {
-        id: viewDelegate
-        readonly property real _padding: 5
-        readonly property real szHeight: contentItem.implicitHeight * 2.5
-        implicitWidth: _padding + contentItem.x + contentItem.implicitWidth + _padding
-        implicitHeight: szHeight
-        background: Rectangle { // Background rectangle enabled to show the alternative row colors
-            id: background
+
+    delegate: Rectangle {
+        id: delegateItem
+
+        color: row === treeView.currentRow ? CSTheme.secondary : CSTheme.background
+        opacity: 0.3
+
+        implicitWidth: treeView.width
+        implicitHeight: label.implicitHeight * 1.5
+
+        readonly property real indentation: 20
+        readonly property real padding: 5
+
+        // Assigned to by TreeView:
+        required property TreeView treeView
+        required property bool isTreeNode
+        required property bool expanded
+        required property bool hasChildren
+        required property int depth
+        required property int row
+        required property int column
+        required property bool current
+
+        RowLayout {
             anchors.fill: parent
-            color: {
-                if (viewDelegate.model.row === viewDelegate.treeView.currentRow) {
-                    return Qt.lighter(palette.highlight, 1.2)
-                } else {
-                    if (viewDelegate.treeView.alternatingRows && viewDelegate.model.row % 2 !== 0) {
-                        return (Application.styleHints.colorScheme === Qt.Light) ?
-                                 Qt.darker(palette.alternateBase, 1.25) :
-                                 Qt.lighter(palette.alternateBase, 2.)
+            anchors.leftMargin: depth * indentation + padding
+            anchors.rightMargin: 5
+            spacing: 2
+        
+            CSIconButton {
+                id: indicator
+                opacity: hasChildren ? 1.0 : 0.0
+                enabled: hasChildren
+                iconPath: model.expand ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png" : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
+                onClicked: {
+                    if (model.expand) {
+                        model.expand = false
                     } else {
-                       return palette.base
+                        model.expand = true
                     }
+                    treeView.toggleExpanded(delegateItem.row)
                 }
             }
-            Rectangle { // The selection indicator shown on the left side of the highlighted row
-                width: viewDelegate._padding
+
+            Image {
+                source: "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_%1.png".arg(model.object_type)
+                sourceSize.width: 16
+                sourceSize.height: 16
+                fillMode: Image.PreserveAspectFit
+            }
+
+            Label {
+                id: label
+                width: parent.width - padding - x
+                clip: true
+                text: model.display
+                color: CSTheme.textPrimary
+            }
+            Item {
+                Layout.fillWidth: true
                 height: parent.height
-                visible: !viewDelegate.model.column
-                color: {
-                    if (viewDelegate.model.row === viewDelegate.treeView.currentRow) {
-                        return (Application.styleHints.colorScheme === Qt.Light) ?
-                                 Qt.darker(palette.highlight, 1.25) :
-                                 Qt.lighter(palette.highlight, 2.)
-                    } else {
-                        return "transparent"
-                    }
+            }
+            CSIconButton {
+                id: active
+                iconPath: model.active ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_hide.png" : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_hide_checked.png"
+                onClicked: {
+                    model.active = !model.active
                 }
             }
-        }
-        indicator: Item {
-            x: viewDelegate._padding + viewDelegate.depth * viewDelegate.indentation
-            implicitWidth: viewDelegate.szHeight
-            implicitHeight: viewDelegate.szHeight
-            visible: viewDelegate.isTreeNode && viewDelegate.hasChildren
-            rotation: viewDelegate.expanded ? 90 : 0
-            TapHandler {
-                onSingleTapped: {
-                    let index = viewDelegate.treeView.index(viewDelegate.model.row, viewDelegate.model.column)
-                    viewDelegate.treeView.selectionModel.setCurrentIndex(index, ItemSelectionModel.NoUpdate)
-                    viewDelegate.treeView.toggleExpanded(viewDelegate.model.row)
-                }
-            }
-            // ColorImage {
-            //     width: parent.width / 3
-            //     height: parent.height / 3
-            //     anchors.centerIn: parent
-            //     source: "qrc:/arrow_icon.png"
-            //     color: palette.buttonText
-            // }
-        }
-        contentItem: Label {
-            x: viewDelegate._padding + (viewDelegate.depth + 1 * viewDelegate.indentation)
-            width: parent.width - viewDelegate._padding - x
-            text: viewDelegate.model.display
-            elide: Text.ElideRight
         }
     }
+
+    // Provide our own custom ScrollIndicator for the TreeView.
+    ScrollIndicator.vertical: ScrollIndicator {
+        active: true
+        implicitWidth: 8
+
+        contentItem: Rectangle {
+            implicitWidth: 6
+            implicitHeight: 6
+
+            color: CSTheme.primary
+            radius: width / 2
+            opacity: treeView.movingVertically ? 0.3 : 0.0
+
+            Behavior on opacity {
+                OpacityAnimator {
+                    duration: 500
+                }
+            }
+        }
+    }
+
 }
