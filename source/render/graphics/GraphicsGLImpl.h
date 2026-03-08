@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicsResourceDescriptors.h"
 #include "base/Color.h"
+#include <span>
 
 namespace CS
 {
@@ -44,6 +45,8 @@ public:
 
     bool BuildGraphicsBuffer(GraphicsBufferDescriptor* descriptor);
     bool UpdateGraphicsBufferData(GraphicsBufferDescriptor* descriptor, const void* data);
+    bool
+    UpdateGraphicsSubBufferData(GraphicsBufferDescriptor* descriptor, std::span<const std::byte> data, size_t offset);
     bool DestroyGraphicsBuffer(GraphicsBufferDescriptor* descriptor);
 
     bool IsBuild(const GraphicsInputAssemblyDescriptor* descriptor);

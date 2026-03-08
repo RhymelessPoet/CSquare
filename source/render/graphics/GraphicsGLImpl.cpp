@@ -164,7 +164,12 @@ bool GraphicsGLImpl::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_
 bool GraphicsGLImpl::BuildGraphicsBuffer(GraphicsBufferDescriptor* descriptor)
 {
     GLuint buffer = 0u;
-    m_glContext->GLGenBuffers(1, &buffer).GLCheck();
+    GLenum target = GetBufferType(descriptor->GetBufferType());
+    m_glContext->GLGenBuffers(1, &buffer)
+        .GLBindBuffer(target, buffer)
+        .GLBufferData(target, descriptor->GetSize(), nullptr, GL_DYNAMIC_DRAW)
+        .GLBindBuffer(target, 0)
+        .GLCheck();
     descriptor->SetNativeBuffer(buffer);
     return true;
 }
@@ -194,6 +199,38 @@ bool GraphicsGLImpl::UpdateGraphicsBufferData(GraphicsBufferDescriptor* descript
     } else {
         m_glContext->GLBindBuffer(target, buffer)
             .GLBufferData(target, size, data, GL_STATIC_DRAW)
+            .GLBindBuffer(target, 0);
+    }
+    return true;
+}
+
+bool GraphicsGLImpl::UpdateGraphicsSubBufferData(GraphicsBufferDescriptor* descriptor,
+                                                 std::span<const std::byte> data,
+                                                 size_t offset)
+{
+    GLuint buffer = descriptor->GetNativeBuffer();
+    auto bufferType = descriptor->GetBufferType();
+
+    auto bufferSize = descriptor->GetSize();
+    auto dataSize = data.size();
+    if (buffer == 0u || dataSize == 0u || offset + dataSize > bufferSize) {
+        return false;
+    }
+
+    GLenum target = GetBufferType(bufferType);
+    if (target == GL_UNIFORM_BUFFER) {
+        m_glContext->GLBindBuffer(target, buffer);
+        // .GLBufferSubData(GL_UNIFORM_BUFFER, 0, size, data)
+        m_glContext->GLBufferSubData(target, offset, dataSize, data.data());
+
+        m_glContext->GLCheck();
+
+        m_glContext->GLBindBuffer(target, 0);
+
+        m_glContext->GLCheck();
+    } else {
+        m_glContext->GLBindBuffer(target, buffer)
+            .GLBufferSubData(target, offset, dataSize, data.data())
             .GLBindBuffer(target, 0);
     }
     return true;

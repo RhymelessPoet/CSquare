@@ -288,9 +288,7 @@ void AssimpLoader::printMaterialInfo(const aiMaterial* material)
                 std::cerr << data[i] << " ";
             }
         } else if (aiproperty->mType == aiPTI_String) {
-            aiString str;
-            memcpy(&str, aiproperty->mData, sizeof(aiString));
-            std::cerr << str.C_Str();
+            std::cerr << reinterpret_cast<char*>(aiproperty->mData);
         } else if (aiproperty->mType == aiPTI_Integer) {
             auto count = aiproperty->mDataLength / sizeof(int);
             auto data = reinterpret_cast<int*>(aiproperty->mData);

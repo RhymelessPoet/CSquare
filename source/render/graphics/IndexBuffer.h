@@ -1,5 +1,6 @@
 #pragma once
 #include "IGraphicsResource.h"
+#include <span>
 
 namespace CS
 {
@@ -13,6 +14,7 @@ public:
     ~IndexBuffer() = default;
 
     void UpdateData(const void* data, size_t size);
+    void UpdateData(std::span<const std::byte> data, size_t offset = 0);
 
 private:
     IndexBuffer(GraphicsBufferDescriptor* descriptor);

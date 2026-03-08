@@ -29,12 +29,15 @@ void CameraManipulator::LookAt(const Vector3f& eye, const Vector3f& center)
 void CameraManipulator::Dolly(float delta, float speed)
 {
     auto direction = m_center - m_position;
-    auto position = m_position + delta * speed * direction.Normalized();
+    auto length = direction.Length();
+    // Prevent too fast movement by auto-adjusting speed based on distance to center
+    auto dollyAmount = delta * speed * std::max(length * 0.1f, 0.1f);
+    auto position = m_position + direction.Normalized() * dollyAmount;
 
     auto newDirection = m_center - position;
     if (newDirection.Dot(direction) > 0.0f && newDirection.Length() > m_nearPlane) {
         m_position = position;
-        m_farPlane = 2.0f * newDirection.Length();
+        m_farPlane = std::max(m_minFarPlane, 2.0f * newDirection.Length());
     }
     UpdateCamera();
 }
@@ -134,7 +137,8 @@ void CameraManipulator::FitTo(const AABB& box)
     auto boxSize = box.GetSize().Cast<float>();
     auto& [min, max] = box;
     m_position = m_center + Vector3f{0.0f, 0.0f, boxSize.Z() * 6.0f};
-    m_farPlane = boxSize.Length() * 10.0f;
+    m_farPlane = (m_position - m_center).Length() * 2.0f;
+    m_minFarPlane = m_farPlane;
     UpdateCamera();
 }
 

@@ -54,7 +54,7 @@ Command_DrawIndexed::Command_DrawIndexed(uint32_t count, uint32_t indexOffset)
 
 bool Command_DrawIndexed::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
-    return graphicsAPI->DrawIndexed(m_count, m_indexOffset);
+    return graphicsAPI->DrawIndexed(m_count, 1u, m_indexOffset);
 }
 
 bool Command_SetViewport::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)

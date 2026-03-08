@@ -57,6 +57,7 @@ private:
     float m_aspectRatio{1.0f};
     float m_nearPlane{0.1f};
     float m_farPlane{1000.0f};
+    float m_minFarPlane{1000.0f};
 
     std::optional<Bookmark> m_bookmark;
 };

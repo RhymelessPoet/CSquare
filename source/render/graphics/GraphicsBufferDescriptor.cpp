@@ -38,6 +38,14 @@ bool GraphicsBufferDescriptor::UpdateData(const void* data, size_t size)
     return false;
 }
 
+bool GraphicsBufferDescriptor::UpdateData(std::span<const std::byte> data, size_t offset)
+{
+    if (IsBuild()) {
+        return GetGraphicsAPI()->UpdateGraphicsSubBufferData(this, data, offset);
+    }
+    return false;
+}
+
 bool GraphicsBufferDescriptor::build()
 {
     return GetGraphicsAPI()->BuildGraphicsBuffer(this);

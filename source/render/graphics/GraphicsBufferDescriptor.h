@@ -1,6 +1,6 @@
 #pragma once
-
 #include "IGraphicsResourceDescriptor.h"
+#include <span>
 
 namespace CS
 {
@@ -29,6 +29,7 @@ public:
     uint32_t GetNativeBuffer() const;
 
     bool UpdateData(const void* data, size_t size);
+    bool UpdateData(std::span<const std::byte> data, size_t offset = 0);
 
     void SetSize(size_t size) { m_size = size; }
     size_t GetSize() const { return m_size; }

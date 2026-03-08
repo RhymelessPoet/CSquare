@@ -14,4 +14,12 @@ void IndexBuffer::UpdateData(const void* data, size_t size)
     descriptor<GraphicsBufferDescriptor>().UpdateData(data, size);
 }
 
+void IndexBuffer::UpdateData(std::span<const std::byte> data, size_t offset)
+{
+    if (!IsValid()) {
+        return;
+    }
+    descriptor<GraphicsBufferDescriptor>().UpdateData(data, offset);
+}
+
 } // namespace CS

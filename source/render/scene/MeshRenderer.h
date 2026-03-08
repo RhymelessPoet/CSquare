@@ -4,19 +4,13 @@
 #include "graphics/IndexBuffer.h"
 #include "graphics/VertexBuffer.h"
 #include "utils/OrientedBoundingBox.h"
-#include <array>
+#include <map>
 #include <memory>
 
 namespace CS
 {
-class Mesh;
-class Shader;
 class MeshRenderSystem;
-class MaterialInstance;
-class MaterialCompiler;
-class VertexInputLayout;
 class GeometryNode;
-class OrientedBoundingBox;
 
 class MeshRenderer : public IRenderable
 {
@@ -36,16 +30,31 @@ public:
     OrientedBoundingBox GetWorldBoundingBox();
 
 private:
+    struct GeometryData
+    {
+        GraphicsInputAssembly inputAssembly;
+        uint32_t vertexOffset{0u};
+        uint32_t indexOffset{0u};
+        bool vertexBufferDirty{true};
+        bool indexBufferDirty{true};
+    };
+    using GeometryDataMap = std::map<const std::shared_ptr<GeometryNode>, std::unique_ptr<GeometryData>>;
+
     void render(RenderContext& context, std::shared_ptr<GeometryNode> node);
+    void
+    updateGeometryData(const GeometryDataMap& map, const std::shared_ptr<GeometryNode>& preNode, GeometryData& data);
+    std::pair<size_t, size_t> getGeometryDataSize(const std::shared_ptr<GeometryNode>& node) const;
+    std::pair<size_t, size_t> getGeometryDataOffset(const GeometryDataMap& map,
+                                                    const std::shared_ptr<GeometryNode>& node) const;
+    GraphicsInputAssembly& getInputAssembly(GeometryDataMap& map, const std::shared_ptr<GeometryNode>& node);
 
 private:
     std::vector<std::shared_ptr<GeometryNode>> m_geometryNodes;
+    GeometryDataMap m_geometryData;
+    uint32_t m_vertexBufferSize{0u};
+    uint32_t m_indexBufferSize{0u};
 
     IndexBuffer m_indexBuffer;
     VertexBuffer m_vertexBuffer;
-
-    GraphicsInputAssembly m_inputAssembly;
-
-    bool m_meshDirty : 1; // Use bit field for memory efficiency
 };
 } // namespace CS

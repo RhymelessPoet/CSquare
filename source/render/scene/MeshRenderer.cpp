@@ -21,11 +21,55 @@ namespace CS
 
 MeshRenderer::MeshRenderer(std::shared_ptr<SceneObject> owner) : IRenderable(std::move(owner)) {}
 
-void MeshRenderer::OnUpdate() {}
+void MeshRenderer::OnUpdate()
+{
+    GeometryDataMap newGeometryData;
+    std::shared_ptr<GeometryNode> preNode;
+    for (const auto& node : m_geometryNodes) {
+        auto it = m_geometryData.find(node);
+        if (it != m_geometryData.end()) {
+            newGeometryData[node] = std::move(it->second);
+        } else {
+            newGeometryData[node] = std::make_unique<GeometryData>();
+            updateGeometryData(newGeometryData, preNode, *newGeometryData[node]);
+        }
+        preNode = node;
+    }
+    m_geometryData = std::move(newGeometryData);
+    if (m_geometryNodes.empty()) {
+        m_vertexBufferSize = 0u;
+        m_indexBufferSize = 0u;
+    } else {
+        auto lastNode = m_geometryNodes.back();
+        auto [vertexBufferSize, indexBufferSize] = getGeometryDataSize(lastNode);
+        auto [vertexBufferOffset, indexBufferOffset] = getGeometryDataOffset(m_geometryData, lastNode);
+        m_vertexBufferSize = vertexBufferOffset + vertexBufferSize;
+        m_indexBufferSize = indexBufferOffset + indexBufferSize;
+    }
+}
 
 void MeshRenderer::OnRender(RenderContext& context)
 {
+    auto graphicsAPI = context.GetGraphicsAPI();
+    if (!m_vertexBuffer.IsValid()) {
+        m_vertexBuffer = graphicsAPI->CreateVertexBuffer(m_vertexBufferSize);
+    }
+    if (!m_indexBuffer.IsValid()) {
+        m_indexBuffer = graphicsAPI->CreateIndexBuffer(m_indexBufferSize);
+    }
+    if (!m_vertexBuffer.IsBuild()) {
+        m_vertexBuffer.Build();
+    }
+    if (!m_indexBuffer.IsBuild()) {
+        m_indexBuffer.Build();
+    }
     for (const auto& node : m_geometryNodes) {
+
+        auto& inputAssembly = getInputAssembly(m_geometryData, node);
+        if (!inputAssembly.IsValid()) {
+            inputAssembly = graphicsAPI->CreateInputAssembly();
+        }
+
         render(context, node);
     }
 }
@@ -69,37 +113,28 @@ void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> 
 {
     auto mesh = node->GetMesh();
     auto material = node->GetMaterial();
-    auto graphicsAPI = context.GetGraphicsAPI();
-    if (!m_vertexBuffer.IsValid()) {
-        auto vertexBufferSize = mesh->GetVertexBuffer(0u).GetByteSize();
-        m_vertexBuffer = graphicsAPI->CreateVertexBuffer(vertexBufferSize);
-    }
-    if (!m_indexBuffer.IsValid()) {
-        auto indexBufferSize = mesh->GetIndices<std::byte>().size();
-        m_indexBuffer = graphicsAPI->CreateIndexBuffer(indexBufferSize);
-    }
 
-    if (!m_inputAssembly.IsValid()) {
-        m_inputAssembly = graphicsAPI->CreateInputAssembly();
+    auto& inputAssembly = getInputAssembly(m_geometryData, node);
+    auto [vertexBufferSize, indexBufferSize] = getGeometryDataSize(node);
+    auto [vertexBufferOffset, indexBufferOffset] = getGeometryDataOffset(m_geometryData, node);
+
+    if (!inputAssembly.IsBuild()) {
         auto vertexInputLayout = node->GetVertexInputLayout();
-        uint32_t offset = 0u;
+        uint32_t offset = vertexBufferOffset;
         for (uint32_t binding = 0u; binding < vertexInputLayout->MaxBindings; ++binding) {
             const auto& vertexBinding = vertexInputLayout->GetBinding(binding);
             if (vertexBinding.has_value()) {
-                m_inputAssembly.SetVertexInput(binding, m_vertexBuffer, offset);
+                inputAssembly.SetVertexInput(binding, m_vertexBuffer, offset);
                 offset += vertexBinding.value().GetStride() * mesh->GetVertexCount();
             }
         }
-        m_inputAssembly.SetIndexBuffer(m_indexBuffer, uint32_t{});
+        inputAssembly.SetIndexBuffer(m_indexBuffer, uint32_t{});
+        inputAssembly.SetVertexInputLayout(vertexInputLayout);
 
-        m_inputAssembly.SetVertexInputLayout(vertexInputLayout);
-    }
-
-    if (!m_vertexBuffer.IsBuild()) {
-        m_vertexBuffer.Build();
-    }
-    if (!m_indexBuffer.IsBuild()) {
-        m_indexBuffer.Build();
+        auto vertexData = mesh->GetVertexBufferView(0u);
+        auto indexData = mesh->GetIndices<std::byte>();
+        m_vertexBuffer.UpdateData(vertexData, vertexBufferOffset);
+        m_indexBuffer.UpdateData(indexData, indexBufferOffset);
     }
 
     auto transform = owner()->GetComponent<Transform>();
@@ -108,14 +143,6 @@ void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> 
         const auto modelMatrix = transform->GetWorldMatrix().Transposed();
 
         auto noError = material->SetUniformValue(std::string_view("model"), modelMatrix.ToStdVector());
-    }
-
-    if (m_meshDirty) {
-        auto vertexData = mesh->GetVertexBufferView(0u);
-        auto indexData = mesh->GetIndices<std::byte>();
-        m_vertexBuffer.UpdateData(vertexData.data(), vertexData.size());
-        m_indexBuffer.UpdateData(indexData.data(), indexData.size());
-        m_meshDirty = false;
     }
 
     auto& materialCompiler = context.GetMaterialCompiler();
@@ -129,9 +156,52 @@ void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> 
     auto commandBuffer = context.GetCommandBuffer();
 
     commandBuffer.Bind(pipeline)
-        .Bind(m_inputAssembly)
+        .Bind(inputAssembly)
         .Bind(shaderBindingSet)
-        .DrawIndexed(mesh->GetIndices<uint32_t>().size(), 0u);
+        .DrawIndexed(mesh->GetIndices<uint32_t>().size(), indexBufferOffset);
+}
+
+void MeshRenderer::updateGeometryData(const GeometryDataMap& map,
+                                      const std::shared_ptr<GeometryNode>& preNode,
+                                      GeometryData& data)
+{
+    uint32_t vertexOffset = 0u;
+    uint32_t indexOffset = 0u;
+    if (preNode) {
+        auto [vertexBufferSize, indexBufferSize] = getGeometryDataSize(preNode);
+        auto [preVertexOffset, preIndexOffset] = getGeometryDataOffset(map, preNode);
+        vertexOffset = preVertexOffset + vertexBufferSize;
+        indexOffset = preIndexOffset + indexBufferSize;
+    }
+    if (data.vertexOffset != vertexOffset) {
+        data.vertexOffset = vertexOffset;
+        data.vertexBufferDirty = true;
+    }
+    if (data.indexOffset != indexOffset) {
+        data.indexOffset = indexOffset;
+        data.indexBufferDirty = true;
+    }
+}
+
+std::pair<size_t, size_t> MeshRenderer::getGeometryDataSize(const std::shared_ptr<GeometryNode>& node) const
+{
+    auto mesh = node->GetMesh();
+    return std::pair<size_t, size_t>(mesh->GetVertexBuffer(0u).GetByteSize(), mesh->GetIndices<std::byte>().size());
+}
+
+std::pair<size_t, size_t> MeshRenderer::getGeometryDataOffset(const GeometryDataMap& map,
+                                                              const std::shared_ptr<GeometryNode>& node) const
+{
+    auto it = map.find(node);
+    if (it != map.end()) {
+        return std::pair<size_t, size_t>(it->second->vertexOffset, it->second->indexOffset);
+    }
+    return std::pair<size_t, size_t>(0u, 0u);
+}
+
+GraphicsInputAssembly& MeshRenderer::getInputAssembly(GeometryDataMap& map, const std::shared_ptr<GeometryNode>& node)
+{
+    return map[node]->inputAssembly;
 }
 
 } // namespace CS
