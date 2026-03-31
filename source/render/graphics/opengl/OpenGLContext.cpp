@@ -1,5 +1,6 @@
 #include "OpenGLContext.h"
 #include "NativeContext.h"
+#include <format>
 #include <iostream>
 
 namespace CS
@@ -20,6 +21,14 @@ OpenGLContext::~OpenGLContext() {}
 bool OpenGLContext::IsShared() const
 {
     return false;
+}
+
+std::string_view OpenGLContext::GetVersion()
+{
+    if (m_version.empty()) {
+        initVersion();
+    }
+    return m_version;
 }
 
 OpenGLContext& OpenGLContext::GLViewport(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -120,6 +129,12 @@ OpenGLContext& OpenGLContext::GLDeleteTextures(GLsizei n, const GLuint* textures
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLPixelStorei(GLenum pname, GLint param)
+{
+    glPixelStorei(pname, param);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLGenSamplers(GLsizei n, GLuint* samplers)
 {
     glGenSamplers(n, samplers);
@@ -190,7 +205,7 @@ OpenGLContext& OpenGLContext::GLBufferSubData(GLenum target, GLintptr offset, GL
 {
     GLint alignment;
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
-    if (offset % alignment != 0) {
+    if (target == GL_UNIFORM_BUFFER && offset % alignment != 0) {
         std::cerr << "offset not align " << alignment << std::endl;
     }
     glBufferSubData(target, offset, size, data);
@@ -433,6 +448,16 @@ OpenGLContext& OpenGLContext::GLCheck()
         std::cerr << "OpenGL Error: " << getErrorString(err) << std::endl;
     }
     return *this;
+}
+
+void OpenGLContext::initVersion()
+{
+    const char* version = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    const char* vendor = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+    const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    const char* glslVersion = reinterpret_cast<const char*>(glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    m_version = std::format("[{}], [{}], [{}], [{}]", version, vendor, renderer, glslVersion);
 }
 
 } // namespace CS

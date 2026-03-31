@@ -25,6 +25,8 @@ public:
 
     ImageFormat GetFormat() const { return m_format; }
 
+    const Path& GetPath() const { return m_path; }
+
 private:
     std::string m_name;
     ImageFormat m_format{ImageFormat::RGBA8};

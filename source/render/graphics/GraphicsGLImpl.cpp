@@ -9,6 +9,7 @@
 #include "graphics/GraphicsResourceCache.h"
 #include "graphics/opengl/glad/include/glad/glad.h"
 #include "opengl/OpenGLContext.h"
+#include <iostream>
 
 namespace CS
 {
@@ -108,6 +109,8 @@ static GLFormatMapping GetGLFormatMapping(TextureFormat format)
         return {GL_RGBA8, GL_BGRA, GL_UNSIGNED_BYTE};
     case TextureFormat::RGBA8Srgb:
         return {GL_SRGB8_ALPHA8, GL_RGBA, GL_UNSIGNED_BYTE};
+    case TextureFormat::RGB8Srgb:
+        return {GL_SRGB8, GL_RGB, GL_UNSIGNED_BYTE};
     case TextureFormat::RGB32Float:
         return {GL_RGB32F, GL_RGB, GL_FLOAT};
     case TextureFormat::RGBA32Float:
@@ -152,7 +155,11 @@ GraphicsGLImpl::~GraphicsGLImpl() {}
 
 bool GraphicsGLImpl::Initialize()
 {
-    return gladLoadGL() == 1;
+    bool glLoad = gladLoadGL() == 1;
+
+    std::cerr << m_glContext->GetVersion() << std::endl;
+
+    return glLoad;
 }
 
 bool GraphicsGLImpl::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -493,14 +500,25 @@ bool GraphicsGLImpl::BuildTexture(TextureDescriptor* descriptor)
 
 bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void* data)
 {
+    static constexpr GLint DefaultTextureDataAlignment = 4;
+
     GLuint textureID = descriptor->GetNativeTexture();
     const auto [width, height] = descriptor->GetSize();
     auto [internalFormat, format, type] = GetGLFormatMapping(descriptor->GetFormat());
 
+    auto formatSize = GetTextureFormatSize(descriptor->GetFormat());
+    auto alignment = (width * formatSize) % DefaultTextureDataAlignment;
+
+    if (alignment != 0) {
+        m_glContext->GLPixelStorei(GL_UNPACK_ALIGNMENT, static_cast<GLint>(alignment));
+    }
     m_glContext->GLBindTexture(GL_TEXTURE_2D, textureID)
         .GLTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data)
         .GLBindTexture(GL_TEXTURE_2D, 0)
         .GLCheck();
+    if (alignment != 0) {
+        m_glContext->GLPixelStorei(GL_UNPACK_ALIGNMENT, DefaultTextureDataAlignment);
+    }
 
     return true;
 }

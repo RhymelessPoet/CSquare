@@ -2,6 +2,7 @@
 #include "base/Size.h"
 #include "glad/glad.h"
 #include <memory>
+#include <string>
 
 namespace CS
 {
@@ -15,6 +16,8 @@ public:
     ~OpenGLContext();
 
     bool IsShared() const;
+
+    std::string_view GetVersion();
 
     OpenGLContext& GLViewport(GLint x, GLint y, GLsizei width, GLsizei height);
     OpenGLContext& GLDisable(GLenum cap);
@@ -42,6 +45,7 @@ public:
                                 GLenum type,
                                 const void* pixels);
     OpenGLContext& GLDeleteTextures(GLsizei n, const GLuint* textures);
+    OpenGLContext& GLPixelStorei(GLenum pname, GLint param);
 
     OpenGLContext& GLGenSamplers(GLsizei n, GLuint* samplers);
     OpenGLContext& GLSamplerParameteri(GLuint sampler, GLenum pname, GLint param);
@@ -99,7 +103,11 @@ public:
     OpenGLContext& GLCheck();
 
 private:
+    void initVersion();
+
+private:
     std::unique_ptr<INativeContext> m_nativeContext;
+    std::string m_version;
 };
 
 } // namespace CS

@@ -33,6 +33,12 @@ public:
     void SetMipmapFilter(MipmapFilterMode mode);
     MipmapFilterMode GetMipmapFilter() const { return m_mipmapFilter; }
 
+    void SetSRGB(bool isSRGB) { m_isSRGB = isSRGB; }
+    bool IsSRGB() const { return m_isSRGB; }
+
+    void SetUseMipmaps(bool useMipmaps) { m_useMipmaps = useMipmaps; }
+    bool UseMipmaps() const { return m_useMipmaps; }
+
     bool IsDirty() const { return m_dirty; }
     void ResetDirty() { m_dirty = false; }
 

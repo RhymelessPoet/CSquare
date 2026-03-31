@@ -55,8 +55,8 @@ static inline constexpr std::string_view PBR_VS = R"(
 #version 450 core
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
-layout(location = 2) in vec3 in_tagent;
-layout(location = 3) in vec3 in_bitagent;
+layout(location = 2) in vec3 in_tangent;
+layout(location = 3) in vec3 in_bitangent;
 layout(location = 4) in vec2 in_texcoord;
 
 layout(std140, binding = 0) uniform VPMatrix
@@ -73,6 +73,8 @@ layout(std140, binding = 1) uniform MMatrix
 layout(location = 0) out vec3 normal;
 layout(location = 1) out vec3 world_position;
 layout(location = 2) out vec2 tex_coord;
+layout(location = 3) out vec3 tangent;
+layout(location = 4) out vec3 bitangent;
 
 void main()
 {
@@ -82,6 +84,8 @@ void main()
     world_position = model_position.xyz;
     normal = transpose(mat3(model)) * in_normal;
     tex_coord = in_texcoord;
+    tangent = transpose(mat3(model)) * in_tangent;
+    bitangent = transpose(mat3(model)) * in_bitangent;
 }
 
 )";
@@ -91,37 +95,146 @@ static inline constexpr std::string_view PBR_FS = R"(
 
 // 输入变量
 layout(location = 0) in vec3 normal;
-layout(location = 1) in vec3 world_position;  // 补充世界空间位置(PBR必需)
-layout(location = 2) in vec2 tex_coord;       // 纹理坐标(如果需要纹理采样)
+layout(location = 1) in vec3 world_position;
+layout(location = 2) in vec2 tex_coord;
+layout(location = 3) in vec3 tangent;
+layout(location = 4) in vec3 bitangent;
 
-// PBR 材质参数
+// PBR 材质参数（双模式兼容）
 layout(std140, binding = 2) uniform PBR
 {
-    vec4 base_color;      // 基础色 (RGB) + 透明度 (A)
-    vec4 diffuse_color;   // 漫反射系数(PBR中通常融合到base_color)
-    vec4 emission_color;  // 自发光颜色 (RGB) + 强度 (A)
-    float metallic;       // 金属度 [0,1]
-    float roughness;      // 粗糙度 [0,1]
-    float shininess;      // 兼容传统高光的光泽度(PBR中主要用roughness)
+    vec4 base_color;          // 基础色（金属工作流, 高光工作流）
+    vec4 diffuse_color;       // 漫反射颜色（高光工作流）
+    vec4 specular_color;      // 高光颜色（高光工作流）
+    vec4 emission_color;      // 自发光颜色 + 强度
+    float metallic;           // 金属度（金属工作流）
+    float roughness;          // 粗糙度（金属工作流）
+    float glossiness;         // 光泽度（高光工作流）
+
+    float normal_scale;       // 法线贴图强度
+
+    bool use_spec_gloss;     // 【模式开关】true=高光/光泽度, false=金属/粗糙度
+    bool use_emission_color_map;
+
+    bool use_base_color_map;  // 金属工作流, 高光工作流
+    bool use_metallic_map;
+    bool use_roughness_map;
+
+    bool use_specular_map;    // 高光纹理
+    bool use_glossiness_map;  // 光泽度纹理
+
+    bool use_height_map;
+    bool use_normal_map;
 };
 
-// 光源参数(示例：单个方向光)
+// 光源参数
 layout(std140, binding = 3) uniform ImagingParameters
 {
-    vec3 camera_position;        // 相机世界空间位置
-    vec3 light_direction;        // 世界空间光源方向(归一化)
-    vec3 light_color;            // 光源颜色
-    float light_intensity;       // 光源强度
+    vec3 camera_position;
+    vec3 light_direction;
+    vec3 light_color;
+    float light_intensity;
 };
+
+// 纹理绑定
+layout(binding = 4) uniform sampler2D base_color_map;
+layout(binding = 5) uniform sampler2D emission_color_map;
+layout(binding = 6) uniform sampler2D metallic_map;
+layout(binding = 7) uniform sampler2D roughness_map;
+layout(binding = 8) uniform sampler2D normal_map;
+layout(binding = 9) uniform sampler2D specular_map;       // 新增：高光纹理
+layout(binding = 10) uniform sampler2D glossiness_map;   // 新增：光泽度纹理
 
 // 输出颜色
 layout(location = 0) out vec4 FragColor;
 
-// 数学常量
 const float PI = 3.14159265359;
 
-// -------------------------- PBR 核心函数 --------------------------
-// 法线分布函数 (Trowbridge-Reitz GGX)
+// ===================== 采样函数（兼容双模式）=====================
+vec4 GetBaseColor()
+{
+    if (use_base_color_map) {
+        vec4 tex_color = texture(base_color_map, tex_coord);
+        return vec4(tex_color.rgb, base_color.a);
+    } else {
+        return base_color;
+    }
+}
+
+vec4 GetDiffuseColor()
+{
+    if (use_base_color_map) {
+        return texture(base_color_map, tex_coord);
+    } else {
+        return diffuse_color;
+    }
+}
+
+vec3 GetSpecularColor()
+{
+    if (use_specular_map) {
+        return texture(specular_map, tex_coord).rgb;
+    } else {
+        return specular_color.rgb;
+    }
+}
+
+float GetMetallic()
+{
+    if (use_metallic_map) {
+        return texture(metallic_map, tex_coord).r;
+    } else {
+        return metallic;
+    }
+}
+
+float GetRoughness()
+{
+    if (use_roughness_map) {
+        return texture(roughness_map, tex_coord).r;
+    } else {
+        return roughness;
+    }
+}
+
+float GetGlossiness()
+{
+    if (use_glossiness_map) {
+        return texture(glossiness_map, tex_coord).r;
+    } else {
+        return glossiness;
+    }
+}
+
+vec4 GetEmissionColor()
+{
+    if (use_emission_color_map) {
+        vec4 tex_color = texture(emission_color_map, tex_coord);
+        return vec4(tex_color.rgb, emission_color.a);
+    } else {
+        return emission_color;
+    }
+}
+
+vec3 GetNormal()
+{
+    if(!use_normal_map)
+        return normalize(normal);
+
+    vec3 tangent_normal = texture(normal_map, tex_coord).rgb;
+    tangent_normal.xy *= normal_scale;
+    tangent_normal = normalize(tangent_normal * 2.0 - 1.0);
+
+    mat3 TBN = mat3(
+        normalize(tangent),
+        normalize(bitangent),
+        normalize(normal)
+    );
+
+    return normalize(TBN * tangent_normal);
+}
+
+// ===================== PBR 核心函数（不变）=====================
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
     float a = roughness * roughness;
@@ -133,7 +246,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return nom / max(denom, 0.0000001); // 防止除零
+    return nom / max(denom, 0.0000001);
 }
 
 // 几何遮挡函数 (Schlick-GGX)
@@ -167,60 +280,75 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main()
 {
-    // 1. 基础向量归一化
-    vec3 N = normalize(normal);                              // 法向量
-    vec3 V = normalize(camera_position - world_position);    // 视线方向
-    vec3 L = normalize(light_direction);                     // 光源方向
-    vec3 H = normalize(V + L);                               // 半程向量
+    vec3 N = GetNormal();
+    vec3 V = normalize(camera_position - world_position);
+    vec3 L = normalize(light_direction);
+    vec3 H = normalize(V + L);
 
-    // 2. 基础材质参数处理
-    vec3 albedo = pow(base_color.rgb, vec3(2.2));     // 伽马校正
-    float metallic = clamp(metallic, 0.0, 1.0);       // 金属度限制
-    float roughness = clamp(roughness, 0.001, 1.0);   // 粗糙度限制(防止除零)
-    float ao = 1.0;                                   // 环境遮挡(可扩展)
+    // -------------------------- 双模式参数兼容 --------------------------
+    vec3 albedo;
+    vec3 diffuse;
+    vec3 specular;
+    float roughnessFinal;
+    float metallicFinal;
 
-    // 3. 菲涅尔基值 F0 (非金属=0.04,金属=反照率)
-    vec3 F0 = vec3(0.04);
-    F0 = mix(F0, albedo, metallic);
+    if (use_spec_gloss)
+    {
+        // 模式 1: 高光/光泽度
+        diffuse = pow(GetDiffuseColor().rgb, vec3(2.2));
+        specular = pow(GetSpecularColor(), vec3(2.2));
+        roughnessFinal = clamp(1.0 - GetGlossiness(), 0.001, 1.0);
+        albedo = diffuse;
+        metallicFinal = 0.0; // 金属度不参与
+    }
+    else
+    {
+        // 模式 2: 金属/粗糙度（默认）
+        vec4 baseColorLinear = GetBaseColor();
+        albedo = pow(baseColorLinear.rgb, vec3(2.2));
+        diffuse = albedo;
+        roughnessFinal = clamp(GetRoughness(), 0.001, 1.0);
+        metallicFinal = clamp(GetMetallic(), 0.0, 1.0);
+        
+        // 金属工作流自动计算高光 F0
+        vec3 F0_base = vec3(0.04);
+        specular = mix(F0_base, albedo, metallicFinal);
+    }
 
-    // 4. 计算PBR各项系数
-    float NDF = DistributionGGX(N, H, roughness);       // 法线分布
-    float G = GeometrySmith(N, V, L, roughness);        // 几何阴影
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);   // 菲涅尔
+    float ao = 1.0;
 
-    // 5. 镜面反射和漫反射计算
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 specular = numerator / max(denominator, 0.0000001);
+    // -------------------------- PBR 光照计算（一套通用） --------------------------
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), specular);
+    float NDF = DistributionGGX(N, H, roughnessFinal);
+    float G = GeometrySmith(N, V, L, roughnessFinal);
 
-    // 镜面/漫反射权重 (kS=镜面,kD=漫反射)
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metallic;  // 金属无漫反射
 
-    // 6. 漫反射贡献
+    if (!use_spec_gloss) {
+        kD *= 1.0 - metallicFinal; // 金属消除漫反射
+    }
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    vec3 spec = numerator / max(denominator, 0.0000001);
+
     float NdotL = max(dot(N, L), 0.0);
-    vec3 diffuse = (kD * albedo / PI) * NdotL;
+    vec3 diffuseResult = (kD * albedo / PI) * NdotL;
 
-    // 7. 总直接光照
     vec3 radiance = light_color * light_intensity;
-    vec3 directLight = (diffuse + specular) * radiance;
+    vec3 directLight = (diffuseResult + spec) * radiance;
 
-    // 8. 环境光照 (简化版IBL,可替换为CubeMap采样)
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    // 环境光 + 自发光
+    vec3 ambient = vec3(0.13) * albedo * ao;
+    vec3 emission = GetEmissionColor().rgb * GetEmissionColor().a;
 
-    // 9. 自发光贡献
-    vec3 emission = emission_color.rgb * emission_color.a;
-
-    // 10. 最终颜色计算
+    // 最终颜色
     vec3 finalColor = ambient + directLight + emission;
+    finalColor = finalColor / (finalColor + vec3(1.0));
+    finalColor = pow(finalColor, vec3(1.0/2.2));
 
-    // 11. 色调映射 + 伽马校正
-    finalColor = finalColor / (finalColor + vec3(1.0));  // Reinhard色调映射
-    finalColor = pow(finalColor, vec3(1.0/2.2));         // 反伽马校正
-
-    // 输出最终颜色(包含透明度)
-    FragColor = vec4(finalColor, base_color.a);
+    FragColor = vec4(finalColor, GetBaseColor().a);
 }
 
 )";
@@ -284,17 +412,53 @@ void BuiltInShaders::createPBRShader()
     auto binding2 = ShaderBinding{2u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
     binding2.SetLayout({{"base_color", 4 * sizeof(float)},
                         {"diffuse_color", 4 * sizeof(float)},
+                        {"specular_color", 4 * sizeof(float)},
                         {"emission_color", 4 * sizeof(float)},
                         {"metallic", sizeof(float)},
                         {"roughness", sizeof(float)},
-                        {"shininess", sizeof(float)}});
+                        {"glossiness", sizeof(float)},
+                        {"normal_scale", sizeof(float)},
+                        {"use_spec_gloss", sizeof(bool)},
+                        {"use_emission_color_map", sizeof(bool)},
+                        {"use_base_color_map", sizeof(bool)},
+                        {"use_metallic_map", sizeof(bool)},
+                        {"use_roughness_map", sizeof(bool)},
+                        {"use_specular_map", sizeof(bool)},
+                        {"use_glossiness_map", sizeof(bool)},
+                        {"use_normal_map", sizeof(bool)}});
     auto binding3 = ShaderBinding{3u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
     binding3.SetLayout({{"camera_position", 3 * sizeof(float)},
                         {"light_direction", 3 * sizeof(float)},
                         {"light_color", 3 * sizeof(float)},
                         {"light_intensity", sizeof(float)}});
+
+    auto materialTexture = std::make_unique<ImageTexture>();
+    materialTexture->SetAddressModeUV(AddressMode::Repeat, AddressMode::Repeat);
+
+    auto binding4 = ShaderBinding{4u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding4.SetTexture(ShaderBindingTexture("base_color_map", materialTexture->Clone()));
+    auto binding5 = ShaderBinding{5u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding5.SetTexture(ShaderBindingTexture("emission_color_map", materialTexture->Clone()));
+    auto binding6 = ShaderBinding{6u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding6.SetTexture(ShaderBindingTexture("metallic_map", materialTexture->Clone()));
+    auto binding7 = ShaderBinding{7u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding7.SetTexture(ShaderBindingTexture("roughness_map", materialTexture->Clone()));
+    auto binding8 = ShaderBinding{8u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding8.SetTexture(ShaderBindingTexture("normal_map", materialTexture->Clone()));
+    auto binding9 = ShaderBinding{9u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding9.SetTexture(ShaderBindingTexture("specular_map", materialTexture->Clone()));
+    auto binding10 = ShaderBinding{10u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding10.SetTexture(ShaderBindingTexture("glossiness_map", std::move(materialTexture)));
+
     fragShader->AddBinding(binding2);
     fragShader->AddBinding(binding3);
+    fragShader->AddBinding(binding4);
+    fragShader->AddBinding(binding5);
+    fragShader->AddBinding(binding6);
+    fragShader->AddBinding(binding7);
+    fragShader->AddBinding(binding8);
+    fragShader->AddBinding(binding9);
+    fragShader->AddBinding(binding10);
 
     m_fragmentShaders["PBR_FS"] = fragShader;
 }

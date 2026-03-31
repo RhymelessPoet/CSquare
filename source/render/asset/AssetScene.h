@@ -1,4 +1,6 @@
 #pragma once
+#include "base/FileSystem.h"
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -15,11 +17,12 @@ class AssetNode;
 class AssetScene
 {
 public:
-    explicit AssetScene(std::string_view name = "");
+    explicit AssetScene(std::string_view name = "", Path path = Path{});
 
     std::shared_ptr<AssetNode> GetRoot() const { return m_root; }
 
     void AddTexture(std::shared_ptr<Image> texture);
+    std::shared_ptr<Image> GetTexture(std::string_view path) const;
     std::shared_ptr<Image> GetTexture(uint32_t index) const;
 
     void AddMaterial(std::shared_ptr<MaterialInstance> material);
@@ -29,10 +32,14 @@ public:
     std::shared_ptr<Mesh> GetMesh(uint32_t index) const;
     std::optional<uint32_t> GetMaterialIndex(uint32_t meshIndex) const;
 
+    const Path& GetPath() const { return m_path; }
+
 private:
     std::string m_name;
+    Path m_path;
     std::shared_ptr<AssetNode> m_root;
 
+    std::map<std::string, uint32_t> m_textureIndices;
     std::vector<std::shared_ptr<Image>> m_textures;
     std::vector<std::shared_ptr<MaterialInstance>> m_materials;
     std::vector<std::shared_ptr<Mesh>> m_meshs;

@@ -6,13 +6,13 @@
 
 namespace CS
 {
-static inline TextureFormat GetTextureFormatFromImageFormat(ImageFormat format)
+static inline TextureFormat GetTextureFormatFromImageFormat(ImageFormat format, bool isSRGB = false)
 {
     switch (format) {
     case ImageFormat::RGBA8:
-        return TextureFormat::RGBA8Unorm;
+        return isSRGB ? TextureFormat::RGBA8Srgb : TextureFormat::RGBA8Unorm;
     case ImageFormat::RGB8:
-        return TextureFormat::RGB8Unorm;
+        return isSRGB ? TextureFormat::RGB8Srgb : TextureFormat::RGB8Unorm;
     case ImageFormat::RGB32Float:
         return TextureFormat::RGB32Float;
     case ImageFormat::RGBA32Float:
@@ -50,8 +50,14 @@ MaterialTexturesMap::SampledTexture* MaterialTexturesMap::AllocateTexture(std::s
         sampler.SetMipmapFilter(imageTexture.GetMipmapFilter());
     }
 
+    const auto& image = imageTexture.GetImage();
+    if (image != nullptr) {
+        auto format = GetTextureFormatFromImageFormat(image->GetFormat(), imageTexture.IsSRGB());
+        texture.SetFormat(format);
+        m_toUpdateImages[nameStr] = image;
+    }
+
     m_textures[nameStr] = SampledTexture{.texture = texture, .sampler = sampler};
-    m_toUpdateImages[nameStr] = imageTexture.GetImage();
 
     return &m_textures[nameStr];
 }
@@ -67,6 +73,9 @@ MaterialTexturesMap::SampledTexture* MaterialTexturesMap::GetTexture(std::string
 
 void MaterialTexturesMap::SetTextureData(std::string_view name, std::shared_ptr<Image> image)
 {
+    if (image == nullptr) {
+        return;
+    }
     auto it = m_textures.find(std::string(name));
     if (it != m_textures.end()) {
         m_toUpdateImages[std::string(name)] = image;
@@ -78,16 +87,14 @@ void MaterialTexturesMap::SetTextureData(std::string_view name, std::shared_ptr<
 void MaterialTexturesMap::UpdateTextures()
 {
     for (auto& [name, sampledTexture] : m_textures) {
-        sampledTexture.texture.Build();
         sampledTexture.sampler.Build();
 
         auto itr = m_toUpdateImages.find(name);
-        if (itr == m_toUpdateImages.end()) {
+        if (itr == m_toUpdateImages.end() || itr->second == nullptr) {
             continue;
         }
         auto& image = itr->second;
-        auto format = GetTextureFormatFromImageFormat(image->GetFormat());
-        sampledTexture.texture.SetFormat(format);
+
         sampledTexture.texture.Build();
         sampledTexture.texture.UpdateData(reinterpret_cast<const void*>(image->GetData()), image->GetSize().XY());
     }

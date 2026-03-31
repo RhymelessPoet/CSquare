@@ -63,7 +63,8 @@ void ProjectModel::initializeScene()
 
     // auto assetScene = AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
     // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/monkeysun/monkeysun.gltf");
-    auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/room/room.gltf");
+    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/room/room.gltf");
+    auto assetScene = AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/sponza/sponza.gltf");
 
     if (assetScene != nullptr) {
         AssetImporter importer(impl().scene);

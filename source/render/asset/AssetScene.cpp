@@ -1,13 +1,29 @@
 #include "AssetScene.h"
 #include "AssetNode.h"
+#include "Image.h"
 
 namespace CS
 {
-AssetScene::AssetScene(std::string_view name) : m_name(name), m_root(std::make_shared<AssetNode>()) {}
+AssetScene::AssetScene(std::string_view name, Path path)
+    : m_name(name), m_path(std::move(path)), m_root(std::make_shared<AssetNode>())
+{}
 
 void AssetScene::AddTexture(std::shared_ptr<Image> texture)
 {
+    m_textureIndices[texture->GetPath().string()] = m_textures.size();
     m_textures.push_back(std::move(texture));
+}
+
+std::shared_ptr<Image> AssetScene::GetTexture(std::string_view path) const
+{
+    if (auto itr = m_textureIndices.find(std::string(path)); itr != m_textureIndices.end()) {
+        auto index = itr->second;
+        if (index < m_textures.size()) {
+            return m_textures[index];
+        }
+    }
+
+    return nullptr;
 }
 
 std::shared_ptr<Image> AssetScene::GetTexture(uint32_t index) const

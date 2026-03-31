@@ -32,7 +32,11 @@ private:
     void parseNode(const aiNode* node, std::shared_ptr<AssetScene> scene, std::shared_ptr<AssetNode> assetNode);
 
     std::shared_ptr<Mesh> parseMesh(const aiMesh* aimesh);
-    std::shared_ptr<MaterialInstance> parsePBR(const aiMaterial* assimpMaterial);
+    std::shared_ptr<MaterialInstance> parsePBR(const aiMaterial* aimaterial, const std::shared_ptr<AssetScene>& scene);
+    bool parsePBRProperties(const aiMaterial* aimaterial, const std::shared_ptr<MaterialInstance>& material);
+    bool parsePBRPTextures(const aiMaterial* aimaterial,
+                           const std::shared_ptr<MaterialInstance>& material,
+                           const std::shared_ptr<AssetScene>& scene);
 
     void printMaterialInfo(const aiMaterial* material);
 };

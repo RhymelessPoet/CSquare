@@ -2,14 +2,71 @@
 #include "asset/AssetNode.h"
 #include "asset/AssetScene.h"
 #include "asset/BuiltInMaterials.h"
+#include "asset/Image.h"
 #include "base/math/Math.h"
 #include "geometry/Mesh.h"
+#include "materials/ImageTexture.h"
 #include "materials/Material.h"
+#include <assimp/version.h>
 #include <cassert>
 #include <iostream>
 
-namespace CS
+using namespace std::literals;
+
+namespace
 {
+// clang-format off
+std::map<aiTextureType, std::string_view> PBRTextureTypes = {
+    {aiTextureType_BASE_COLOR, "base_color_map"sv},
+    {aiTextureType_METALNESS, "metallic_map"sv},
+    {aiTextureType_DIFFUSE_ROUGHNESS, "roughness_map"sv},
+    {aiTextureType_NORMAL_CAMERA, "normal_camera_map"sv},
+    {aiTextureType_AMBIENT_OCCLUSION, "ambient_occlusion_map"sv},
+    {aiTextureType_EMISSION_COLOR, "emissive_color_map"sv},
+    {aiTextureType_DIFFUSE, "diffuse_color_map"sv},
+    {aiTextureType_SPECULAR, "specular_color_map"sv},
+    {aiTextureType_SHININESS, "glossiness_map"sv},
+    {aiTextureType_NORMALS, "normal_map"sv}
+};
+// clang-format on
+
+std::string_view GetPBRTextureControlName(aiTextureType type)
+{
+    // clang-format off
+    static std::map<aiTextureType, std::string_view> PBRTextureControls = {
+        {aiTextureType_BASE_COLOR, "use_base_color_map"sv},
+        {aiTextureType_METALNESS, "use_metallic_map"sv},
+        {aiTextureType_DIFFUSE_ROUGHNESS, "use_roughness_map"sv},
+        {aiTextureType_NORMAL_CAMERA, "use_normal_camera_map"sv},
+        {aiTextureType_AMBIENT_OCCLUSION, "use_ambient_occlusion_map"sv},
+        {aiTextureType_EMISSION_COLOR, "use_emissive_color_map"sv},
+        {aiTextureType_DIFFUSE, "use_diffuse_color_map"sv},
+        {aiTextureType_SPECULAR, "use_specular_color_map"sv},
+        {aiTextureType_SHININESS, "use_glossiness_map"sv},
+        {aiTextureType_NORMALS, "use_normal_map"sv}
+    };
+    // clang-format on
+
+    if (auto itr = PBRTextureControls.find(type); itr != PBRTextureControls.end()) {
+        return itr->second;
+    }
+
+    // TODO: log error
+
+    return ""sv;
+}
+
+CS::AddressMode GetAddressMode(aiTextureMapMode mode)
+{
+    static std::array<CS::AddressMode, 4u> AddressModes = {CS::AddressMode::Repeat, CS::AddressMode::ClampToEdge,
+                                                           CS::AddressMode::MirroredRepeat, CS::AddressMode::Decal};
+    if (mode < 4) {
+        return AddressModes[mode];
+    }
+    // TODO: log error
+    return CS::AddressMode::Repeat;
+}
+
 template <typename T>
 static T GetProperty(const aiMaterial* material, const char* key, unsigned int type, unsigned int idx)
 {
@@ -21,10 +78,17 @@ static T GetProperty(const aiMaterial* material, const char* key, unsigned int t
     return value;
 }
 
+} // namespace
+
+namespace CS
+{
+
 AssimpLoader::AssimpLoader() {}
 
 std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
 {
+    std::cerr << "Assimp version: " << aiGetVersionMajor() << "." << aiGetVersionMinor() << "."
+              << aiGetVersionRevision() << std::endl;
     Assimp::Importer importer;
 
     auto postprocessFlags =
@@ -46,7 +110,8 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
     std::vector<std::shared_ptr<Mesh>> meshs;
     std::vector<uint32_t> meshMaterialIndices;
 
-    auto scene = std::make_shared<AssetScene>();
+    auto name = FileSystem::is_directory(path) ? path.filename() : path.parent_path().filename();
+    auto scene = std::make_shared<AssetScene>(name.string(), path);
 
     bool noError = true;
     noError = noError && parseTextures(aiscene, scene);
@@ -87,7 +152,7 @@ bool AssimpLoader::parseMaterials(const aiScene* aiscene, std::shared_ptr<AssetS
         printMaterialInfo(aimaterial);
         const auto mode = GetProperty<int>(aimaterial, AI_MATKEY_SHADING_MODEL);
         if (mode == aiShadingMode_PBR_BRDF) {
-            scene->AddMaterial(parsePBR(aimaterial));
+            scene->AddMaterial(parsePBR(aimaterial, scene));
         }
         std::cerr << "\n";
     }
@@ -234,45 +299,120 @@ void AssimpLoader::parseNode(const aiNode* node,
     }
 }
 
-std::shared_ptr<MaterialInstance> AssimpLoader::parsePBR(const aiMaterial* aimaterial)
+std::shared_ptr<MaterialInstance> AssimpLoader::parsePBR(const aiMaterial* aimaterial,
+                                                         const std::shared_ptr<AssetScene>& scene)
 {
     auto material = BuiltInMaterials::Instance().GetPBRMaterial();
     auto materialInstance = material->CreateInstance();
 
     materialInstance->SetName(aimaterial->GetName().C_Str());
+    parsePBRPTextures(aimaterial, materialInstance, scene);
+    parsePBRProperties(aimaterial, materialInstance);
+
+    return materialInstance;
+}
+
+bool AssimpLoader::parsePBRProperties(const aiMaterial* aimaterial, const std::shared_ptr<MaterialInstance>& material)
+{
+    bool noError{true};
 
     aiColor4D color;
-    bool noError = true;
     if (aimaterial->Get(AI_MATKEY_BASE_COLOR, color) == AI_SUCCESS) {
-        noError =
-            noError && materialInstance->SetUniformValue("base_color", Vector4f{color.r, color.g, color.b, color.a});
+        noError = noError && material->SetUniformValue("base_color", Vector4f{color.r, color.g, color.b, color.a});
     }
 
     if (aimaterial->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
-        noError =
-            noError && materialInstance->SetUniformValue("diffuse_color", Vector4f{color.r, color.g, color.b, color.a});
+        noError = noError && material->SetUniformValue("diffuse_color", Vector4f{color.r, color.g, color.b, color.a});
+    }
+
+    if (aimaterial->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS) {
+        noError = noError && material->SetUniformValue("specular_color", Vector4f{color.r, color.g, color.b, color.a});
+        noError = noError && material->SetUniformValue("use_spec_gloss", true);
     }
 
     if (aimaterial->Get(AI_MATKEY_COLOR_EMISSIVE, color) == AI_SUCCESS) {
-        noError = noError &&
-                  materialInstance->SetUniformValue("emission_color", Vector4f{color.r, color.g, color.b, color.a});
+        noError = noError && material->SetUniformValue("emission_color", Vector4f{color.r, color.g, color.b, color.a});
     }
 
     float metallic = 0.0f;
     if (aimaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS) {
-        noError = noError && materialInstance->SetUniformValue("metallic", metallic);
+        noError = noError && material->SetUniformValue("metallic", metallic);
     }
 
     float roughness = 1.0f;
     if (aimaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
-        noError = noError && materialInstance->SetUniformValue("roughness", roughness);
+        noError = noError && material->SetUniformValue("roughness", roughness);
     }
     float shininess = 0.0f;
     if (aimaterial->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
-        noError = noError && materialInstance->SetUniformValue("shininess", shininess);
+        noError = noError && material->SetUniformValue("glossiness", shininess);
+        noError = noError && material->SetUniformValue("use_spec_gloss", true);
     }
 
-    return materialInstance;
+    return noError;
+}
+
+bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
+                                     const std::shared_ptr<MaterialInstance>& material,
+                                     const std::shared_ptr<AssetScene>& scene)
+{
+    bool noError{true};
+
+    for (const auto& [type, name] : PBRTextureTypes) {
+        aiString texPath;
+        aiTextureMapping mapping;
+        unsigned int uvIndex = 0;
+        float blend = 1.0f;
+        aiTextureOp op = aiTextureOp_Add;
+        aiTextureMapMode mapMode[2] = {aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
+
+        if (aiTextureType_NORMAL_CAMERA == type) {
+            int a = 0;
+        }
+
+        auto controlName = GetPBRTextureControlName(type);
+        if (!material->SetUniformValue(controlName, false)) {
+            // TODO: log error
+        }
+
+        if (AI_SUCCESS != aimaterial->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
+            noError = false;
+            continue;
+        }
+        auto imagePath = scene->GetPath().parent_path().append(texPath.C_Str());
+        auto image = scene->GetTexture(imagePath.string());
+        if (image == nullptr) {
+            image = std::make_shared<Image>(imagePath);
+            scene->AddTexture(image);
+        }
+        auto texture = material->GetInstanceTexture(name);
+        if (texture == nullptr) {
+            noError = false;
+            continue;
+        }
+        auto insTexture = texture->Clone();
+        if (auto imageTexture = dynamic_cast<ImageTexture*>(insTexture.get()); imageTexture != nullptr) {
+            imageTexture->SetImage(image);
+            imageTexture->SetAddressModeUV(GetAddressMode(mapMode[0]), GetAddressMode(mapMode[1]));
+            if (!material->SetUniformValue(controlName, true)) {
+                noError = false;
+            }
+            if (!material->SetTexture(name, std::move(insTexture))) {
+                noError = false;
+            }
+            if (name == "base_color_map"sv) {
+                // imageTexture->SetSRGB(true);
+            }
+            if (name == "normal_map"sv) {
+                (void)material->SetUniformValue("normal_scale", 0.0f);
+            }
+            if (name == "specular_color_map"sv || name == "glossiness_map"sv) {
+                (void)material->SetUniformValue("use_spec_gloss", true);
+            }
+        }
+    }
+
+    return noError;
 }
 
 void AssimpLoader::printMaterialInfo(const aiMaterial* material)
@@ -311,6 +451,18 @@ void AssimpLoader::printMaterialInfo(const aiMaterial* material)
             std::cerr << "unknown type";
         }
         std::cerr << "\n";
+    }
+    for (const auto& [type, name] : PBRTextureTypes) {
+        aiString texPath;
+        aiTextureMapping mapping;
+        unsigned int uvIndex = 0;
+        float blend = 1.0f;
+        aiTextureOp op = aiTextureOp_Add;
+        aiTextureMapMode mapMode[2] = {aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
+
+        if (AI_SUCCESS == material->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
+            std::cerr << name << " path: " << texPath.C_Str() << "\n";
+        }
     }
 }
 

@@ -6,7 +6,7 @@ namespace CS
 
 Image::Image(Path path, ImageFormat format) : m_path(std::move(path)), m_format(format)
 {
-    m_data = ImageLoader::Load(m_path, m_size, m_format);
+    Load(m_path, m_format);
 }
 
 Image::Image(std::vector<std::byte> data, ImageFormat format) : m_data(std::move(data)), m_format(format) {}
@@ -19,8 +19,11 @@ void Image::Load(Path path, ImageFormat format)
     if (!path.empty()) {
         m_path = std::move(path);
     }
-
-    m_data = ImageLoader::Load(m_path, m_size, m_format);
+    if (m_format == ImageFormat::RGB32Float || m_format == ImageFormat::RGBA32Float) {
+        m_data = ImageLoader::LoadFloat(m_path, m_size, m_format);
+    } else {
+        m_data = ImageLoader::Load(m_path, m_size, m_format);
+    }
 }
 
 void Image::Release()
