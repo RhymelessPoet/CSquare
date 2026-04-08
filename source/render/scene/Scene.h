@@ -1,4 +1,5 @@
 #pragma once
+#include "core/event/IEventListener.h"
 #include "utils/AxisAlignedBoundingBox.h"
 #include <functional>
 #include <map>
@@ -15,7 +16,8 @@ class Camera;
 class SceneObjectComposer;
 class Material;
 class IRenderable;
-class Scene : public std::enable_shared_from_this<Scene>
+class NewGeometryNode;
+class Scene : public std::enable_shared_from_this<Scene>, public IEventListener
 {
 public:
     Scene(std::shared_ptr<SceneObjectComposer> composer, std::string_view name = "");
@@ -34,10 +36,14 @@ public:
     const AABB& GetAABB() const { return m_box; }
     const AABB& GetAABB(bool reCompute = false);
 
+    std::unique_ptr<IEvent> OnEvent(std::unique_ptr<IEvent> event) override;
+
 private:
     void traverseWith(std::shared_ptr<SceneObject> object,
                       const std::function<void(std::shared_ptr<SceneObject>)>& func);
     void collectRenderables(std::shared_ptr<SceneObject> object);
+
+    std::unique_ptr<IEvent> onEvent(NewGeometryNode* event);
 
 private:
     std::string m_name;

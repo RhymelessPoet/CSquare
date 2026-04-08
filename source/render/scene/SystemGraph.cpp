@@ -1,5 +1,8 @@
 #include "SystemGraph.h"
 #include "ISystem.h"
+#include "RenderModuleContext.h"
+#include "SceneEvents.h"
+#include "SystemContext.h"
 
 namespace CS
 {
@@ -12,11 +15,29 @@ struct ImplData<SystemGraph>
 
 SystemGraph::SystemGraph() : PImpl<SystemGraph>() {}
 
-void SystemGraph::OnUpdate()
+void SystemGraph::OnUpdate(RenderModuleContext& context)
 {
+    SystemContext sysContext(context);
     for (const auto& system : systems()) {
-        system->OnUpdate();
+        sysContext.SetEventDispatcher(system.get());
+        system->OnUpdate(sysContext);
+        system->Dispatch(this);
     }
+    Dispatch(context.GetEventDispatcher());
+}
+
+std::vector<IEventListener*> SystemGraph::sift(IEvent* event) const
+{
+    return std::vector<IEventListener*>();
+}
+
+std::unique_ptr<IEvent> SystemGraph::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)
+{
+    if (auto event_ = dynamic_cast<NewMaterialInScene*>(event.get()); event_ != nullptr) {
+        nextDispatcher->PushEvent(std::move(event));
+        return nullptr;
+    }
+    return event;
 }
 
 void SystemGraph::sort() {}

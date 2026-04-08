@@ -5,7 +5,7 @@ namespace CS
 {
 CameraComponent::CameraComponent(std::shared_ptr<SceneObject> owner) : IComponent(std::move(owner)) {}
 
-void CameraComponent::OnUpdate()
+void CameraComponent::OnUpdate(SystemContext& context)
 {
     if (m_dirty) {
         updateProjectionMatrix();

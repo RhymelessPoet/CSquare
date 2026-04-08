@@ -12,11 +12,11 @@ public:
     MeshRenderSystem() = default;
     ~MeshRenderSystem() = default;
 
-    virtual void OnUpdate() override;
-    virtual void OnRender(RenderContext& context) override;
+    void OnUpdate(SystemContext& context) override;
 
 private:
-    std::map<uint16_t, std::shared_ptr<Material>> m_materials;
+    std::vector<IEventListener*> sift(IEvent* event) const override;
+    std::unique_ptr<IEvent> dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event) override;
 };
 
 } // namespace CS

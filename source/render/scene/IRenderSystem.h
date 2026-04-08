@@ -11,9 +11,6 @@ class IRenderSystem : public ISystem
 public:
     IRenderSystem();
     virtual ~IRenderSystem() = default;
-
-    virtual void OnRender(RenderContext& context) = 0;
-    ;
 };
 
 } // namespace CS

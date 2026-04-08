@@ -24,6 +24,12 @@ void ISystem::removeComponent(IComponent* component)
     }
 }
 
+std::unique_ptr<IEvent> ISystem::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)
+{
+    nextDispatcher->PushEvent(std::move(event));
+    return nullptr;
+}
+
 InvalidSystem& InvalidSystem::Instance()
 {
     static InvalidSystem instance;

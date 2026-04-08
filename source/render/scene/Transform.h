@@ -17,7 +17,7 @@ public:
     Transform(std::shared_ptr<SceneObject> owner, const Vector3f& position);
     ~Transform() = default;
 
-    virtual void OnUpdate() override;
+    virtual void OnUpdate(SystemContext& context) override;
 
     bool IsFresh() const;
 
@@ -37,6 +37,10 @@ public:
     const Matrix4f& GetWorldMatrix();
 
     OBB Trans(const AABB& box);
+
+private:
+    void update();
+    void notifyChildrenDirty();
 
 private:
     Vector3f m_position{0.0f, 0.0f, 0.0f};

@@ -14,6 +14,9 @@
 #include "SceneObject.h"
 #include "Transform.h"
 
+#include "SceneObjectEvents.h"
+#include "SystemContext.h"
+#include "core/event/IEventDispatcher.h"
 #include <iostream>
 
 namespace CS
@@ -21,8 +24,9 @@ namespace CS
 
 MeshRenderer::MeshRenderer(std::shared_ptr<SceneObject> owner) : IRenderable(std::move(owner)) {}
 
-void MeshRenderer::OnUpdate()
+void MeshRenderer::OnUpdate(SystemContext& context)
 {
+    auto eventDispatcher = context.GetEventDispatcher();
     GeometryDataMap newGeometryData;
     std::shared_ptr<GeometryNode> preNode;
     for (const auto& node : m_geometryNodes) {
@@ -32,6 +36,7 @@ void MeshRenderer::OnUpdate()
         } else {
             newGeometryData[node] = std::make_unique<GeometryData>();
             updateGeometryData(newGeometryData, preNode, *newGeometryData[node]);
+            eventDispatcher->PushEvent<NewGeometryNode>(this, node);
         }
         preNode = node;
     }

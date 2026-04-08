@@ -1,6 +1,7 @@
 #pragma once
 #include "GenerationID.h"
 #include "TypeTraits.h"
+#include <expected>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -94,7 +95,13 @@ public:
 
     bool RemoveEdge(const VertexID& from, const VertexID& to) { return m_edges.RemoveEdge(from, to); }
 
-    const Vertex& GetVertex(const VertexID& id) const { return m_vertices.at(id); }
+    std::expected<const Vertex*, bool> GetVertex(const VertexID& id) const
+    {
+        if (auto it = m_vertices.find(id); it != m_vertices.end()) {
+            return &it->second;
+        }
+        return std::unexpected(false);
+    }
 
     std::vector<VertexID> GetTopologicallySortedVertices() const;
 

@@ -22,6 +22,10 @@ public:
     ProjectModel* GetProject(ProjectID id);
 
 private:
+    friend class CS::Singleton<ProjectManager>;
+    ProjectManager() = default;
+
+private:
     std::unordered_map<ProjectID, std::unique_ptr<ProjectModel>> m_projects;
 };
 

@@ -21,7 +21,7 @@ namespace CS
 class PanoramicSkyMaterialConfiguration : public IMaterialConfiguration
 {
 public:
-    virtual void Configure(GraphicsPipeline& pipeline) const override { pipeline.SetDepthTest(false); }
+    void Configure(GraphicsPipeline& pipeline) const override { pipeline.SetDepthTest(false); }
 };
 
 // clang-format off

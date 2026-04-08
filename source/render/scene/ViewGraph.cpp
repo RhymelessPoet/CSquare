@@ -48,12 +48,18 @@ std::shared_ptr<View> ViewGraph::CreateView(RenderTarget target)
     return view;
 }
 
+std::unique_ptr<IEvent> ViewGraph::OnEvent(std::unique_ptr<IEvent> event)
+{
+    return std::unique_ptr<IEvent>();
+}
+
 void ImplData<ViewGraph>::sort()
 {
     auto vertices = viewGraph.GetTopologicallySortedVertices();
     views.clear();
     for (const auto& vertexID : vertices) {
-        views.push_back(viewGraph.GetVertex(vertexID).data);
+        (void)viewGraph.GetVertex(vertexID);
+        //.and_then([&views](const auto& vertex) { views.push_back(vertex.data); });
     }
 }
 

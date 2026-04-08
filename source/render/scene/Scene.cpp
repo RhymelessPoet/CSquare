@@ -2,7 +2,9 @@
 #include "Camera.h"
 #include "IRenderSystem.h"
 #include "MeshRenderer.h"
+#include "SceneEvents.h"
 #include "SceneObject.h"
+#include "SceneObjectEvents.h"
 #include "geometry/GeometryNode.h"
 #include "materials/Material.h"
 #include "renderer/MaterialCompiler.h"
@@ -21,17 +23,16 @@ Scene::~Scene() {}
 void Scene::OnRender(RenderContext& context)
 {
     collectRenderables(m_root);
-    for (auto renderable : m_renderables) {
-        auto meshRender = dynamic_cast<MeshRenderer*>(renderable);
-        if (meshRender == nullptr) {
-            continue;
-        }
-        meshRender->OnUpdate();
-        if (auto go = meshRender->GetGeometryNode(0u); go != nullptr) {
-            auto material = go->GetMaterial()->GetMaterial();
-            m_materials[material->GetID()] = material;
-        }
-    }
+    // for (auto renderable : m_renderables) {
+    //     auto meshRender = dynamic_cast<MeshRenderer*>(renderable);
+    //     if (meshRender == nullptr) {
+    //         continue;
+    //     }
+    //     if (auto go = meshRender->GetGeometryNode(0u); go != nullptr) {
+    //         auto material = go->GetMaterial()->GetMaterial();
+    //         m_materials[material->GetID()] = material;
+    //     }
+    // }
 
     auto camera = context.GetCamera();
 
@@ -68,6 +69,7 @@ std::shared_ptr<Camera> Scene::CreateCamera()
 std::shared_ptr<SceneObject> Scene::CreateSceneObject(std::shared_ptr<SceneObject> parent)
 {
     auto sceneObject = std::make_shared<SceneObject>();
+    sceneObject->SetScene(shared_from_this());
     if (parent != nullptr) {
         sceneObject->SetParent(parent);
     } else {
@@ -87,6 +89,14 @@ const AABB& Scene::GetAABB(bool reCompute)
         });
     }
     return std::as_const(*this).GetAABB();
+}
+
+std::unique_ptr<IEvent> Scene::OnEvent(std::unique_ptr<IEvent> event)
+{
+    if (auto event_ = dynamic_cast<NewGeometryNode*>(event.get()); event_ != nullptr) {
+        return onEvent(event_);
+    }
+    return event;
 }
 
 void Scene::traverseWith(std::shared_ptr<SceneObject> object,
@@ -113,6 +123,16 @@ void Scene::collectRenderables(std::shared_ptr<SceneObject> object)
         }
         collectRenderables(child);
     }
+}
+
+std::unique_ptr<IEvent> Scene::onEvent(NewGeometryNode* event)
+{
+    auto materialInstance = event->GetGeometryNode()->GetMaterial();
+    auto result = m_materials.emplace(materialInstance->GetMaterial()->GetID(), materialInstance->GetMaterial());
+    if (result.second) {
+        return std::make_unique<NewMaterialInScene>(shared_from_this(), result.first->second);
+    }
+    return std::unique_ptr<IEvent>();
 }
 
 } // namespace CS

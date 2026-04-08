@@ -19,7 +19,7 @@ public:
     explicit MeshRenderer(std::shared_ptr<SceneObject> owner);
     ~MeshRenderer() override = default;
 
-    virtual void OnUpdate() override;
+    virtual void OnUpdate(SystemContext& context) override;
 
     virtual void OnRender(RenderContext& context) override;
 

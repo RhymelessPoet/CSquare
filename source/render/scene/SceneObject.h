@@ -7,11 +7,15 @@
 namespace CS
 {
 class IComponent;
+class Scene;
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
     explicit SceneObject(std::string_view name = "");
     ~SceneObject();
+
+    void SetScene(const std::shared_ptr<Scene>& scene) { m_scene = scene; }
+    std::shared_ptr<Scene> GetScene() const { return m_scene.lock(); }
 
     void SetName(std::string_view name) { m_name = name; }
     std::string GetName() const { return m_name; }
@@ -42,6 +46,7 @@ public:
 
 private:
     std::string m_name;
+    std::weak_ptr<Scene> m_scene;
     std::weak_ptr<SceneObject> m_parent;
     std::vector<std::shared_ptr<SceneObject>> m_children;
     std::vector<std::unique_ptr<IComponent>> m_components;

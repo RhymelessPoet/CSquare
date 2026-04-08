@@ -14,25 +14,9 @@ Transform::Transform(std::shared_ptr<SceneObject> owner, const Vector3f& positio
     m_position = position;
 }
 
-void Transform::OnUpdate()
+void Transform::OnUpdate(SystemContext& context)
 {
-    Transform* parentTransform = nullptr;
-    auto parentSO = owner()->GetParent();
-    bool parentTransformIsFresh = false;
-    if (parentSO != nullptr) {
-        parentTransform = parentSO->GetComponent<Transform>();
-        parentTransformIsFresh = parentTransform != nullptr && parentTransform->IsFresh();
-    }
-
-    if (m_dirty || parentTransformIsFresh) {
-        m_worldMatrix = GetLocalModelMatrix();
-
-        if (parentTransform != nullptr) {
-            m_worldMatrix = parentTransform->GetWorldMatrix() * m_worldMatrix;
-        }
-        m_dirty = false;
-        m_fresh = true;
-    }
+    update();
 }
 
 bool Transform::IsFresh() const
@@ -93,7 +77,7 @@ const Matrix4f& Transform::GetWorldMatrix() const
 const Matrix4f& Transform::GetWorldMatrix()
 {
     if (m_dirty) {
-        OnUpdate();
+        update();
     }
     return m_worldMatrix;
 }
@@ -114,6 +98,37 @@ OBB Transform::Trans(const AABB& box)
 
     return OBB(obbCenter.Cast<double>(), obbAxes[0], obbAxes[1], obbAxes[2],
                Size3d{obbExtents.X(), obbExtents.Y(), obbExtents.Z()});
+}
+
+void Transform::update()
+{
+    Transform* parentTransform = nullptr;
+    auto parentSO = owner()->GetParent();
+    bool parentTransformIsFresh = false;
+    if (parentSO != nullptr) {
+        parentTransform = parentSO->GetComponent<Transform>();
+        parentTransformIsFresh = parentTransform != nullptr && parentTransform->IsFresh();
+    }
+
+    if (m_dirty || parentTransformIsFresh) {
+        m_worldMatrix = GetLocalModelMatrix();
+
+        if (parentTransform != nullptr) {
+            m_worldMatrix = parentTransform->GetWorldMatrix() * m_worldMatrix;
+        }
+        m_dirty = false;
+        m_fresh = true;
+    }
+}
+
+void Transform::notifyChildrenDirty()
+{
+    for (const auto& child : owner()->GetChildren()) {
+        if (auto childTransform = child->GetComponent<Transform>()) {
+            childTransform->m_dirty = true;
+            childTransform->notifyChildrenDirty();
+        }
+    }
 }
 
 } // namespace CS

@@ -17,12 +17,12 @@ class AssetLoader;
 class AssetManager : public Singleton<AssetManager>
 {
 public:
-    friend class Singleton<AssetManager>;
     std::shared_ptr<AssetScene> GetAssetScene(const std::filesystem::path& path);
     std::shared_ptr<Material> GetMaterial(const std::string& name);
     std::shared_ptr<Mesh> GetMesh(const std::string& name);
 
 private:
+    friend class Singleton<AssetManager>;
     AssetManager();
 
 private:

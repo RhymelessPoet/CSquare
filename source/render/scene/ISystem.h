@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+#include "core/event/IEventDispatcher.h"
 #include <vector>
 
 namespace CS
@@ -7,8 +7,9 @@ namespace CS
 class IComponent;
 class SceneObject;
 class InvalidComponent;
+class SystemContext;
 
-class ISystem
+class ISystem : public IEventDispatcher
 {
 public:
     friend class IComponent;
@@ -17,7 +18,7 @@ public:
     virtual ~ISystem();
 
     virtual bool IsValid() const { return true; }
-    virtual void OnUpdate() = 0;
+    virtual void OnUpdate(SystemContext& context) = 0;
 
     template <typename T, typename... Args>
     bool CreateComponent(std::shared_ptr<SceneObject> so, Args&&... args)
@@ -34,6 +35,9 @@ public:
 private:
     bool assembleComponent(std::shared_ptr<SceneObject> so, std::unique_ptr<IComponent> component);
     void removeComponent(IComponent* component);
+
+    std::vector<IEventListener*> sift(IEvent* event) const override { return std::vector<IEventListener*>(); }
+    std::unique_ptr<IEvent> dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event) override;
 
 protected:
     std::vector<IComponent*> m_components;
@@ -52,7 +56,7 @@ public:
 
     virtual bool IsValid() const override { return false; }
 
-    virtual void OnUpdate() override {};
+    virtual void OnUpdate(SystemContext& context) override {};
 
     static InvalidSystem& Instance();
 };

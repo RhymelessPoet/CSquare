@@ -10,7 +10,7 @@ public:
     CameraSystem() = default;
     ~CameraSystem() override = default;
 
-    virtual void OnUpdate() override;
+    void OnUpdate(SystemContext& context) override;
 };
 
 } // namespace CS

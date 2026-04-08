@@ -10,7 +10,7 @@ public:
     TransformSystem(/* args */) = default;
     ~TransformSystem() = default;
 
-    virtual void OnUpdate() override;
+    void OnUpdate(SystemContext& context) override;
 };
 
 } // namespace CS

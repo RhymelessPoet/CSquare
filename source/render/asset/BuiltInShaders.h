@@ -10,11 +10,12 @@ class Shader;
 class BuiltInShaders : public Singleton<BuiltInShaders>
 {
 public:
-    BuiltInShaders();
     std::shared_ptr<Shader> GetVertexShader(std::string_view name);
     std::shared_ptr<Shader> GetFragmentShader(std::string_view name);
 
 private:
+    friend class Singleton<BuiltInShaders>;
+    BuiltInShaders();
     void createPanoramicSkyShader();
     void createPBRShader();
 

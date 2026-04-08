@@ -19,7 +19,7 @@ public:
     explicit CameraComponent(std::shared_ptr<SceneObject> owner);
     ~CameraComponent() = default;
 
-    virtual void OnUpdate() override;
+    void OnUpdate(SystemContext& context) override;
 
     void Ortho(float left, float right, float bottom, float top, float nearPlane, float farPlane);
     void Perspective(float fov, float aspectRatio, float nearPlane, float farPlane);

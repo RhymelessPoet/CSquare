@@ -1,4 +1,5 @@
 #include "RenderModule.h"
+#include "RenderModuleContext.h"
 #include "graphics/GLRendererBuilder.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsResourceCache.h"
@@ -44,7 +45,9 @@ void RenderModule::Update()
 {
     std::unique_lock<std::mutex> lock(m_impl->mtx);
     m_impl->cv.wait(lock, [=] { return !m_impl->ready; });
-    m_impl->systemGraph->OnUpdate();
+    RenderModuleContext context(this);
+    m_impl->systemGraph->OnUpdate(context);
+    Dispatch();
     m_impl->ready = true;
 }
 
@@ -86,6 +89,16 @@ std::shared_ptr<GraphicsAPI> RenderModule::GetGraphicsAPI(std::shared_ptr<View> 
 const ViewGraph& RenderModule::GetViewGraph() const
 {
     return *m_impl->viewGraph;
+}
+
+std::vector<IEventListener*> RenderModule::sift(IEvent* event) const
+{
+    return {m_impl->viewGraph.get()};
+}
+
+std::unique_ptr<IEvent> RenderModule::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)
+{
+    return event;
 }
 
 } // namespace CS

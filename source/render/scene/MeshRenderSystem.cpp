@@ -1,6 +1,10 @@
 #include "MeshRenderSystem.h"
 #include "Camera.h"
 #include "MeshRenderer.h"
+#include "Scene.h"
+#include "SceneEvents.h"
+#include "SceneObject.h"
+#include "SceneObjectEvents.h"
 #include "geometry/GeometryNode.h"
 #include "materials/Material.h"
 #include "renderer/MaterialCompiler.h"
@@ -8,49 +12,32 @@
 
 namespace CS
 {
-void MeshRenderSystem::OnUpdate()
+void MeshRenderSystem::OnUpdate(SystemContext& context)
 {
     for (auto component : m_components) {
         auto meshRender = dynamic_cast<MeshRenderer*>(component);
         if (meshRender == nullptr) {
             continue;
         }
-        meshRender->OnUpdate();
-        if (auto go = meshRender->GetGeometryNode(0u); go != nullptr) {
-            auto material = go->GetMaterial()->GetMaterial();
-            m_materials[material->GetID()] = material;
-        }
+        meshRender->OnUpdate(context);
     }
 }
 
-void MeshRenderSystem::OnRender(RenderContext& context)
+std::vector<IEventListener*> MeshRenderSystem::sift(IEvent* event) const
 {
-    auto camera = context.GetCamera();
-
-    const auto& cameraPos = camera->GetPosition();
-    const auto viewMatrix = camera->GetViewMatrix().Transposed();
-    const auto projectionMatrix = camera->GetProjectionMatrix().Transposed();
-    for (auto& [_, material] : m_materials) {
-        auto noError = material->SetUniformValue(std::string_view("projection"), projectionMatrix.ToStdVector());
-        noError = noError && material->SetUniformValue(std::string_view("view"), viewMatrix.ToStdVector());
-        noError = noError && material->SetUniformValue(std::string_view("camera_position"), cameraPos);
-        noError = noError && material->SetUniformValue(std::string_view("light_direction"),
-                                                       Vector3f{7.0f, 3.0f, 1.0f}.Normalized());
-        noError = noError && material->SetUniformValue(std::string_view("light_color"), Vector3f{1.0f, 1.0f, 1.0f});
-        noError = noError && material->SetUniformValue(std::string_view("light_intensity"), 10.0f);
-
-        auto& materialCompiler = context.GetMaterialCompiler();
-        material->GetDefaultInstance().Apply(materialCompiler);
-
-        auto shaderBindingSet = materialCompiler.GetShaderBindingSet(material->GetDefaultInstance());
-        context.GetCommandBuffer().Bind(shaderBindingSet);
+    if (auto soEvent = dynamic_cast<SceneObjectEvent*>(event); soEvent != nullptr) {
+        return {soEvent->GetSceneObject()->GetScene().get()};
     }
+    return std::vector<IEventListener*>();
+}
 
-    for (auto& component : m_components) {
-        if (auto meshRenderer = dynamic_cast<MeshRenderer*>(component)) {
-            meshRenderer->OnRender(context);
-        }
+std::unique_ptr<IEvent> MeshRenderSystem::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)
+{
+    if (auto event_ = dynamic_cast<NewMaterialInScene*>(event.get()); event_ != nullptr) {
+        nextDispatcher->PushEvent(std::move(event));
+        return nullptr;
     }
+    return event;
 }
 
 } // namespace CS

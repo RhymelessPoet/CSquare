@@ -12,6 +12,8 @@ public:
     std::shared_ptr<Material> GetPBRMaterial();
 
 private:
+    friend class Singleton<BuiltInMaterials>;
+    BuiltInMaterials() = default;
     std::shared_ptr<Material> createPBRMaterial();
 
 private:
