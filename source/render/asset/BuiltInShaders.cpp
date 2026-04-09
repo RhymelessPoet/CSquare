@@ -82,10 +82,11 @@ void main()
     gl_Position = projection * view * model_position;
 
     world_position = model_position.xyz;
-    normal = transpose(mat3(model)) * in_normal;
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+    normal = normalMatrix * in_normal;
+    tangent = normalMatrix * in_tangent;
+    bitangent = normalMatrix * in_bitangent;
     tex_coord = in_texcoord;
-    tangent = transpose(mat3(model)) * in_tangent;
-    bitangent = transpose(mat3(model)) * in_bitangent;
 }
 
 )";
@@ -113,18 +114,17 @@ layout(std140, binding = 2) uniform PBR
 
     float normal_scale;       // 法线贴图强度
 
-    bool use_spec_gloss;     // 【模式开关】true=高光/光泽度, false=金属/粗糙度
-    bool use_emission_color_map;
+    unsigned int use_spec_gloss;     // 【模式开关】true=高光/光泽度, false=金属/粗糙度
+    unsigned int use_emission_color_map;
 
-    bool use_base_color_map;  // 金属工作流, 高光工作流
-    bool use_metallic_map;
-    bool use_roughness_map;
+    unsigned int use_base_color_map;  // 金属工作流, 高光工作流
+    unsigned int use_metallic_map;
+    unsigned int use_roughness_map;
 
-    bool use_specular_map;    // 高光纹理
-    bool use_glossiness_map;  // 光泽度纹理
+    unsigned int use_specular_map;    // 高光纹理
+    unsigned int use_glossiness_map;  // 光泽度纹理
 
-    bool use_height_map;
-    bool use_normal_map;
+    unsigned int use_normal_map;
 };
 
 // 光源参数
@@ -150,10 +150,19 @@ layout(location = 0) out vec4 FragColor;
 
 const float PI = 3.14159265359;
 
-// ===================== 采样函数（兼容双模式）=====================
+struct MetallicRoughnessParameters
+{
+    vec3 albedo;
+    float metallic;
+    float roughness;
+
+    vec3 normal;
+    vec3 view_direction;
+};
+
 vec4 GetBaseColor()
 {
-    if (use_base_color_map) {
+    if (use_base_color_map != 0) {
         vec4 tex_color = texture(base_color_map, tex_coord);
         return vec4(tex_color.rgb, base_color.a);
     } else {
@@ -163,7 +172,7 @@ vec4 GetBaseColor()
 
 vec4 GetDiffuseColor()
 {
-    if (use_base_color_map) {
+    if (use_base_color_map != 0) {
         return texture(base_color_map, tex_coord);
     } else {
         return diffuse_color;
@@ -172,7 +181,7 @@ vec4 GetDiffuseColor()
 
 vec3 GetSpecularColor()
 {
-    if (use_specular_map) {
+    if (use_specular_map != 0) {
         return texture(specular_map, tex_coord).rgb;
     } else {
         return specular_color.rgb;
@@ -181,7 +190,7 @@ vec3 GetSpecularColor()
 
 float GetMetallic()
 {
-    if (use_metallic_map) {
+    if (use_metallic_map != 0) {
         return texture(metallic_map, tex_coord).r;
     } else {
         return metallic;
@@ -190,7 +199,7 @@ float GetMetallic()
 
 float GetRoughness()
 {
-    if (use_roughness_map) {
+    if (use_roughness_map != 0) {
         return texture(roughness_map, tex_coord).r;
     } else {
         return roughness;
@@ -199,7 +208,7 @@ float GetRoughness()
 
 float GetGlossiness()
 {
-    if (use_glossiness_map) {
+    if (use_glossiness_map != 0) {
         return texture(glossiness_map, tex_coord).r;
     } else {
         return glossiness;
@@ -208,7 +217,7 @@ float GetGlossiness()
 
 vec4 GetEmissionColor()
 {
-    if (use_emission_color_map) {
+    if (use_emission_color_map != 0) {
         vec4 tex_color = texture(emission_color_map, tex_coord);
         return vec4(tex_color.rgb, emission_color.a);
     } else {
@@ -218,23 +227,25 @@ vec4 GetEmissionColor()
 
 vec3 GetNormal()
 {
-    if(!use_normal_map)
+    if(use_normal_map == 0)
         return normalize(normal);
 
     vec3 tangent_normal = texture(normal_map, tex_coord).rgb;
-    tangent_normal.xy *= normal_scale;
+    float height = tangent_normal.b;
     tangent_normal = normalize(tangent_normal * 2.0 - 1.0);
+    tangent_normal.xy *= normal_scale;
+    tangent_normal.z = mix(height, tangent_normal.z, normal_scale);
 
-    mat3 TBN = mat3(
-        normalize(tangent),
-        normalize(bitangent),
-        normalize(normal)
-    );
+    vec3 T = normalize(tangent);
+    vec3 N = normalize(normal);
+
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
 
     return normalize(TBN * tangent_normal);
 }
 
-// ===================== PBR 核心函数（不变）=====================
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
     float a = roughness * roughness;
@@ -258,7 +269,7 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     float nom = NdotV;
     float denom = NdotV * (1.0 - k) + k;
 
-    return nom / denom;
+    return nom / max(denom, 0.0000001);
 }
 
 // 几何阴影函数 (Smith)
@@ -278,6 +289,36 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 PBRShade(MetallicRoughnessParameters params)
+{
+    vec3 N = params.normal;
+    vec3 V = params.view_direction;
+    vec3 L = normalize(light_direction);
+    vec3 H = normalize(V + L);
+
+    vec3 F0 = mix(vec3(0.04), params.albedo, params.metallic);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    float NDF = DistributionGGX(N, H, params.roughness);
+    float G = GeometrySmith(N, V, L, params.roughness);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - params.metallic;
+
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    vec3 specularPart = numerator / max(denominator, 0.0000001);
+
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 diffusePart = kD * params.albedo / PI;
+
+    vec3 radiance = light_color * light_intensity;
+    vec3 directLight = (diffusePart + specularPart) * radiance * NdotL;
+
+    return directLight;
+}
+
 void main()
 {
     vec3 N = GetNormal();
@@ -285,70 +326,80 @@ void main()
     vec3 L = normalize(light_direction);
     vec3 H = normalize(V + L);
 
-    // -------------------------- 双模式参数兼容 --------------------------
-    vec3 albedo;
-    vec3 diffuse;
-    vec3 specular;
-    float roughnessFinal;
-    float metallicFinal;
+    MetallicRoughnessParameters params;
+    params.normal = GetNormal();
+    params.view_direction = normalize(camera_position - world_position);
 
-    if (use_spec_gloss)
+    float alpha = 1.0f;
+
+    if (use_spec_gloss != 0)
     {
-        // 模式 1: 高光/光泽度
-        diffuse = pow(GetDiffuseColor().rgb, vec3(2.2));
-        specular = pow(GetSpecularColor(), vec3(2.2));
-        roughnessFinal = clamp(1.0 - GetGlossiness(), 0.001, 1.0);
-        albedo = diffuse;
-        metallicFinal = 0.0; // 金属度不参与
+        vec4 diffuseColorLinear = GetDiffuseColor();
+        alpha = diffuseColorLinear.a;
+
+        params.albedo = pow(diffuseColorLinear.rgb, vec3(2.2));
+        params.roughness = clamp(1.0 - GetGlossiness(), 0.001, 1.0);
+        params.metallic = 0.0;
+
+        //specular = pow(GetSpecularColor(), vec3(2.2));
     }
     else
     {
-        // 模式 2: 金属/粗糙度（默认）
         vec4 baseColorLinear = GetBaseColor();
-        albedo = pow(baseColorLinear.rgb, vec3(2.2));
-        diffuse = albedo;
-        roughnessFinal = clamp(GetRoughness(), 0.001, 1.0);
-        metallicFinal = clamp(GetMetallic(), 0.0, 1.0);
-        
-        // 金属工作流自动计算高光 F0
-        vec3 F0_base = vec3(0.04);
-        specular = mix(F0_base, albedo, metallicFinal);
+        alpha = baseColorLinear.a;
+
+        params.albedo = pow(baseColorLinear.rgb, vec3(2.2));
+        params.roughness = clamp(GetRoughness(), 0.001, 1.0);
+        params.metallic = clamp(GetMetallic(), 0.0, 1.0);
     }
+
+    vec3 directLight = PBRShade(params);
 
     float ao = 1.0;
-
-    // -------------------------- PBR 光照计算（一套通用） --------------------------
-    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), specular);
-    float NDF = DistributionGGX(N, H, roughnessFinal);
-    float G = GeometrySmith(N, V, L, roughnessFinal);
-
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-
-    if (!use_spec_gloss) {
-        kD *= 1.0 - metallicFinal; // 金属消除漫反射
-    }
-
-    vec3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
-    vec3 spec = numerator / max(denominator, 0.0000001);
-
-    float NdotL = max(dot(N, L), 0.0);
-    vec3 diffuseResult = (kD * albedo / PI) * NdotL;
-
-    vec3 radiance = light_color * light_intensity;
-    vec3 directLight = (diffuseResult + spec) * radiance;
-
-    // 环境光 + 自发光
-    vec3 ambient = vec3(0.13) * albedo * ao;
+    vec3 ambient = vec3(0.03) * params.albedo * ao;
     vec3 emission = GetEmissionColor().rgb * GetEmissionColor().a;
 
-    // 最终颜色
     vec3 finalColor = ambient + directLight + emission;
+
     finalColor = finalColor / (finalColor + vec3(1.0));
     finalColor = pow(finalColor, vec3(1.0/2.2));
 
-    FragColor = vec4(finalColor, GetBaseColor().a);
+    FragColor = vec4(finalColor, alpha);
+}
+
+)";
+
+static inline constexpr std::string_view Depth_Map_VS = R"(
+#version 450 core
+layout(location = 0) in vec3 in_position;
+
+layout(std140, binding = 0) uniform VPMatrix
+{
+    mat4 view;
+    mat4 projection;
+};
+
+layout(std140, binding = 1) uniform MMatrix
+{
+    mat4 model;
+};
+
+layout(location = 0) out vec3 normal;
+layout(location = 1) out vec3 world_position;
+layout(location = 2) out vec2 tex_coord;
+layout(location = 3) out vec3 tangent;
+layout(location = 4) out vec3 bitangent;
+
+void main()
+{
+    vec4 model_position = model * vec4(in_position, 1.0);
+    gl_Position = projection * view * model_position;
+
+    world_position = model_position.xyz;
+    normal = transpose(mat3(model)) * in_normal;
+    tex_coord = in_texcoord;
+    tangent = transpose(mat3(model)) * in_tangent;
+    bitangent = transpose(mat3(model)) * in_bitangent;
 }
 
 )";
@@ -418,14 +469,14 @@ void BuiltInShaders::createPBRShader()
                         {"roughness", sizeof(float)},
                         {"glossiness", sizeof(float)},
                         {"normal_scale", sizeof(float)},
-                        {"use_spec_gloss", sizeof(bool)},
-                        {"use_emission_color_map", sizeof(bool)},
-                        {"use_base_color_map", sizeof(bool)},
-                        {"use_metallic_map", sizeof(bool)},
-                        {"use_roughness_map", sizeof(bool)},
-                        {"use_specular_map", sizeof(bool)},
-                        {"use_glossiness_map", sizeof(bool)},
-                        {"use_normal_map", sizeof(bool)}});
+                        {"use_spec_gloss", sizeof(uint32_t)},
+                        {"use_emission_color_map", sizeof(uint32_t)},
+                        {"use_base_color_map", sizeof(uint32_t)},
+                        {"use_metallic_map", sizeof(uint32_t)},
+                        {"use_roughness_map", sizeof(uint32_t)},
+                        {"use_specular_map", sizeof(uint32_t)},
+                        {"use_glossiness_map", sizeof(uint32_t)},
+                        {"use_normal_map", sizeof(uint32_t)}});
     auto binding3 = ShaderBinding{3u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
     binding3.SetLayout({{"camera_position", 3 * sizeof(float)},
                         {"light_direction", 3 * sizeof(float)},

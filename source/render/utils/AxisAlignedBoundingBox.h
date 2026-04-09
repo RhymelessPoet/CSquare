@@ -21,6 +21,7 @@ public:
 
     Vector3d GetCenter() const { return (m_min + m_max) * 0.5; }
     Vector3d GetSize() const { return m_max - m_min; }
+    double GetDiagonalLength() const { return (m_max - m_min).Length(); }
 
     void Include(const Vector3d& point);
     void Include(const std::vector<Vector3d>& points);

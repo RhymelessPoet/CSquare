@@ -63,11 +63,16 @@ public:
         return false;
     }
 
+    [[nodiscard]] bool SetUniformValue(std::string_view name, bool value)
+    {
+        return SetUniformValue(name, static_cast<uint32_t>(value));
+    }
+
     template <typename T>
-        requires type_traits::is_in_variant_v<T, Uniform>
+        requires type_traits::is_in_variant_v<T, UniformValue>
     [[nodiscard]] bool GetUniformValue(std::string_view name, T& outValue) const
     {
-        auto itr = m_uniforms.find(name);
+        auto itr = m_uniforms.find(std::string(name));
         if (itr != m_uniforms.end()) {
             if (auto val = std::get_if<T>(&itr->second.value); val != nullptr) {
                 outValue = *val;
@@ -76,6 +81,16 @@ public:
         }
         if (m_id != 0u) {
             return GetDefaultInstance().GetUniformValue(name, outValue);
+        }
+        return false;
+    }
+
+    [[nodiscard]] bool GetUniformValue(std::string_view name, bool& outValue) const
+    {
+        uint32_t intValue{0u};
+        if (GetUniformValue<uint32_t>(name, intValue)) {
+            outValue = (intValue != 0);
+            return true;
         }
         return false;
     }

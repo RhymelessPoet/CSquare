@@ -46,7 +46,7 @@ void Scene::OnRender(RenderContext& context)
         noError = noError && material->SetUniformValue(std::string_view("light_direction"),
                                                        Vector3f{7.0f, 3.0f, 1.0f}.Normalized());
         noError = noError && material->SetUniformValue(std::string_view("light_color"), Vector3f{1.0f, 1.0f, 1.0f});
-        noError = noError && material->SetUniformValue(std::string_view("light_intensity"), 10.0f);
+        noError = noError && material->SetUniformValue(std::string_view("light_intensity"), 1.1f);
 
         auto& materialCompiler = context.GetMaterialCompiler();
         material->GetDefaultInstance().Apply(materialCompiler);

@@ -9,6 +9,7 @@ std::shared_ptr<Material> BuiltInMaterials::GetPBRMaterial()
 {
     if (m_pbrMaterial == nullptr) {
         m_pbrMaterial = createPBRMaterial();
+        initializePBRMaterial();
     }
 
     return m_pbrMaterial;
@@ -29,6 +30,31 @@ std::shared_ptr<Material> BuiltInMaterials::createPBRMaterial()
                     .End();
     // clang-format on
     return material;
+}
+
+void BuiltInMaterials::initializePBRMaterial()
+{
+    m_pbrMaterial->SetUniformValue("base_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    m_pbrMaterial->SetUniformValue("diffuse_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    m_pbrMaterial->SetUniformValue("specular_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    m_pbrMaterial->SetUniformValue("emission_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    m_pbrMaterial->SetUniformValue("metallic", 0.0f);
+    m_pbrMaterial->SetUniformValue("roughness", 1.0f);
+    m_pbrMaterial->SetUniformValue("glossiness", 0.0f);
+    m_pbrMaterial->SetUniformValue("normal_scale", 1.0f);
+    m_pbrMaterial->SetUniformValue("use_spec_gloss", false);
+    m_pbrMaterial->SetUniformValue("use_emission_color_map", false);
+    m_pbrMaterial->SetUniformValue("use_base_color_map", false);
+    m_pbrMaterial->SetUniformValue("use_metallic_map", false);
+    m_pbrMaterial->SetUniformValue("use_roughness_map", false);
+    m_pbrMaterial->SetUniformValue("use_specular_map", false);
+    m_pbrMaterial->SetUniformValue("use_glossiness_map", false);
+    m_pbrMaterial->SetUniformValue("use_normal_map", false);
+}
+
+std::shared_ptr<Material> BuiltInMaterials::createPCSSShadowMaterial()
+{
+    return std::shared_ptr<Material>();
 }
 
 } // namespace CS

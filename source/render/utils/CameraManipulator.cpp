@@ -136,9 +136,10 @@ void CameraManipulator::FitTo(const AABB& box)
     m_center = box.GetCenter().Cast<float>();
     auto boxSize = box.GetSize().Cast<float>();
     auto& [min, max] = box;
-    m_position = m_center + Vector3f{0.0f, 0.0f, boxSize.Z() * 6.0f};
+    m_minFarPlane = static_cast<float>(box.GetDiagonalLength());
+    m_position = m_center + Vector3f{0.0f, 0.0f, m_minFarPlane * 1.1f};
     m_farPlane = (m_position - m_center).Length() * 2.0f;
-    m_minFarPlane = m_farPlane;
+
     UpdateCamera();
 }
 

@@ -327,7 +327,7 @@ bool AssimpLoader::parsePBRProperties(const aiMaterial* aimaterial, const std::s
 
     if (aimaterial->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS) {
         noError = noError && material->SetUniformValue("specular_color", Vector4f{color.r, color.g, color.b, color.a});
-        noError = noError && material->SetUniformValue("use_spec_gloss", true);
+        // noError = noError && material->SetUniformValue("use_spec_gloss", true);
     }
 
     if (aimaterial->Get(AI_MATKEY_COLOR_EMISSIVE, color) == AI_SUCCESS) {
@@ -343,9 +343,9 @@ bool AssimpLoader::parsePBRProperties(const aiMaterial* aimaterial, const std::s
     if (aimaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS) {
         noError = noError && material->SetUniformValue("roughness", roughness);
     }
-    float shininess = 0.0f;
-    if (aimaterial->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) {
-        noError = noError && material->SetUniformValue("glossiness", shininess);
+    float glossiness = 0.0f;
+    if (aimaterial->Get(AI_MATKEY_GLOSSINESS_FACTOR, glossiness) == AI_SUCCESS) {
+        noError = noError && material->SetUniformValue("glossiness", glossiness);
         noError = noError && material->SetUniformValue("use_spec_gloss", true);
     }
 

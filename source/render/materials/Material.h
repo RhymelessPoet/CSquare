@@ -21,6 +21,7 @@ public:
         Builder& Begin(std::unique_ptr<IMaterialConfiguration> configuration);
         Builder& AddInputAttribute(uint32_t location, VertexInputFormat format);
         Builder& AddShader(std::shared_ptr<Shader> shader);
+        Builder& AddRequisiteMaterial(std::shared_ptr<Material> material);
 
         std::shared_ptr<Material> End();
 
@@ -62,6 +63,8 @@ private:
     std::map<uint32_t, VertexInputFormat> m_attributes;
     std::vector<std::shared_ptr<Shader>> m_shaders;
     std::unique_ptr<MaterialInstance> m_defaultInstance;
+
+    std::vector<std::shared_ptr<Material>> m_requisiteMaterials;
 };
 
 } // namespace CS

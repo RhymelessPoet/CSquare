@@ -62,6 +62,12 @@ Material::Builder& Material::Builder::AddShader(std::shared_ptr<Shader> shader)
     return *this;
 }
 
+Material::Builder& Material::Builder::AddRequisiteMaterial(std::shared_ptr<Material> material)
+{
+    m_material->m_requisiteMaterials.push_back(std::move(material));
+    return *this;
+}
+
 std::shared_ptr<Material> Material::Builder::End()
 {
     m_material->createDefaultInstance(std::move(m_uniforms), std::move(m_textures));

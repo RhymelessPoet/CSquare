@@ -15,9 +15,12 @@ private:
     friend class Singleton<BuiltInMaterials>;
     BuiltInMaterials() = default;
     std::shared_ptr<Material> createPBRMaterial();
+    void initializePBRMaterial();
+    std::shared_ptr<Material> createPCSSShadowMaterial();
 
 private:
     std::shared_ptr<Material> m_pbrMaterial;
+    std::shared_ptr<Material> m_pcssShadowMaterial;
 };
 
 } // namespace CS
