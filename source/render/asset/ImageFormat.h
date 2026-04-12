@@ -6,6 +6,7 @@ namespace CS
 
 enum class ImageFormat : uint8_t
 {
+    R8,
     RGB8,
     RGBA8,
     ARGB8,
@@ -25,6 +26,8 @@ enum class ImageChannelType
 inline uint32_t Channels(ImageFormat format)
 {
     switch (format) {
+    case ImageFormat::R8:
+        return 1u;
     case ImageFormat::RGB8:
         return 3u;
     case ImageFormat::ARGB8:

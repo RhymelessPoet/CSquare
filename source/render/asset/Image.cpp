@@ -21,8 +21,9 @@ void Image::Load(Path path, ImageFormat format)
     }
     if (m_format == ImageFormat::RGB32Float || m_format == ImageFormat::RGBA32Float) {
         m_data = ImageLoader::LoadFloat(m_path, m_size, m_format);
+        m_internalFormat = m_format;
     } else {
-        m_data = ImageLoader::Load(m_path, m_size, m_format);
+        m_data = ImageLoader::Load(m_path, m_size, m_format, m_internalFormat);
     }
 }
 

@@ -7,7 +7,8 @@
 
 namespace CS
 {
-std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat& format)
+std::vector<std::byte>
+ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat& format, ImageFormat& internal)
 {
     auto absolutePath = imagePath;
     if (!imagePath.is_absolute()) {
@@ -39,9 +40,11 @@ std::vector<std::byte> ImageLoader::Load(const Path& imagePath, Size3u& imageSiz
     if (channels == 1) {
         requiredChannels = 3;       // Treat single channel images as RGB
         format = ImageFormat::RGB8; // Default to RGB8 for single channel images
+        internal = ImageFormat::R8;
     } else {
         imageSize = {width, height, requiredChannels};
         format = (requiredChannels == 4) ? ImageFormat::RGBA8 : ImageFormat::RGB8;
+        internal = format;
     }
 
     auto imageMemoryBuffer = reinterpret_cast<stbi_uc*>(imageMemory.data());

@@ -24,6 +24,9 @@ public:
     void SetFormat(TextureFormat format);
     TextureFormat GetFormat() const;
 
+    void SetMipmap(bool mipmap);
+    bool IsMipmap() const;
+
     void UpdateData(const void* data, const Size2u& size);
 
 private:

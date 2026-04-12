@@ -65,6 +65,12 @@ void TextureDescriptor::SetFormat(TextureFormat format)
     setDirty();
 }
 
+void TextureDescriptor::SetMipmap(bool mipmap)
+{
+    m_isMipmap = mipmap;
+    setDirty();
+}
+
 void TextureDescriptor::UpdateData(const void* data)
 {
     auto graphicsAPI = GetGraphicsAPI();

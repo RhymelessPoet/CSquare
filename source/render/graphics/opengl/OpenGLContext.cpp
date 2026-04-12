@@ -123,6 +123,20 @@ OpenGLContext& OpenGLContext::GLTexImage2D(GLenum target,
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLTexSubImage2D(GLenum target,
+                                              GLint level,
+                                              GLint xoffset,
+                                              GLint yoffset,
+                                              GLsizei width,
+                                              GLsizei height,
+                                              GLenum format,
+                                              GLenum type,
+                                              const void* pixels)
+{
+    glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLDeleteTextures(GLsizei n, const GLuint* textures)
 {
     glDeleteTextures(n, textures);
@@ -132,6 +146,12 @@ OpenGLContext& OpenGLContext::GLDeleteTextures(GLsizei n, const GLuint* textures
 OpenGLContext& OpenGLContext::GLPixelStorei(GLenum pname, GLint param)
 {
     glPixelStorei(pname, param);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLGenerateMipmap(GLenum target)
+{
+    glGenerateMipmap(target);
     return *this;
 }
 

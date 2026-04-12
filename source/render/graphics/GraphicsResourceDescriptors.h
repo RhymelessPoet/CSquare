@@ -28,6 +28,9 @@ public:
     void SetFormat(TextureFormat format);
     TextureFormat GetFormat() const { return m_format; }
 
+    void SetMipmap(bool mipmap);
+    bool IsMipmap() const { return m_isMipmap; }
+
     void UpdateData(const void* data);
 
     bool IsExternal() const { return m_isExternal; }
@@ -39,6 +42,7 @@ private:
     Size2u m_size;
     uint32_t m_textureID{0u};
     TextureFormat m_format{TextureFormat::RGBA8Unorm};
+    bool m_isMipmap{false};
     bool m_isExternal{false};
 };
 

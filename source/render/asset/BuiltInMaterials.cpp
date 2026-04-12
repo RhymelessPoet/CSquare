@@ -2,6 +2,7 @@
 #include "asset/BuiltInShaders.h"
 #include "materials/Material.h"
 #include "materials/PBRConfiguration.h"
+#include <iostream>
 
 namespace CS
 {
@@ -34,22 +35,27 @@ std::shared_ptr<Material> BuiltInMaterials::createPBRMaterial()
 
 void BuiltInMaterials::initializePBRMaterial()
 {
-    m_pbrMaterial->SetUniformValue("base_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-    m_pbrMaterial->SetUniformValue("diffuse_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-    m_pbrMaterial->SetUniformValue("specular_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-    m_pbrMaterial->SetUniformValue("emission_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-    m_pbrMaterial->SetUniformValue("metallic", 0.0f);
-    m_pbrMaterial->SetUniformValue("roughness", 1.0f);
-    m_pbrMaterial->SetUniformValue("glossiness", 0.0f);
-    m_pbrMaterial->SetUniformValue("normal_scale", 1.0f);
-    m_pbrMaterial->SetUniformValue("use_spec_gloss", false);
-    m_pbrMaterial->SetUniformValue("use_emission_color_map", false);
-    m_pbrMaterial->SetUniformValue("use_base_color_map", false);
-    m_pbrMaterial->SetUniformValue("use_metallic_map", false);
-    m_pbrMaterial->SetUniformValue("use_roughness_map", false);
-    m_pbrMaterial->SetUniformValue("use_specular_map", false);
-    m_pbrMaterial->SetUniformValue("use_glossiness_map", false);
-    m_pbrMaterial->SetUniformValue("use_normal_map", false);
+    bool noError{true};
+    noError = noError && m_pbrMaterial->SetUniformValue("base_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    noError = noError && m_pbrMaterial->SetUniformValue("diffuse_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    noError = noError && m_pbrMaterial->SetUniformValue("specular_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    noError = noError && m_pbrMaterial->SetUniformValue("emission_color", Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    noError = noError && m_pbrMaterial->SetUniformValue("metallic", 0.0f);
+    noError = noError && m_pbrMaterial->SetUniformValue("roughness", 1.0f);
+    noError = noError && m_pbrMaterial->SetUniformValue("glossiness", 0.0f);
+    noError = noError && m_pbrMaterial->SetUniformValue("normal_scale", 1.0f);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_spec_gloss", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_emission_color_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_base_color_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_metallic_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_roughness_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_specular_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_glossiness_map", false);
+    noError = noError && m_pbrMaterial->SetUniformValue("use_normal_map", false);
+
+    if (!noError) {
+        std::cerr << "Failed to initialize PBR material default values.\n";
+    }
 }
 
 std::shared_ptr<Material> BuiltInMaterials::createPCSSShadowMaterial()

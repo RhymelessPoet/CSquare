@@ -39,6 +39,16 @@ TextureFormat Texture::GetFormat() const
     return descriptor<TextureDescriptor>().GetFormat();
 }
 
+void Texture::SetMipmap(bool mipmap)
+{
+    descriptor<TextureDescriptor>().SetMipmap(mipmap);
+}
+
+bool Texture::IsMipmap() const
+{
+    return descriptor<TextureDescriptor>().IsMipmap();
+}
+
 void Texture::UpdateData(const void* data, const Size2u& size)
 {
     auto& desc = descriptor<TextureDescriptor>();

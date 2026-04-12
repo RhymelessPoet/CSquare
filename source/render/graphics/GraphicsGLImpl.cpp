@@ -510,12 +510,16 @@ bool GraphicsGLImpl::UpdateTextureData(TextureDescriptor* descriptor, const void
     auto alignment = (width * formatSize) % DefaultTextureDataAlignment;
 
     if (alignment != 0) {
-        m_glContext->GLPixelStorei(GL_UNPACK_ALIGNMENT, static_cast<GLint>(alignment));
+        alignment = alignment % 2 == 0 ? 2 : 1;
+        m_glContext->GLPixelStorei(GL_UNPACK_ALIGNMENT, static_cast<GLint>(alignment)).GLCheck();
     }
     m_glContext->GLBindTexture(GL_TEXTURE_2D, textureID)
         .GLTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, data)
-        .GLBindTexture(GL_TEXTURE_2D, 0)
         .GLCheck();
+    if (descriptor->IsMipmap()) {
+        m_glContext->GLGenerateMipmap(GL_TEXTURE_2D).GLCheck();
+    }
+    m_glContext->GLBindTexture(GL_TEXTURE_2D, 0);
     if (alignment != 0) {
         m_glContext->GLPixelStorei(GL_UNPACK_ALIGNMENT, DefaultTextureDataAlignment);
     }

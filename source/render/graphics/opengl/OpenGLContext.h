@@ -44,8 +44,18 @@ public:
                                 GLenum format,
                                 GLenum type,
                                 const void* pixels);
+    OpenGLContext& GLTexSubImage2D(GLenum target,
+                                   GLint level,
+                                   GLint xoffset,
+                                   GLint yoffset,
+                                   GLsizei width,
+                                   GLsizei height,
+                                   GLenum format,
+                                   GLenum type,
+                                   const void* pixels);
     OpenGLContext& GLDeleteTextures(GLsizei n, const GLuint* textures);
     OpenGLContext& GLPixelStorei(GLenum pname, GLint param);
+    OpenGLContext& GLGenerateMipmap(GLenum target);
 
     OpenGLContext& GLGenSamplers(GLsizei n, GLuint* samplers);
     OpenGLContext& GLSamplerParameteri(GLuint sampler, GLenum pname, GLint param);

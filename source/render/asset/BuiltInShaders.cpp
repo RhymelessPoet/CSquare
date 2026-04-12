@@ -321,11 +321,6 @@ vec3 PBRShade(MetallicRoughnessParameters params)
 
 void main()
 {
-    vec3 N = GetNormal();
-    vec3 V = normalize(camera_position - world_position);
-    vec3 L = normalize(light_direction);
-    vec3 H = normalize(V + L);
-
     MetallicRoughnessParameters params;
     params.normal = GetNormal();
     params.view_direction = normalize(camera_position - world_position);
@@ -356,15 +351,16 @@ void main()
     vec3 directLight = PBRShade(params);
 
     float ao = 1.0;
-    vec3 ambient = vec3(0.03) * params.albedo * ao;
+    vec3 ambient = vec3(0.05) * params.albedo * ao;
     vec3 emission = GetEmissionColor().rgb * GetEmissionColor().a;
 
-    vec3 finalColor = ambient + directLight + emission;
+    vec3 finalColor = ambient + directLight;// + emission;
 
     finalColor = finalColor / (finalColor + vec3(1.0));
     finalColor = pow(finalColor, vec3(1.0/2.2));
 
     FragColor = vec4(finalColor, alpha);
+    // FragColor = vec4(params.normal * 0.5 + 0.5, alpha);
 }
 
 )";
@@ -488,6 +484,8 @@ void BuiltInShaders::createPBRShader()
 
     auto binding4 = ShaderBinding{4u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
     binding4.SetTexture(ShaderBindingTexture("base_color_map", materialTexture->Clone()));
+    binding4.GetTexture().texture->SetUseMipmaps(true);
+    binding4.GetTexture().texture->SetMipmapFilter(MipmapFilterMode::Linear);
     auto binding5 = ShaderBinding{5u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
     binding5.SetTexture(ShaderBindingTexture("emission_color_map", materialTexture->Clone()));
     auto binding6 = ShaderBinding{6u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};

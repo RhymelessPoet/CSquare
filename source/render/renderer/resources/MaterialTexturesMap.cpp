@@ -54,6 +54,7 @@ MaterialTexturesMap::SampledTexture* MaterialTexturesMap::AllocateTexture(std::s
     if (image != nullptr) {
         auto format = GetTextureFormatFromImageFormat(image->GetFormat(), imageTexture.IsSRGB());
         texture.SetFormat(format);
+        texture.SetMipmap(imageTexture.UseMipmaps());
         m_toUpdateImages[nameStr] = image;
     }
 

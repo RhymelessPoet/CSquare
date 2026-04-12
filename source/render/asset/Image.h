@@ -24,12 +24,14 @@ public:
     void Release();
 
     ImageFormat GetFormat() const { return m_format; }
+    ImageFormat GetInternalFormat() const { return m_internalFormat; }
 
     const Path& GetPath() const { return m_path; }
 
 private:
     std::string m_name;
     ImageFormat m_format{ImageFormat::RGBA8};
+    ImageFormat m_internalFormat{ImageFormat::RGBA8};
     Path m_path;
     Size3u m_size;
     std::vector<std::byte> m_data;

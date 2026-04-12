@@ -3,11 +3,12 @@
 #include "asset/AssetScene.h"
 #include "asset/BuiltInMaterials.h"
 #include "asset/Image.h"
+#include "assimp/GltfMaterial.h"
+#include "assimp/version.h"
 #include "base/math/Math.h"
 #include "geometry/Mesh.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
-#include <assimp/version.h>
 #include <cassert>
 #include <iostream>
 
@@ -376,7 +377,6 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
         }
 
         if (AI_SUCCESS != aimaterial->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
-            noError = false;
             continue;
         }
         auto imagePath = scene->GetPath().parent_path().append(texPath.C_Str());
@@ -387,7 +387,6 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
         }
         auto texture = material->GetInstanceTexture(name);
         if (texture == nullptr) {
-            noError = false;
             continue;
         }
         auto insTexture = texture->Clone();
@@ -403,11 +402,14 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
             if (name == "base_color_map"sv) {
                 // imageTexture->SetSRGB(true);
             }
-            if (name == "normal_map"sv) {
-                (void)material->SetUniformValue("normal_scale", 0.0f);
+            if (float normalScale = 1.0f;
+                name == "normal_map"sv &&
+                aimaterial->Get(AI_MATKEY_GLTF_TEXTURE_SCALE(aiTextureType_NORMALS, 0), normalScale) == AI_SUCCESS)
+            {
+                noError = noError && material->SetUniformValue("normal_scale", normalScale);
             }
             if (name == "specular_color_map"sv || name == "glossiness_map"sv) {
-                (void)material->SetUniformValue("use_spec_gloss", true);
+                noError = noError && material->SetUniformValue("use_spec_gloss", true);
             }
         }
     }
