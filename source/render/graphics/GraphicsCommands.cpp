@@ -11,8 +11,8 @@ bool Command_BeginPass::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     auto renderTarget = graphicsAPI->GetResourceDescriptor<RenderTargetDescriptor>(m_renderTarget);
     if (renderTarget != nullptr) {
-        graphicsAPI->BindRenderTarget(renderTarget);
-        return true;
+        buildGraphicsResource(renderTarget);
+        return graphicsAPI->BindRenderTarget(renderTarget);
     }
     return false;
 }

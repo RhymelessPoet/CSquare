@@ -1,4 +1,6 @@
 #pragma once
+#include "base/ExtensibleEnum.h"
+#include <bitset>
 #include <memory>
 
 namespace CS
@@ -6,6 +8,18 @@ namespace CS
 class SceneObject;
 class ISystem;
 class SystemContext;
+
+struct ComponentState
+{
+    using UnderlyingType = uint8_t;
+    static constexpr size_t NameLength{16u};
+    static constexpr size_t MaxCount = 32u;
+};
+
+const inline EnumClass<ComponentState, "New", "Active", "Destroyed"> BaseComponentStates;
+
+using EComponentState = Enum<ComponentState>;
+using EComponentStateFlags = std::bitset<ComponentState::MaxCount>;
 
 class IComponent
 {
@@ -27,7 +41,11 @@ protected:
 
     ISystem* system() const { return m_system; }
 
+    void setState(EComponentState state, bool value);
+    bool isOn(EComponentState state) const;
+
 private:
+    EComponentStateFlags m_stateFlags;
     std::weak_ptr<SceneObject> m_owner;
     ISystem* m_system{nullptr};
 };

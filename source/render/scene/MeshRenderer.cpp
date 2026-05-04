@@ -117,7 +117,10 @@ OrientedBoundingBox MeshRenderer::GetWorldBoundingBox()
 void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> node)
 {
     auto mesh = node->GetMesh();
-    auto material = node->GetMaterial();
+    auto material = node->GetMaterial(context.GetTargetViewType());
+    if (material == nullptr) {
+        return;
+    }
 
     auto& inputAssembly = getInputAssembly(m_geometryData, node);
     auto [vertexBufferSize, indexBufferSize] = getGeometryDataSize(node);

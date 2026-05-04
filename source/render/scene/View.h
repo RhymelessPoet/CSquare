@@ -1,4 +1,5 @@
 #pragma once
+#include "ViewType.h"
 #include "base/PImpl.h"
 #include "graphics/RenderTarget.h"
 #include <memory>
@@ -21,21 +22,27 @@ private:
 public:
     friend class ViewGraph;
 
-    View(ConstructorTag, ViewID id);
-    View(ConstructorTag, ViewID id, RenderTarget target);
+    View(ConstructorTag, ViewID id, EViewType type);
+    View(ConstructorTag, ViewID id, EViewType type, RenderTarget target);
     ~View();
 
     void SetRenderTarget(RenderTarget target);
-    RenderTarget GetRenderTarget();
+    RenderTarget GetRenderTarget() const;
 
     void SetScene(std::shared_ptr<Scene> scene);
     std::shared_ptr<Scene> GetScene() const;
 
     std::shared_ptr<Camera> GetCamera() const;
 
-    void Render(RenderContext& context);
+    void OnRender(RenderContext& context);
 
     ViewID GetID() const;
+
+    EViewType GetViewType() const;
+
+    void SetCamera(std::shared_ptr<Camera> camera);
+
+    void SetInput(uint32_t slotID, Texture texture);
 
 private:
     template <typename... Args>

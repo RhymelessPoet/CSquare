@@ -19,7 +19,7 @@ Renderer::~Renderer() {}
 
 void Renderer::Render(const ViewGraph& graph)
 {
-    graph.GetMainView()->Render(*m_renderContext);
+    graph.OnRender(*m_renderContext);
     m_resourceManager->UpdateResources();
     m_graphicAPI->SubmitCommandBuffer(m_renderContext->GetCommandBuffer());
 }

@@ -101,6 +101,9 @@ public:
     void SetDepthStencilAttachment(size_t textureResourceID);
     TextureDescriptor* GetDepthStencilAttachment() const { return m_depthStencilAttachment; }
 
+    void SetDepthAttachment(size_t textureResourceID);
+    TextureDescriptor* GetDepthAttachment() const { return m_depthAttachment; }
+
     void SetSize(const Size2u& size);
     const Size2u& GetSize() const { return m_size; }
 
@@ -110,6 +113,7 @@ protected:
 private:
     Size2u m_size;
     TextureDescriptor* m_colorAttachment{nullptr};
+    TextureDescriptor* m_depthAttachment{nullptr};
     TextureDescriptor* m_depthStencilAttachment{nullptr};
     std::optional<uint32_t> m_FBO;
 };

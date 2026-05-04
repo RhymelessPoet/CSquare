@@ -8,6 +8,7 @@ namespace CS
 
 class SceneObject;
 class GeometryNode;
+class LightComponent;
 
 class SceneObjectEvent : public IEvent
 {
@@ -36,6 +37,12 @@ public:
 
 private:
     std::weak_ptr<GeometryNode> m_geometryNode;
+};
+
+class NewLight : public SceneObjectEvent
+{
+public:
+    NewLight(IComponent* component) : SceneObjectEvent("NewLight", component) {}
 };
 
 } // namespace CS

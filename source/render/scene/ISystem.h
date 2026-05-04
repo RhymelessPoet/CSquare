@@ -36,7 +36,7 @@ private:
     bool assembleComponent(std::shared_ptr<SceneObject> so, std::unique_ptr<IComponent> component);
     void removeComponent(IComponent* component);
 
-    std::vector<IEventListener*> sift(IEvent* event) const override { return std::vector<IEventListener*>(); }
+    std::vector<IEventListener*> sift(IEvent* event) const override;
     std::unique_ptr<IEvent> dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event) override;
 
 protected:

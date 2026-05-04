@@ -140,6 +140,18 @@ void RenderTargetDescriptor::SetDepthStencilAttachment(size_t textureResourceID)
     setDirty();
 }
 
+void RenderTargetDescriptor::SetDepthAttachment(size_t textureResourceID)
+{
+    if (m_depthAttachment != nullptr) {
+        m_depthAttachment->Release();
+    }
+
+    auto graphicsAPI = GetGraphicsAPI();
+    m_depthAttachment = graphicsAPI->GetResourceDescriptor<TextureDescriptor>(textureResourceID);
+    m_depthAttachment->AddReference();
+    setDirty();
+}
+
 void RenderTargetDescriptor::SetSize(const Size2u& size)
 {
     m_size = size;
@@ -148,6 +160,9 @@ void RenderTargetDescriptor::SetSize(const Size2u& size)
     }
     if (m_depthStencilAttachment != nullptr) {
         m_depthStencilAttachment->SetSize(size);
+    }
+    if (m_depthAttachment != nullptr) {
+        m_depthAttachment->SetSize(size);
     }
     setDirty();
 }

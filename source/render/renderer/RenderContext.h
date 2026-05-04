@@ -1,5 +1,7 @@
 #pragma once
+#include "base/Rect.h"
 #include "graphics/GraphicsCommandBuffer.h"
+#include "scene/ViewType.h"
 #include <memory>
 
 namespace CS
@@ -8,6 +10,7 @@ class GraphicsAPI;
 class Camera;
 class Material;
 class MaterialCompiler;
+
 class RenderContext
 {
 public:
@@ -15,21 +18,29 @@ public:
     virtual ~RenderContext() = default;
 
     GraphicsCommandBuffer GetCommandBuffer() const { return m_commandBuffer; }
+    std::shared_ptr<GraphicsAPI> GetGraphicsAPI() { return m_graphicsAPI; }
 
     void SetCamera(std::shared_ptr<Camera> camera) { m_camera = std::move(camera); }
     std::shared_ptr<Camera> GetCamera() const { return m_camera; }
 
+    void SetMaterialCompiler(std::unique_ptr<MaterialCompiler> compiler);
     MaterialCompiler& GetMaterialCompiler() { return *m_materialCompiler; }
 
-    std::shared_ptr<GraphicsAPI> GetGraphicsAPI() { return m_graphicsAPI; }
+    void SetTargetViewType(EViewType viewType) { m_targetViewType = viewType; }
+    EViewType GetTargetViewType() const { return m_targetViewType; }
 
-    void SetMaterialCompiler(std::unique_ptr<MaterialCompiler> computer);
+    void SetViewport(const Rect32i& viewport) { m_viewport = viewport; }
+    const Rect32i& GetViewport() const { return m_viewport; }
 
 private:
     std::shared_ptr<GraphicsAPI> m_graphicsAPI;
     std::unique_ptr<MaterialCompiler> m_materialCompiler;
     std::shared_ptr<Camera> m_camera;
     GraphicsCommandBuffer m_commandBuffer;
+
+    Rect32i m_viewport{0, 0, 720, 720};
+
+    EViewType m_targetViewType;
 };
 
 } // namespace CS

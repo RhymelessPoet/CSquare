@@ -10,7 +10,18 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox()
 
 std::array<Vector3d, 8> AxisAlignedBoundingBox::GetCorners() const
 {
-    return std::array<Vector3d, 8>();
+    std::array<Vector3d, 8> corners;
+
+    corners[0] = Vector3d{m_min.X(), m_min.Y(), m_min.Z()};
+    corners[1] = Vector3d{m_min.X(), m_min.Y(), m_max.Z()};
+    corners[2] = Vector3d{m_min.X(), m_max.Y(), m_min.Z()};
+    corners[3] = Vector3d{m_min.X(), m_max.Y(), m_max.Z()};
+    corners[4] = Vector3d{m_max.X(), m_min.Y(), m_min.Z()};
+    corners[5] = Vector3d{m_max.X(), m_min.Y(), m_max.Z()};
+    corners[6] = Vector3d{m_max.X(), m_max.Y(), m_min.Z()};
+    corners[7] = Vector3d{m_max.X(), m_max.Y(), m_max.Z()};
+
+    return corners;
 }
 
 inline void AxisAlignedBoundingBox::Include(const Vector3d& point)

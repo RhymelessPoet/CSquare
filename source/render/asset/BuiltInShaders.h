@@ -18,6 +18,7 @@ private:
     BuiltInShaders();
     void createPanoramicSkyShader();
     void createPBRShader();
+    void createShadowMapShader();
 
 private:
     std::map<std::string, std::shared_ptr<Shader>> m_vertexShaders;

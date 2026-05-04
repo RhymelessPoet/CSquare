@@ -4,13 +4,14 @@
 
 namespace CS
 {
+
 RenderContext::RenderContext(std::shared_ptr<GraphicsAPI> graphicsAPI)
     : m_graphicsAPI(std::move(graphicsAPI)), m_commandBuffer(m_graphicsAPI->CreateCommandBuffer())
 {}
 
-void RenderContext::SetMaterialCompiler(std::unique_ptr<MaterialCompiler> computer)
+void RenderContext::SetMaterialCompiler(std::unique_ptr<MaterialCompiler> compiler)
 {
-    m_materialCompiler = std::move(computer);
+    m_materialCompiler = std::move(compiler);
 }
 
 } // namespace CS

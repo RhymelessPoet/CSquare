@@ -1,6 +1,8 @@
 #include "ISystem.h"
 #include "IComponent.h"
+#include "Scene.h"
 #include "SceneObject.h"
+#include "SceneObjectEvents.h"
 
 namespace CS
 {
@@ -22,6 +24,14 @@ void ISystem::removeComponent(IComponent* component)
     if (it != m_components.end()) {
         m_components.erase(it, m_components.end());
     }
+}
+
+std::vector<IEventListener*> ISystem::sift(IEvent* event) const
+{
+    if (auto soEvent = dynamic_cast<SceneObjectEvent*>(event); soEvent != nullptr) {
+        return {soEvent->GetSceneObject()->GetScene().get()};
+    }
+    return std::vector<IEventListener*>();
 }
 
 std::unique_ptr<IEvent> ISystem::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)

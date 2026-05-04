@@ -1,6 +1,7 @@
 #include "ProjectModel.h"
 #include "Engine.h"
 #include "RenderModule.h"
+#include "Scene/Light.h"
 #include "SceneTreeModel.h"
 #include "asset/AssetImporter.h"
 #include "asset/AssetLoader.h"
@@ -21,6 +22,7 @@ struct ImplData<CSEditor::ProjectModel>
 
     std::shared_ptr<Scene> scene;
     std::unique_ptr<PanoramicSky> sky;
+    std::unique_ptr<Light> directionalLight;
 
     CSEditor::TreeModel sceneTree;
 };
@@ -61,10 +63,18 @@ void ProjectModel::initializeScene()
     auto image = std::make_shared<Image>("assets/hdr/moonrise_puresky_4k.hdr", ImageFormat::RGB32Float);
     impl().sky->SetImage(image);
 
+    impl().directionalLight = std::make_unique<Light>(impl().scene);
+    impl().directionalLight->SetLightType(ELightType::Make<"Directional">());
+    impl().directionalLight->SetDirection(-Vector3f{0.5f, 1.0f, 0.3f});
+    impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
+    impl().directionalLight->SetIntensity(5.1f);
+
     // auto assetScene = AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
     // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/monkeysun/monkeysun.gltf");
     // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/room/room.gltf");
-    auto assetScene = AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/sponza/sponza.gltf");
+    // auto assetScene = AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/sponza/sponza.gltf");
+    auto assetScene =
+        AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/lost_empire/lost_empire.gltf");
 
     if (assetScene != nullptr) {
         AssetImporter importer(impl().scene);

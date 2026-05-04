@@ -116,6 +116,16 @@ Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
     return GetTexture(renderTarget.GetColorAttachment());
 }
 
+Texture GraphicsAPI::GetDepthAttachment(RenderTarget renderTarget) const
+{
+    return GetTexture(renderTarget.GetDepthAttachment());
+}
+
+Texture GraphicsAPI::GetDepthStencilAttachment(RenderTarget renderTarget) const
+{
+    return GetTexture(renderTarget.GetDepthStencilAttachment());
+}
+
 Sampler GraphicsAPI::CreateSampler()
 {
     auto resorceCache = m_impl->GetResourceCache();
@@ -132,6 +142,8 @@ RenderTarget GraphicsAPI::CreateRenderTarget(const Size2u& size)
 
     auto resourceID = resorceCache->Allocate<RenderTargetDescriptor>(m_impl);
     auto descriptor = resorceCache->GetDescriptor<RenderTargetDescriptor>(resourceID);
+
+    descriptor->SetSize(size);
 
     return RenderTarget(descriptor);
 }

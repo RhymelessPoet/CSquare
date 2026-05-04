@@ -2,6 +2,7 @@
 #include "base/TypeTraits.h"
 #include "base/math/Vector.h"
 #include "graphics/MaterialTexture.h"
+#include "scene/ViewType.h"
 
 #include <map>
 #include <memory>
@@ -115,6 +116,10 @@ public:
     void SetName(std::string_view name) { m_name = name; }
     std::string_view GetName() const { return m_name; }
 
+    EViewType GetViewType() const;
+
+    std::shared_ptr<MaterialInstance> GetRequisiteMaterial(EViewType viewType) const;
+
     std::shared_ptr<MaterialInstance> Clone() const;
 
 private:
@@ -140,6 +145,8 @@ private:
     Textures m_textures;
 
     std::string m_name;
+
+    std::vector<std::shared_ptr<MaterialInstance>> m_requisiteMaterials;
 };
 
 uint32_t SizeOf(const MaterialInstance::UniformValue& value);

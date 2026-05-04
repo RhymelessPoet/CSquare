@@ -22,6 +22,8 @@ public:
         Builder& AddInputAttribute(uint32_t location, VertexInputFormat format);
         Builder& AddShader(std::shared_ptr<Shader> shader);
         Builder& AddRequisiteMaterial(std::shared_ptr<Material> material);
+        Builder& Connect(const SlotID& from, uint16_t toSlotIndex);
+        Builder& Bind(uint16_t slotIndex, uint32_t binding);
 
         std::shared_ptr<Material> End();
 
@@ -29,11 +31,17 @@ public:
         void insertUniform(uint32_t binding, const ShaderBindingProperty& property);
         void insertUniformTexture(uint32_t binding, const ShaderBindingTexture& texture);
 
+        bool connectFrom(const SlotID& from, const SlotID& to);
+        bool connectTo(const SlotID& from, const SlotID& to);
+        void disconnectFrom(const SlotID& id);
+
     private:
         static uint16_t ID;
         MaterialInstance::Uniforms m_uniforms;
         MaterialInstance::Textures m_textures;
         std::shared_ptr<Material> m_material;
+        std::map<SlotID, uint16_t> m_connects;
+        std::map<uint16_t, uint32_t> m_bindings;
     };
     friend class Builder;
 
@@ -50,6 +58,10 @@ public:
 
     const MaterialInstance& GetDefaultInstance() const { return *m_defaultInstance; }
     MaterialInstance& GetDefaultInstance() { return *m_defaultInstance; }
+
+    IMaterialConfiguration& GetConfiguration() { return *m_configuration; }
+
+    std::span<std::shared_ptr<Material>> GetRequisiteMaterials() { return m_requisiteMaterials; }
 
 private:
     Material(/* args */) = default;

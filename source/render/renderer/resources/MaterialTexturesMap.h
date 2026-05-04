@@ -9,6 +9,7 @@
 namespace CS
 {
 class ImageTexture;
+class RenderTexture;
 class GraphicsAPI;
 
 class MaterialTexturesMap
@@ -25,6 +26,7 @@ public:
     CS_DELETE_COPY_MOVE(MaterialTexturesMap);
 
     SampledTexture* AllocateTexture(std::string_view name, const ImageTexture& texture);
+    SampledTexture* AllocateTexture(std::string_view name, const RenderTexture& renderTexture, Texture texture);
     SampledTexture* GetTexture(std::string_view name);
 
     void SetTextureData(std::string_view name, std::shared_ptr<Image> image);

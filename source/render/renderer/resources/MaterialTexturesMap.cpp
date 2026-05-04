@@ -1,6 +1,7 @@
 #include "MaterialTexturesMap.h"
 #include "asset/Image.h"
 #include "graphics/GraphicsAPI.h"
+#include "graphics/RenderTexture.h"
 #include "graphics/Sampler.h"
 #include "materials/ImageTexture.h"
 
@@ -56,6 +57,30 @@ MaterialTexturesMap::SampledTexture* MaterialTexturesMap::AllocateTexture(std::s
         texture.SetFormat(format);
         texture.SetMipmap(imageTexture.UseMipmaps());
         m_toUpdateImages[nameStr] = image;
+    }
+
+    m_textures[nameStr] = SampledTexture{.texture = texture, .sampler = sampler};
+
+    return &m_textures[nameStr];
+}
+
+MaterialTexturesMap::SampledTexture*
+MaterialTexturesMap::AllocateTexture(std::string_view name, const RenderTexture& renderTexture, Texture texture)
+{
+    auto nameStr = std::string(name);
+    auto itr = m_textures.find(nameStr);
+    if (itr != m_textures.end()) {
+        return &itr->second;
+    }
+    auto sampler = m_graphicsAPI->CreateSampler();
+    auto [u, v] = renderTexture.GetAddressModeUV();
+    sampler.SetAddressModeUV(u, v);
+
+    auto [minFilter, magFilter] = renderTexture.GetFilter();
+    sampler.SetFilter(minFilter, magFilter);
+
+    if (renderTexture.GetMipmapFilter() != MipmapFilterMode::Max) {
+        sampler.SetMipmapFilter(renderTexture.GetMipmapFilter());
     }
 
     m_textures[nameStr] = SampledTexture{.texture = texture, .sampler = sampler};

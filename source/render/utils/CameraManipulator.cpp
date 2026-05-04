@@ -131,7 +131,7 @@ void CameraManipulator::UpdateCamera()
     _camera->Perspective(Math::AngleToRadian(m_fovY), m_aspectRatio, m_nearPlane, m_farPlane);
 }
 
-void CameraManipulator::FitTo(const AABB& box)
+void CameraManipulator::FitTo(const AxisAlignedBoundingBox& box)
 {
     m_center = box.GetCenter().Cast<float>();
     auto boxSize = box.GetSize().Cast<float>();

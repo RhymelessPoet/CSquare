@@ -6,6 +6,7 @@
 #include "graphics/GLRendererBuilder.h"
 #include "graphics/GraphicsAPI.h"
 #include "scene/CameraSystem.h"
+#include "scene/LightSystem.h"
 #include "scene/MeshRenderSystem.h"
 #include "scene/SceneObjectComposer.h"
 #include "scene/SystemGraph.h"
@@ -31,27 +32,29 @@ QuickRenderView::QuickRenderView()
     if (m_renderModule.has_value()) {
         auto renderModule = m_renderModule.value();
         renderModule->GetSystemGraph().AddSystem<CS::MeshRenderSystem>();
+        renderModule->GetSystemGraph().AddSystem<CS::LightSystem>();
         renderModule->GetSystemGraph().AddSystem<CS::CameraSystem>();
         renderModule->GetSystemGraph().AddSystem<CS::TransformSystem>();
-
-        m_view = renderModule->GetMainView();
 
         CS::GLRendererBuilder rendererBuilder;
         renderModule->CreateRenderer(rendererBuilder);
 
+        m_view = renderModule->GetMainView();
+
         auto graphicsAPI = renderModule->GetGraphicsAPI(m_view);
 
         auto csTexture = graphicsAPI->CreateTexture();
-        auto depthTexture = graphicsAPI->CreateTexture(CS::TextureFormat::Depth24Stencil8);
+        auto depthTexture = graphicsAPI->CreateTexture(CS::TextureFormat::Depth32);
 
         auto csRenderTarget = graphicsAPI->CreateRenderTarget(CS::Size2u(1, 1));
         csRenderTarget.SetColorAttachment(csTexture);
-        csRenderTarget.SetDepthStencilAttachment(depthTexture);
+        csRenderTarget.SetDepthAttachment(depthTexture);
         m_view->SetRenderTarget(csRenderTarget);
     }
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setFocus(true);
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 QuickRenderView::~QuickRenderView() noexcept {}

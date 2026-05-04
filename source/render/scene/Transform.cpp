@@ -71,7 +71,7 @@ Matrix4f CS::Transform::GetLocalModelMatrix() const
 
 const Matrix4f& Transform::GetWorldMatrix() const
 {
-    return m_worldMatrix;
+    return const_cast<Transform*>(this)->GetWorldMatrix();
 }
 
 const Matrix4f& Transform::GetWorldMatrix()

@@ -7,6 +7,7 @@ namespace CS
 class PBRConfiguration : public IMaterialConfiguration
 {
 public:
+    PBRConfiguration();
     void Configure(GraphicsPipeline& pipeline) const override;
 };
 

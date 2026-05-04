@@ -1,5 +1,6 @@
 #include "GeometryNode.h"
 #include "graphics/VertexInputLayout.h"
+#include "materials/MaterialInstance.h"
 
 namespace CS
 {
@@ -27,6 +28,14 @@ std::shared_ptr<VertexInputLayout> GeometryNode::GetVertexInputLayout()
     m_mesh->ForEachAttribute([&](const Mesh::Attribute& attribute) { makeVertexInputLayout(attribute, bindings); });
 
     return m_vertexInputLayout;
+}
+
+std::shared_ptr<MaterialInstance> GeometryNode::GetMaterial(EViewType viewType) const
+{
+    if (viewType.IsUndefined() || m_material->GetViewType() == viewType) {
+        return m_material;
+    }
+    return m_material->GetRequisiteMaterial(viewType);
 }
 
 void GeometryNode::makeVertexInputLayout(const Mesh::Attribute& attribute,

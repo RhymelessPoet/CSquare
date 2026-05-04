@@ -23,14 +23,6 @@ void MeshRenderSystem::OnUpdate(SystemContext& context)
     }
 }
 
-std::vector<IEventListener*> MeshRenderSystem::sift(IEvent* event) const
-{
-    if (auto soEvent = dynamic_cast<SceneObjectEvent*>(event); soEvent != nullptr) {
-        return {soEvent->GetSceneObject()->GetScene().get()};
-    }
-    return std::vector<IEventListener*>();
-}
-
 std::unique_ptr<IEvent> MeshRenderSystem::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)
 {
     if (auto event_ = dynamic_cast<NewMaterialInScene*>(event.get()); event_ != nullptr) {

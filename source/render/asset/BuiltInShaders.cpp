@@ -1,4 +1,5 @@
 #include "BuiltInShaders.h"
+#include "graphics/RenderTexture.h"
 #include "materials/ImageTexture.h"
 #include "materials/Shader.h"
 
@@ -70,11 +71,51 @@ layout(std140, binding = 1) uniform MMatrix
     mat4 model;
 };
 
+// 光源参数
+layout(std140, binding = 3) uniform ImagingParameters
+{
+    mat4 light_vp_matrix;
+    vec3 camera_position;
+    vec3 light_direction;
+    vec3 light_color;
+    vec2 shadow_normal_bias;
+    float light_intensity;
+};
+
 layout(location = 0) out vec3 normal;
 layout(location = 1) out vec3 world_position;
 layout(location = 2) out vec2 tex_coord;
 layout(location = 3) out vec3 tangent;
 layout(location = 4) out vec3 bitangent;
+layout(location = 5) out vec4 light_space_position;
+
+highp vec4 GetLightSpacePosition(highp vec3 p, const highp vec3 n, const highp vec2 b) {
+
+    mat4 clipMat = mat4(vec4(0.5, 0.0, 0.0, 0.0), 
+                        vec4(0.0, 0.5, 0.0, 0.0), 
+                        vec4(0.0, 0.0, 0.5, 0.0), 
+                        vec4(0.5, 0.5, 0.5, 1.0));
+    highp mat4 lightFromWorldMatrix = clipMat * light_vp_matrix;
+
+    // Extract the first row (Light's Right vector in World Space)
+    highp vec3 L_right = vec3(lightFromWorldMatrix[0][0], lightFromWorldMatrix[1][0], lightFromWorldMatrix[2][0]);
+
+    // Extract the second row (Light's Up vector in World Space)
+    highp vec3 L_up    = vec3(lightFromWorldMatrix[0][1], lightFromWorldMatrix[1][1], lightFromWorldMatrix[2][1]);
+
+    // Project the world normal onto the shadow map's 2D grid
+    highp float n_Lx = dot(n, L_right);
+    highp float n_Ly = dot(n, L_up);
+
+    // float zOffset = lightFromWorldMatrix * vec4(p, 1.0f).z;
+    // Apply the anisotropic normal bias
+    // p += n * (abs(n_Lx * b.x) + abs(n_Ly * b.y));
+
+    vec4 lsPos = lightFromWorldMatrix * vec4(p, 1.0f);
+    // lsPos.w = zOffset;
+    return lsPos;
+}
+
 
 void main()
 {
@@ -87,6 +128,8 @@ void main()
     tangent = normalMatrix * in_tangent;
     bitangent = normalMatrix * in_bitangent;
     tex_coord = in_texcoord;
+
+    light_space_position = GetLightSpacePosition(world_position, normalize(normal), shadow_normal_bias);
 }
 
 )";
@@ -100,6 +143,8 @@ layout(location = 1) in vec3 world_position;
 layout(location = 2) in vec2 tex_coord;
 layout(location = 3) in vec3 tangent;
 layout(location = 4) in vec3 bitangent;
+layout(location = 5) in vec4 light_space_position;
+
 
 // PBR 材质参数（双模式兼容）
 layout(std140, binding = 2) uniform PBR
@@ -125,14 +170,18 @@ layout(std140, binding = 2) uniform PBR
     unsigned int use_glossiness_map;  // 光泽度纹理
 
     unsigned int use_normal_map;
+
+    unsigned int receive_shadow;
 };
 
 // 光源参数
 layout(std140, binding = 3) uniform ImagingParameters
 {
+    mat4 light_vp_matrix;
     vec3 camera_position;
     vec3 light_direction;
     vec3 light_color;
+    vec2 shadow_normal_bias;
     float light_intensity;
 };
 
@@ -144,6 +193,8 @@ layout(binding = 7) uniform sampler2D roughness_map;
 layout(binding = 8) uniform sampler2D normal_map;
 layout(binding = 9) uniform sampler2D specular_map;       // 新增：高光纹理
 layout(binding = 10) uniform sampler2D glossiness_map;   // 新增：光泽度纹理
+
+layout(binding = 11) uniform sampler2D shadow_map;
 
 // 输出颜色
 layout(location = 0) out vec4 FragColor;
@@ -293,7 +344,7 @@ vec3 PBRShade(MetallicRoughnessParameters params)
 {
     vec3 N = params.normal;
     vec3 V = params.view_direction;
-    vec3 L = normalize(light_direction);
+    vec3 L = normalize(-light_direction);
     vec3 H = normalize(V + L);
 
     vec3 F0 = mix(vec3(0.04), params.albedo, params.metallic);
@@ -317,6 +368,50 @@ vec3 PBRShade(MetallicRoughnessParameters params)
     vec3 directLight = (diffusePart + specularPart) * radiance * NdotL;
 
     return directLight;
+}
+
+float SampleDepth(sampler2D map, vec2 uv, float depth)
+{
+    uv = clamp(uv, vec2(0.0f), vec2(1.0f));
+    
+    return texture(map, uv).r < depth ? 1.0f : 0.0f;
+}
+
+float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
+{
+    highp vec3 position = light_space_position.xyz;
+
+    highp vec2 size = vec2(textureSize(shadow_map, 0));
+    highp vec2 texelSize = vec2(1.0) / size;
+
+    float bias = max(0.05 * (1.0 - dot(geoNormal, lightDirection)), 0.005);
+
+    //  Castaño, 2013, "Shadow Mapping Summary Part 1"
+    highp float depth = position.z - bias;
+
+    // clamp position to avoid overflows below, which cause some GPUs to abort
+    position.xy = clamp(position.xy, vec2(-1.0), vec2(2.0));
+
+    vec2 offset = vec2(0.5);
+    highp vec2 uv = (position.xy * size) + offset;
+    highp vec2 base = (floor(uv) - offset) * texelSize;
+    highp vec2 st = fract(uv);
+
+    vec2 uw = vec2(3.0 - 2.0 * st.x, 1.0 + 2.0 * st.x);
+    vec2 vw = vec2(3.0 - 2.0 * st.y, 1.0 + 2.0 * st.y);
+
+    highp vec2 u = vec2((2.0 - st.x) / uw.x - 1.0, st.x / uw.y + 1.0);
+    highp vec2 v = vec2((2.0 - st.y) / vw.x - 1.0, st.y / vw.y + 1.0);
+
+    u *= texelSize.x;
+    v *= texelSize.y;
+
+    float sum = 0.0;
+    sum += uw.x * vw.x * SampleDepth(shadow_map, base + vec2(u.x, v.x), depth);
+    sum += uw.y * vw.x * SampleDepth(shadow_map, base + vec2(u.y, v.x), depth);
+    sum += uw.x * vw.y * SampleDepth(shadow_map, base + vec2(u.x, v.y), depth);
+    sum += uw.y * vw.y * SampleDepth(shadow_map, base + vec2(u.y, v.y), depth);
+    return sum * (1.0 / 16.0);
 }
 
 void main()
@@ -348,7 +443,7 @@ void main()
         params.metallic = clamp(GetMetallic(), 0.0, 1.0);
     }
 
-    vec3 directLight = PBRShade(params);
+    vec3 directLight = PBRShade(params) * (1.0f - GetPCFShadow(normal, -light_direction));
 
     float ao = 1.0;
     vec3 ambient = vec3(0.05) * params.albedo * ao;
@@ -360,7 +455,6 @@ void main()
     finalColor = pow(finalColor, vec3(1.0/2.2));
 
     FragColor = vec4(finalColor, alpha);
-    // FragColor = vec4(params.normal * 0.5 + 0.5, alpha);
 }
 
 )";
@@ -380,23 +474,18 @@ layout(std140, binding = 1) uniform MMatrix
     mat4 model;
 };
 
-layout(location = 0) out vec3 normal;
-layout(location = 1) out vec3 world_position;
-layout(location = 2) out vec2 tex_coord;
-layout(location = 3) out vec3 tangent;
-layout(location = 4) out vec3 bitangent;
-
 void main()
 {
     vec4 model_position = model * vec4(in_position, 1.0);
     gl_Position = projection * view * model_position;
-
-    world_position = model_position.xyz;
-    normal = transpose(mat3(model)) * in_normal;
-    tex_coord = in_texcoord;
-    tangent = transpose(mat3(model)) * in_tangent;
-    bitangent = transpose(mat3(model)) * in_bitangent;
 }
+
+)";
+
+static inline constexpr std::string_view Depth_Map_FS = R"(
+#version 450 core
+
+void main() {}
 
 )";
 
@@ -406,6 +495,7 @@ BuiltInShaders::BuiltInShaders()
 {
     createPanoramicSkyShader();
     createPBRShader();
+    createShadowMapShader();
 }
 
 std::shared_ptr<Shader> BuiltInShaders::GetVertexShader(std::string_view name)
@@ -472,11 +562,14 @@ void BuiltInShaders::createPBRShader()
                         {"use_roughness_map", sizeof(uint32_t)},
                         {"use_specular_map", sizeof(uint32_t)},
                         {"use_glossiness_map", sizeof(uint32_t)},
-                        {"use_normal_map", sizeof(uint32_t)}});
+                        {"use_normal_map", sizeof(uint32_t)},
+                        {"receive_shadow", sizeof(uint32_t)}});
     auto binding3 = ShaderBinding{3u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
-    binding3.SetLayout({{"camera_position", 3 * sizeof(float)},
+    binding3.SetLayout({{"light_vp_matrix", 16 * sizeof(float)},
+                        {"camera_position", 3 * sizeof(float)},
                         {"light_direction", 3 * sizeof(float)},
                         {"light_color", 3 * sizeof(float)},
+                        {"shadow_normal_bias", 2 * sizeof(float)},
                         {"light_intensity", sizeof(float)}});
 
     auto materialTexture = std::make_unique<ImageTexture>();
@@ -498,6 +591,8 @@ void BuiltInShaders::createPBRShader()
     binding9.SetTexture(ShaderBindingTexture("specular_map", materialTexture->Clone()));
     auto binding10 = ShaderBinding{10u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
     binding10.SetTexture(ShaderBindingTexture("glossiness_map", std::move(materialTexture)));
+    auto binding11 = ShaderBinding{11u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
+    binding11.SetTexture(ShaderBindingTexture("shadow_map", std::make_unique<RenderTexture>()));
 
     fragShader->AddBinding(binding2);
     fragShader->AddBinding(binding3);
@@ -508,8 +603,24 @@ void BuiltInShaders::createPBRShader()
     fragShader->AddBinding(binding8);
     fragShader->AddBinding(binding9);
     fragShader->AddBinding(binding10);
+    fragShader->AddBinding(binding11);
 
     m_fragmentShaders["PBR_FS"] = fragShader;
+}
+
+void BuiltInShaders::createShadowMapShader()
+{
+    auto vertShader = std::make_shared<Shader>(std::string(Depth_Map_VS), ShaderStage::Vertex);
+    auto binding0 = ShaderBinding{0u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    binding0.SetLayout({{"view", 16 * sizeof(float)}, {"projection", 16 * sizeof(float)}});
+    auto binding1 = ShaderBinding{1u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    binding1.SetLayout({{"model", 16 * sizeof(float)}});
+    vertShader->AddBinding(binding0);
+    vertShader->AddBinding(binding1);
+    m_vertexShaders["Depth_Map_VS"] = vertShader;
+
+    auto fragShader = std::make_shared<Shader>(std::string(Depth_Map_FS), ShaderStage::Fragment);
+    m_fragmentShaders["Depth_Map_FS"] = fragShader;
 }
 
 } // namespace CS

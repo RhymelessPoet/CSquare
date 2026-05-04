@@ -1,4 +1,5 @@
 #pragma once
+#include "base/PImpl.h"
 #include "core/IModule.h"
 #include "core/event/IEventDispatcher.h"
 
@@ -8,13 +9,12 @@ class View;
 class Scene;
 class RenderTarget;
 class GLRendererBuilder;
-class RenderModuleImpl;
 class GraphicsAPI;
 class SystemGraph;
 class SceneObjectComposer;
 class ViewGraph;
 
-class RenderModule : public IModule, public IEventDispatcher
+class RenderModule : public PImpl<RenderModule, IModule, IEventDispatcher>
 {
 public:
     RenderModule();
@@ -36,14 +36,9 @@ public:
 
     std::shared_ptr<GraphicsAPI> GetGraphicsAPI(std::shared_ptr<View> view) const;
 
-    const ViewGraph& GetViewGraph() const;
-
-public:
+private:
     std::vector<IEventListener*> sift(IEvent* event) const override;
     std::unique_ptr<IEvent> dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event) override;
-
-private:
-    std::unique_ptr<RenderModuleImpl> m_impl;
 };
 
 } // namespace CS

@@ -14,6 +14,9 @@ enum class TextureFormat : uint8_t
     RGB32Float,
     RGBA32Float,
     Depth24Stencil8,
+    Depth32,
+    Depth32Float,
+    Stencil32,
     Max
 };
 

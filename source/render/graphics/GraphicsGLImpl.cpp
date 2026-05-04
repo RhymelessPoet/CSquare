@@ -117,6 +117,8 @@ static GLFormatMapping GetGLFormatMapping(TextureFormat format)
         return {GL_RGBA32F, GL_RGBA, GL_FLOAT};
     case TextureFormat::Depth24Stencil8:
         return {GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8};
+    case TextureFormat::Depth32:
+        return {GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT};
     default:
         return {GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE};
     }
@@ -341,14 +343,19 @@ bool GraphicsGLImpl::BuildRenderTarget(RenderTargetDescriptor* descriptor)
 
     bool hasColorAttachment = false;
     bool hasDepthAttachment = false;
+    bool hasDepthStencilAttachment = false;
 
     auto colorTexture = descriptor->GetColorAttachment();
     if (colorTexture != nullptr) {
         hasColorAttachment = colorTexture->Build();
     }
+    auto depthTexture = descriptor->GetDepthAttachment();
+    if (depthTexture != nullptr) {
+        hasDepthAttachment = depthTexture->Build();
+    }
     auto depthStencilTexture = descriptor->GetDepthStencilAttachment();
     if (depthStencilTexture != nullptr) {
-        hasDepthAttachment = depthStencilTexture->Build();
+        hasDepthStencilAttachment = depthStencilTexture->Build();
     }
 
     m_glContext->GLGenFramebuffers(1, &fbo).GLBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -357,9 +364,13 @@ bool GraphicsGLImpl::BuildRenderTarget(RenderTargetDescriptor* descriptor)
         m_glContext->GLFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                                             colorTexture->GetNativeTexture(), 0);
     }
-    if (hasDepthAttachment) {
+    if (hasDepthStencilAttachment) {
         m_glContext->GLFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                                             depthStencilTexture->GetNativeTexture(), 0);
+    }
+    if (hasDepthAttachment) {
+        m_glContext->GLFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+                                            depthTexture->GetNativeTexture(), 0);
     }
     bool condition = m_glContext->GLCheckFramebufferStatus(GL_FRAMEBUFFER);
 

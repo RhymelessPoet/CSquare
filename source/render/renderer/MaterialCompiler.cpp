@@ -3,6 +3,7 @@
 #include "MaterialUniformIDCreator.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsShaderStage.h"
+#include "graphics/RenderTexture.h"
 #include "materials/IMaterialConfiguration.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
@@ -13,31 +14,25 @@
 
 namespace CS
 {
+static std::map<uint32_t, Texture> textures;
 
 MaterialCompiler::MaterialCompiler(std::shared_ptr<GraphicsAPI> graphicsAPI,
                                    std::shared_ptr<GraphicsResourceManager> resourceManager)
-    : m_graphicsAPI(graphicsAPI), m_resourceManager(std::move(resourceManager))
+    : m_graphicsAPI(graphicsAPI), m_resourceManager(std::move(resourceManager)), m_currentViewInputs(textures)
 {
     m_uniformIDCreator = std::make_unique<MaterialUniformIDCreator>();
 }
 
 MaterialCompiler::~MaterialCompiler() = default;
 
-MaterialCompiler& MaterialCompiler::BeginMaterial()
+MaterialCompiler& MaterialCompiler::BeginMaterial(IMaterialConfiguration* configuration)
 {
     assert(!m_materialStates.has_value());
 
     m_materialStates = MaterialStates{};
     m_materialStates.value().pipeline = m_graphicsAPI->CreatePipeline();
     m_materialStates.value().bindLayout = m_graphicsAPI->CreateShaderBindingSetLayout();
-
-    return *this;
-}
-
-MaterialCompiler& MaterialCompiler::SetConfiguration(const IMaterialConfiguration& configuration)
-{
-    assert(m_materialStates.has_value());
-    configuration.Configure(m_materialStates.value().pipeline);
+    m_materialStates.value().configuration = configuration;
 
     return *this;
 }
@@ -76,6 +71,8 @@ void MaterialCompiler::EndMaterial(uint16_t id)
     assert(m_materialStates.has_value());
     m_resourceManager->EmplacePipeline(id, m_materialStates.value().pipeline);
     m_resourceManager->EmplaceShaderBindingSetLayout(id, m_materialStates.value().bindLayout);
+
+    m_materialStates.value().configuration->Configure(m_materialStates.value().pipeline);
 
     m_materialStates.reset();
 }
@@ -139,22 +136,18 @@ MaterialCompiler& MaterialCompiler::SetUniformBuffer(uint32_t binding, const Mat
     return *this;
 }
 
-MaterialCompiler& MaterialCompiler::SetTexture(const MaterialInstance::Textures::value_type& uniform)
+MaterialCompiler& MaterialCompiler::SetTexture(const IMaterialConfiguration& configuration,
+                                               const MaterialInstance::Textures::value_type& uniform)
 {
     assert(m_materialInstanceStates.has_value());
 
-    auto [materialID, instanceID, bindingSet] = m_materialInstanceStates.value();
-    auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, uniform.first);
-
-    auto& textureMap = m_resourceManager->GetMaterialTextures();
-
     auto& [materialTexture, binding, _] = uniform.second;
-    auto imageTexture = dynamic_cast<const ImageTexture*>(materialTexture.get());
-    if (imageTexture != nullptr) {
-        auto sampledTexture = textureMap.AllocateTexture(uniformID, *imageTexture);
-        bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
-    } else {
-        // TODO: log error
+
+    if (auto imageTexture = dynamic_cast<const ImageTexture*>(materialTexture.get()); imageTexture != nullptr) {
+        bindTexture(binding, uniform.first, imageTexture);
+    }
+    if (auto renderTexture = dynamic_cast<const RenderTexture*>(materialTexture.get()); renderTexture != nullptr) {
+        bindTexture(configuration, binding, uniform.first, renderTexture);
     }
 
     return *this;
@@ -201,19 +194,41 @@ void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, const Mat
     }
 }
 
-void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, const MaterialInstance::Textures& textures)
+void MaterialCompiler::Apply(const IMaterialConfiguration& configuration,
+                             uint16_t materialID,
+                             uint32_t instanceID,
+                             const MaterialInstance::Textures& textures)
 {
+    auto bindingSet = m_resourceManager->GetShaderBindingSet(materialID, instanceID);
     auto& texturesMap = m_resourceManager->GetMaterialTextures();
 
     for (auto& [name, texture] : textures) {
-        if (!texture.dirty) {
+        auto& [materialTexture, binding, dirty] = texture;
+        auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
+
+        if (auto imageTexture = dynamic_cast<ImageTexture*>(materialTexture.get()); imageTexture != nullptr && dirty) {
+            texturesMap.SetTextureData(uniformID, imageTexture->GetImage());
             continue;
         }
-        auto imageTexture = dynamic_cast<ImageTexture*>(texture.texture.get());
-        if (imageTexture == nullptr) {
-            continue;
+
+        if (auto renderTexture = dynamic_cast<RenderTexture*>(materialTexture.get()); renderTexture != nullptr) {
+            auto bindingTexture = texturesMap.GetTexture(uniformID);
+            if (bindingTexture == nullptr) {
+                continue;
+            }
+            auto slot = configuration.GetSlot(binding);
+            if (!slot.has_value()) {
+                continue;
+            }
+            auto inputTexure = getInput(slot.value());
+            if (!inputTexure.IsValid()) {
+                continue;
+            }
+            if (!bindingTexture->texture.IsValid() || bindingTexture->texture != inputTexure) {
+                bindingTexture->texture = inputTexure;
+                bindingSet.BindSampledTexture(binding, inputTexure, bindingTexture->sampler);
+            }
         }
-        texturesMap.SetTextureData(name, imageTexture->GetImage());
     }
 }
 
@@ -229,6 +244,46 @@ void MaterialCompiler::collectShaderbinding(std::map<uint32_t, ShaderBinding>& b
     } else {
         bindings.emplace(binding.GetBinding(), std::move(binding));
     }
+}
+
+void MaterialCompiler::bindTexture(uint32_t binding, std::string_view uniformName, const ImageTexture* texture)
+{
+    auto [materialID, instanceID, bindingSet] = m_materialInstanceStates.value();
+    auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, uniformName);
+
+    auto& textureMap = m_resourceManager->GetMaterialTextures();
+
+    auto sampledTexture = textureMap.AllocateTexture(uniformID, *texture);
+    bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
+}
+
+void MaterialCompiler::bindTexture(const IMaterialConfiguration& configuration,
+                                   uint32_t binding,
+                                   std::string_view uniformName,
+                                   const RenderTexture* texture)
+{
+    auto [materialID, instanceID, bindingSet] = m_materialInstanceStates.value();
+
+    auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, uniformName);
+    auto& textureMap = m_resourceManager->GetMaterialTextures();
+
+    for (const auto& slot : configuration.GetRequisiteSlots()) {
+        if (!slot.binding.has_value() || slot.binding.value() != binding) {
+            continue;
+        }
+        auto graphicTexture = getInput(slot.id);
+        if (!graphicTexture.IsValid()) {
+            continue;
+        }
+        auto sampledTexture = textureMap.AllocateTexture(uniformID, *texture, graphicTexture);
+        bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
+    }
+}
+
+Texture MaterialCompiler::getInput(uint32_t slot) const
+{
+    auto result = std::ranges::find_if(m_currentViewInputs, [&](auto& node) { return node.first == slot; });
+    return result == std::ranges::end(m_currentViewInputs) ? Texture() : result->second;
 }
 
 } // namespace CS

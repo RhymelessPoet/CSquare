@@ -5,6 +5,28 @@
 
 namespace CS
 {
+EViewType MaterialInstance::GetViewType() const
+{
+    if (const auto mat = material()) {
+        return mat->GetConfiguration().GetViewType();
+    }
+    return EViewType();
+}
+
+std::shared_ptr<MaterialInstance> MaterialInstance::GetRequisiteMaterial(EViewType viewType) const
+{
+    for (const auto& requisiteInstance : m_requisiteMaterials) {
+        if (requisiteInstance->GetViewType() == viewType) {
+            return requisiteInstance;
+        }
+        auto nestedRequisite = requisiteInstance->GetRequisiteMaterial(viewType);
+        if (nestedRequisite != nullptr) {
+            return nestedRequisite;
+        }
+    }
+    return nullptr;
+}
+
 std::shared_ptr<MaterialInstance> MaterialInstance::Clone() const
 {
     auto clonedInstance = material()->CreateInstance();
@@ -12,6 +34,9 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Clone() const
     for (const auto& [name, textureUniform] : m_textures) {
         clonedInstance->m_textures.emplace(
             name, TextureUniform{textureUniform.texture->Clone(), textureUniform.binding, textureUniform.dirty});
+    }
+    for (const auto& requisiteInstance : m_requisiteMaterials) {
+        clonedInstance->m_requisiteMaterials.push_back(requisiteInstance->Clone());
     }
     clonedInstance->m_name = m_name;
     return clonedInstance;
@@ -86,7 +111,7 @@ void MaterialInstance::Compile(MaterialCompiler& compiler) const
     }
 
     for (const auto& pair : m_textures) {
-        compiler.SetTexture(pair);
+        compiler.SetTexture(material()->GetConfiguration(), pair);
     }
 
     compiler.EndMaterialInstance();
@@ -109,7 +134,7 @@ void MaterialInstance::Apply(MaterialCompiler& compiler)
         }
     }
 
-    compiler.Apply(materialID, m_id, m_textures);
+    compiler.Apply(material()->GetConfiguration(), materialID, m_id, m_textures);
     for (auto& [_, texture] : m_textures) {
         texture.dirty = false;
     }

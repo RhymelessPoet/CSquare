@@ -37,6 +37,8 @@ public:
     Texture CreateTexture(TextureFormat format = TextureFormat::RGBA8Unorm, const Size2u& size = {1u, 1u});
     Texture GetTexture(size_t id) const;
     Texture GetColorAttachment(RenderTarget renderTarget) const;
+    Texture GetDepthAttachment(RenderTarget renderTarget) const;
+    Texture GetDepthStencilAttachment(RenderTarget renderTarget) const;
 
     Sampler CreateSampler();
 

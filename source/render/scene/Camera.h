@@ -8,11 +8,13 @@ class Scene;
 class SceneObject;
 class CameraComponent;
 class Transform;
+class AxisAlignedBoundingBox;
 
 class Camera : public std::enable_shared_from_this<Camera>
 {
 public:
     Camera(std::shared_ptr<Scene> scene);
+    Camera(std::shared_ptr<SceneObject> sceneObject);
     ~Camera() = default;
 
     void LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f& up);
@@ -32,7 +34,6 @@ private:
     inline const Transform& transform() const;
 
 private:
-    std::shared_ptr<Scene> m_scene;
     std::shared_ptr<SceneObject> m_sceneObject;
 };
 

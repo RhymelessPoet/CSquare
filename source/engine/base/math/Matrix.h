@@ -498,6 +498,17 @@ Matrix4<T> Scaling(const Vector3<T>& scale)
     return result;
 }
 
+template <size_t N, typename T, size_t U>
+    requires(U >= N)
+Matrix<T, N> Extract(const Matrix<T, U>& mat)
+{
+    Matrix<T, N> result;
+    for (size_t i = 0; i < N; ++i)
+        for (size_t j = 0; j < N; ++j)
+            result[i][j] = mat[i][j];
+    return result;
+};
+
 } // namespace Math
 
 } // namespace CS

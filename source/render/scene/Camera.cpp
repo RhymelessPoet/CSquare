@@ -11,14 +11,27 @@
 
 namespace CS
 {
-Camera::Camera(std::shared_ptr<Scene> scene) : m_scene(std::move(scene))
+Camera::Camera(std::shared_ptr<Scene> scene)
 {
-    m_sceneObject = m_scene->CreateSceneObject();
+    m_sceneObject = scene->CreateSceneObject();
     m_sceneObject->SetName("Camera");
 
-    auto composer = m_scene->GetComposer();
+    auto composer = scene->GetComposer();
     composer->AddComponent<CameraComponent>(m_sceneObject);
     composer->AddComponent<Transform>(m_sceneObject);
+}
+
+Camera::Camera(std::shared_ptr<SceneObject> sceneObject) : m_sceneObject(std::move(sceneObject))
+{
+    auto scene = m_sceneObject->GetScene();
+    auto composer = scene->GetComposer();
+
+    if (m_sceneObject->GetComponent<CameraComponent>() == nullptr) {
+        composer->AddComponent<CameraComponent>(m_sceneObject);
+    }
+    if (m_sceneObject->GetComponent<Transform>() == nullptr) {
+        composer->AddComponent<Transform>(m_sceneObject);
+    }
 }
 
 void Camera::LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f& up)

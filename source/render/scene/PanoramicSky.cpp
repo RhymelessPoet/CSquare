@@ -21,6 +21,12 @@ namespace CS
 class PanoramicSkyMaterialConfiguration : public IMaterialConfiguration
 {
 public:
+    PanoramicSkyMaterialConfiguration()
+    {
+        m_viewType = EViewType::Make<"3D_Main">();
+        m_targetSlots.push_back(SlotDescription{.id = {.slotIndex = 0u}, .type = SlotType::Color});
+        m_targetSlots.push_back(SlotDescription{.id = {.slotIndex = 0u}, .type = SlotType::Depth});
+    }
     void Configure(GraphicsPipeline& pipeline) const override { pipeline.SetDepthTest(false); }
 };
 

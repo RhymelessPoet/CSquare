@@ -40,7 +40,26 @@ public:
         }
     }
 
+    Vector(const Vector<T, N - 1>& vector, T value)
+    {
+        for (size_t index = 0u; index < N - 1; ++index) {
+            m_data[index] = vector[index];
+        }
+        m_data[N - 1] = value;
+    }
+
     T& operator[](int i) { return m_data[i]; }
+
+    template <size_t P, size_t W>
+        requires(W <= N && W > P)
+    Vector<T, W - P> Slice()
+    {
+        Vector<T, W - P> sliced;
+        for (size_t index = P; index < W; ++index) {
+            sliced[index - P] = m_data[index];
+        }
+        return sliced;
+    }
 
     const T& operator[](int i) const { return m_data[i]; }
 

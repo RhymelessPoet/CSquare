@@ -125,6 +125,64 @@ Vector3<T> ToEulerAnglesXYZ(const Quaternion<T>& q)
     return Vector3<T>({roll, pitch, yaw});
 }
 
+/**
+ * Calculates the Jacobian matrix J = ∂(u,v,d)/∂(x,y,z) for a 4x4 perspective projection.
+ *
+ * Given a view-space point P = [x, y, z, 1]^T and a projection matrix M,
+ * the projected homogeneous coordinates are [X, Y, Z, W]^T = M * P.
+ * The resulting NDC coordinates are u = X/W, v = Y/W, and depth d = Z/W.
+ *
+ * To find the Jacobian on the CPU, we apply the quotient rule to each component:
+ * ∂(X/W) / ∂xi = ( (∂X/∂xi) * W - X * (∂W/∂xi) ) / W^2
+ *
+ * In matrix form, this can be expressed as:
+ * J = (1/W) * [ M_sub - (1/W) * (T ⊗ w_grad) ]
+ *
+ * Where:
+ * - W: The homogeneous w-component after projection (usually -z for standard mats).
+ * - M_sub: The top-left 3x3 submatrix of M.
+ * - T: The column vector [X, Y, Z]^T (pre-perspective divide).
+ * - w_grad: The row vector [m30, m31, m32] (the first three elements of M's last row).
+ * - ⊗: The outer product, resulting in a 3x3 matrix.
+ *
+ * This Jacobian describes the local "stretch" of the projection. For LiSPSM or
+ * shadow mapping, the inverse Jacobian J^-1 provides the world-space footprint
+ * of a shadow texel, which is essential for calculating an accurate,
+ * non-constant depth bias to eliminate shadow acne.
+ *
+ * @param M The 4x4 projection matrix.
+ * @param p The 3D point in view-space where the Jacobian is evaluated.
+ * @return A 3x3 matrix representing the partial derivatives of (u,v,d) w.r.t (x,y,z).
+ */
+template <typename T>
+    requires(std::is_floating_point_v<T>)
+static Matrix3<T> Jacobian(Matrix4<T> const& M, Vector3<T> const& p) noexcept
+{
+    auto const row0 = M.GetRow(0u);
+    auto const row1 = M.GetRow(1u);
+    auto const row2 = M.GetRow(2u);
+    auto const row3 = M.GetRow(3u);
+
+    Vector3<T> const projected = {
+        row0[0] * p[0] + row0[1] * p[1] + row0[2] * p[2] + row0[3],
+        row1[0] * p[0] + row1[1] * p[1] + row1[2] * p[2] + row1[3],
+        row2[0] * p[0] + row2[1] * p[1] + row2[2] * p[2] + row2[3],
+    };
+
+    T const W = row3[0] * p[0] + row3[1] * p[1] + row3[2] * p[2] + row3[3];
+    Vector3<T> const w_grad = {row3[0], row3[1], row3[2]};
+    Matrix3<T> const M_sub = Extract<3>(M);
+
+    Matrix3<T> result = M_sub;
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            result[i][j] = (M_sub[i][j] - projected[i] * w_grad[j] / W) / W;
+        }
+    }
+
+    return result;
+}
+
 } // namespace Math
 
 } // namespace CS

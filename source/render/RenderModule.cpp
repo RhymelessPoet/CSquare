@@ -16,9 +16,14 @@
 
 namespace CS
 {
-class RenderModuleImpl
+template <>
+struct ImplData<RenderModule>
 {
-public:
+    ImplData()
+    {
+        resourceCache = std::make_shared<GraphicsResourceCache>();
+        systemGraph = std::make_shared<SystemGraph>();
+    }
     std::unique_ptr<Renderer> renderer;
     std::shared_ptr<GraphicsResourceCache> resourceCache;
     std::shared_ptr<SystemGraph> systemGraph;
@@ -29,13 +34,7 @@ public:
     bool ready = false;
 };
 
-RenderModule::RenderModule()
-{
-    m_impl = std::make_unique<RenderModuleImpl>();
-    m_impl->resourceCache = std::make_shared<GraphicsResourceCache>();
-    m_impl->systemGraph = std::make_shared<SystemGraph>();
-    m_impl->viewGraph = std::make_unique<ViewGraph>();
-}
+RenderModule::RenderModule() : ImplBase() {}
 
 RenderModule::~RenderModule() {}
 
@@ -43,57 +42,56 @@ void RenderModule::Initialize() {}
 
 void RenderModule::Update()
 {
-    std::unique_lock<std::mutex> lock(m_impl->mtx);
-    m_impl->cv.wait(lock, [=] { return !m_impl->ready; });
+    std::unique_lock<std::mutex> lock(impl().mtx);
+    impl().cv.wait(lock, [=] { return !impl().ready; });
     RenderModuleContext context(this);
-    m_impl->systemGraph->OnUpdate(context);
+    impl().systemGraph->OnUpdate(context);
     Dispatch();
-    m_impl->ready = true;
+    impl().ready = true;
 }
 
 void RenderModule::Render()
 {
-    std::unique_lock<std::mutex> lock(m_impl->mtx);
-    if (m_impl->ready) {
-        m_impl->ready = false;
-        m_impl->cv.notify_all();
-        m_impl->renderer->Render(*m_impl->viewGraph);
+    std::unique_lock<std::mutex> lock(impl().mtx);
+    if (impl().ready) {
+        impl().ready = false;
+        impl().cv.notify_all();
+        impl().renderer->Render(*impl().viewGraph);
     }
 }
 
 std::shared_ptr<View> RenderModule::GetMainView()
 {
-    return m_impl->viewGraph->GetMainView();
+    if (impl().viewGraph == nullptr) {
+        return nullptr;
+    }
+    return impl().viewGraph->GetMainView();
 }
 
 SystemGraph& RenderModule::GetSystemGraph()
 {
-    return *m_impl->systemGraph;
+    return *impl().systemGraph;
 }
 
 void RenderModule::CreateRenderer(const GLRendererBuilder& builder)
 {
-    m_impl->renderer = builder.Build(m_impl->resourceCache);
+    impl().renderer = builder.Build(impl().resourceCache);
+    impl().viewGraph = std::make_unique<ViewGraph>(impl().renderer->GetGraphicsAPI());
 }
 
 std::shared_ptr<SceneObjectComposer> RenderModule::GetSOComposer() const
 {
-    return std::shared_ptr<SceneObjectComposer>(new SceneObjectComposer(m_impl->systemGraph));
+    return std::shared_ptr<SceneObjectComposer>(new SceneObjectComposer(impl().systemGraph));
 }
 
 std::shared_ptr<GraphicsAPI> RenderModule::GetGraphicsAPI(std::shared_ptr<View> view) const
 {
-    return m_impl->renderer->GetGraphicsAPI();
-}
-
-const ViewGraph& RenderModule::GetViewGraph() const
-{
-    return *m_impl->viewGraph;
+    return impl().renderer->GetGraphicsAPI();
 }
 
 std::vector<IEventListener*> RenderModule::sift(IEvent* event) const
 {
-    return {m_impl->viewGraph.get()};
+    return {impl().viewGraph.get()};
 }
 
 std::unique_ptr<IEvent> RenderModule::dispatch(IEventDispatcher* nextDispatcher, std::unique_ptr<IEvent> event)

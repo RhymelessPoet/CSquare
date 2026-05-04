@@ -28,6 +28,7 @@ public:
     void SetRotation(const Vector3f& xAxis, const Vector3f& yAxis, const Vector3f& zAxis);
 
     const Vector3f GetRotation() const;
+    const Matrix4f& GetRotationMatrix() const { return m_rotation; }
 
     void SetScale(const Vector3f& scale);
     const Vector3f& GetScale() const;

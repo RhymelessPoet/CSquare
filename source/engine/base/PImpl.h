@@ -1,4 +1,5 @@
 #pragma once
+#include "base/Macros.h"
 #include <memory>
 
 namespace CS
@@ -9,12 +10,12 @@ struct ImplData
 {
 };
 
-template <typename Derived>
-class PImpl
+template <typename Derived, typename... Bases>
+class PImpl : public Bases...
 {
 public:
     using Impl = ImplData<Derived>;
-    using ImplBase = PImpl<Derived>;
+    using ImplBase = PImpl<Derived, Bases...>;
 
     template <typename... Args>
     PImpl(Args&&... args)
@@ -23,7 +24,7 @@ public:
     }
 
 protected:
-    ~PImpl() {}
+    ~PImpl() = default;
 
 protected:
     Impl& impl() { return *m_impl; }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Mesh.h"
+#include "scene/ViewType.h"
 #include <map>
 #include <memory>
 #include <string>
@@ -21,7 +22,7 @@ public:
     std::shared_ptr<VertexInputLayout> GetVertexInputLayout();
 
     std::shared_ptr<Mesh> GetMesh() const { return m_mesh; }
-    std::shared_ptr<MaterialInstance> GetMaterial() const { return m_material; }
+    std::shared_ptr<MaterialInstance> GetMaterial(EViewType viewType = EViewType{}) const;
 
 private:
     void makeVertexInputLayout(const Mesh::Attribute& attribute,
