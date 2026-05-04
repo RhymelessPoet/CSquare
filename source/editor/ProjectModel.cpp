@@ -69,12 +69,12 @@ void ProjectModel::initializeScene()
     impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
     impl().directionalLight->SetIntensity(5.1f);
 
-    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/shape/cube.gltf");
-    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/monkeysun/monkeysun.gltf");
-    // auto assetScene = AssetManager::Instance().GetAssetScene("assets/model/room/room.gltf");
-    // auto assetScene = AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/sponza/sponza.gltf");
-    auto assetScene =
-        AssetManager::Instance().GetAssetScene("C:/Users/Moke/Documents/Assets/lost_empire/lost_empire.gltf");
+    // Path assetPath = "assets/shape/cube.gltf";
+    // Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
+    // Path assetPath = "assets/model/room/room.gltf";
+    // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
+    Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
+    auto assetScene = AssetManager::Instance().GetAssetScene(assetPath);
 
     if (assetScene != nullptr) {
         AssetImporter importer(impl().scene);

@@ -1,5 +1,6 @@
 import clang.cindex as CX
 
+
 class Attribute:
     def __init__(self, name: str, tags: dict[str, str]):
         self._name = name
@@ -10,6 +11,7 @@ class Attribute:
 
     def tags(self):
         return self._tags
+
 
 class AttributeParser:
     def __init__(self, attribute_keys: list[str], tags: dict[str, list[str]]):
@@ -34,17 +36,18 @@ class AttributeParser:
 
             if char == ')':
                 if left_parenthesis == 1:
-                    attr = ''.join(stack[0 : parenthesis_index - 1])
-                    attr_values[attr] = ''.join(stack[parenthesis_index - 1 : len(stack)])
+                    attr = ''.join(stack[0: parenthesis_index - 1])
+                    attr_values[attr] = ''.join(
+                        stack[parenthesis_index - 1: len(stack)])
                     stack = []
                     left_parenthesis = 0
                     parenthesis_index = -1
                 else:
                     left_parenthesis -= 1
 
-        return { k : attr_values[k] for k in attr_values.keys() & self._attribute_keys}
+        return {k: attr_values[k] for k in attr_values.keys() & self._attribute_keys}
 
-    def __tags__(self, attr:str, values: str):
+    def __tags__(self, attr: str, values: str):
         tags = {}
         tag_keys = self._tags[attr]
 
@@ -58,11 +61,11 @@ class AttributeParser:
             if char == ')':
                 parenthesis -= 1
             if char == ',' and parenthesis == 0:
-                name_values.append(values[start_index : index].strip())
+                name_values.append(values[start_index: index].strip())
                 start_index = index + 1
 
         if start_index < len(values):
-            name_values.append(values[start_index : len(values)].strip())
+            name_values.append(values[start_index: len(values)].strip())
 
         for name_value in name_values:
             tag = name_value.split('=')
@@ -72,13 +75,13 @@ class AttributeParser:
             else:
                 tags[tag[0].strip()] = ''
 
-        return { k : tags[k] for k in tags.keys() & tag_keys}
+        return {k: tags[k] for k in tags.keys() & tag_keys}
 
     def parse_attributes(self, annotation: str):
         attributes = []
 
         for name, values in self.__attributes__(annotation).items():
-            tags = self.__tags__(name, values[1 : len(values) - 1])
+            tags = self.__tags__(name, values[1: len(values) - 1])
             # print(name, tags)
             attributes.append(Attribute(name, tags))
 
@@ -92,6 +95,7 @@ class Namespace:
 
     def identify_name(self):
         return self._namespace
+
 
 class MetaInfo:
     def __init__(self, name, namespace: Namespace):
@@ -111,9 +115,10 @@ class MetaInfo:
 
     def name(self):
         return self._name
-    
+
     def namespace(self):
         return self._namespace
+
 
 class Filed(MetaInfo):
     def __init__(self, node: CX.Cursor, parent_class, attr_parser: AttributeParser):
@@ -133,6 +138,7 @@ class Method(MetaInfo):
 
     def parent_class(self):
         return self._parent_class
+
 
 class Class(MetaInfo):
     def __init__(self, node: CX.Cursor, namespace: Namespace, attr_parser: AttributeParser):
@@ -169,7 +175,6 @@ class Class(MetaInfo):
 
             elif child.kind == CX.CursorKind.ANNOTATE_ATTR:
                 self._attributes = attr_parser.parse_attributes(child.spelling)
-
 
     def __base_class__(self, node: CX.Cursor):
         namespace = self._namespace

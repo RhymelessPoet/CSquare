@@ -1,9 +1,19 @@
 {
-    "Attributes": ["Meta", "Method", "Property"],
-    "Tags":
-    {
-        "Meta": ["QML"],
+    "Attributes": [
+        "Meta",
+        "Method",
+        "Property"
+    ],
+    "Tags": {
+        "Meta": [
+            "QML"
+        ],
         "Method": [],
-        "Property": ["Setter", "Getter", "UIName"]
+        "Property": [
+            "Setter",
+            "Getter",
+            "UIName",
+            "SerializeName"
+        ]
     }
 }

@@ -80,7 +80,7 @@ public:
     {
         m_viewType = EViewType::Make<"Shadow_Map">();
         m_targetSlots.push_back(SlotDescription{.id = {.slotIndex = 0u}, .type = SlotType::Depth});
-        m_targetSize = Size2u{4096u, 4096u};
+        m_targetSize = Size2u{1024, 1024};
     }
     void Configure(GraphicsPipeline& pipeline) const override
     {

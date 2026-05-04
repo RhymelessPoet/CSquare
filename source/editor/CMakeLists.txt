@@ -101,8 +101,13 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     CSRender
 )
 
+if(MSVC)
+    target_link_options(${TARGET_NAME} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:CSRender>")
+endif()
+
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS})
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIRS})
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/meta)
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 

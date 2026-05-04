@@ -13,3 +13,8 @@ if(NOT TARGET glfw)
 endif()
 
 add_subdirectory(assimp)
+
+if(NOT TARGET Ubpa::UDRefl_core)
+    add_subdirectory(UDRefl)
+    set_target_properties(UDRefl_core PROPERTIES FOLDER ${THIRD_PARTY_FOLDER}/UDRefl)
+endif()
