@@ -27,20 +27,43 @@ file(MAKE_DIRECTORY ${META_GENERATED_DIR})
 
 set(META_PARSER ${CMAKE_SOURCE_DIR}/meta/parser/parser.py)
 set(META_CONFIG ${CMAKE_SOURCE_DIR}/meta/parser/parse_config.json)
+set(META_SCENE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/scene)
 
 # Auto-discover headers with potential meta annotations
-file(GLOB_RECURSE CONFIGURE_DEPENDS META_HEADER_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/scene/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/scene/*.hpp"
+file(GLOB_RECURSE META_HEADER_FILES CONFIGURE_DEPENDS
+    "${META_SCENE_DIR}/*.h"
+    "${META_SCENE_DIR}/*.hpp"
 )
 
-# Stamp file to track when generation was last run
+# Run the meta parser at CONFIGURE time so generated/*.cpp files exist
+# before file(GLOB) collects them below. Without this, a fresh
+# `cmake --preset MSVC` leaves the generated/ folder empty.
+message(STATUS "Running UDRefl meta parser (configure-time)...")
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${META_PARSER}
+            ${META_SCENE_DIR}
+            ${META_CONFIG}
+            --output-dir ${META_GENERATED_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    RESULT_VARIABLE META_GEN_RESULT
+    OUTPUT_VARIABLE META_GEN_STDOUT
+    ERROR_VARIABLE  META_GEN_STDERR
+)
+if(NOT META_GEN_RESULT EQUAL 0)
+    message(WARNING "Meta parser (configure-time) failed (code=${META_GEN_RESULT}):\n"
+                    "stdout: ${META_GEN_STDOUT}\n"
+                    "stderr: ${META_GEN_STDERR}")
+else()
+    message(STATUS "Meta parser finished successfully.")
+endif()
+
+# Stamp file to track when generation was last run (build-time regeneration)
 set(META_STAMP ${CMAKE_CURRENT_BINARY_DIR}/meta_gen.stamp)
 
 add_custom_command(
     OUTPUT ${META_STAMP}
     COMMAND ${Python3_EXECUTABLE} ${META_PARSER}
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene
+    ${META_SCENE_DIR}
     ${META_CONFIG}
     --output-dir ${META_GENERATED_DIR}
     COMMAND ${CMAKE_COMMAND} -E touch ${META_STAMP}
@@ -56,16 +79,12 @@ add_custom_target(CSRenderMetaGen DEPENDS ${META_STAMP})
 add_dependencies(${TARGET_NAME} CSRenderMetaGen)
 
 # Discover generated sources (auto-refreshed when new files appear)
-file(GLOB CONFIGURE_DEPENDS META_GENERATED_SOURCES "${META_GENERATED_DIR}/*.cpp")
+file(GLOB META_GENERATED_SOURCES CONFIGURE_DEPENDS "${META_GENERATED_DIR}/*.cpp")
 
-# Fallback: ensure expected files are listed on first configure
-if(NOT META_GENERATED_SOURCES)
-    set(META_GENERATED_SOURCES
-        ${META_GENERATED_DIR}/CSMetaRegister_Auto.cpp
-        ${META_GENERATED_DIR}/CSMetaRegister_SceneObject.cpp
-        ${META_GENERATED_DIR}/CSMetaRegister_Transform.cpp
-    )
+if(META_GENERATED_SOURCES)
+    set_source_files_properties(${META_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
+    target_sources(${TARGET_NAME} PRIVATE ${META_GENERATED_SOURCES})
+    message(STATUS "Meta generated sources: ${META_GENERATED_SOURCES}")
+else()
+    message(STATUS "No meta-annotated classes produced generated sources.")
 endif()
-
-set_source_files_properties(${META_GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
-target_sources(${TARGET_NAME} PRIVATE ${META_GENERATED_SOURCES})

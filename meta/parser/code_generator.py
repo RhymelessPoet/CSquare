@@ -163,7 +163,12 @@ class CodeGenerator:
         lines.append('')
         lines.append(f'void Register_{class_name}() {{')
         lines.append(f'{indent}using namespace Ubpa::UDRefl;')
-        lines.append(f'{indent}auto& mngr = Mngr;')
+        # NOTE: Do NOT use `Mngr` here. `Mngr` is an `inline static` reference
+        # initialized during dynamic init of each TU. Per-class registration
+        # TUs are not in `init_seg(lib)`, so their `Mngr` is uninitialized when
+        # the aggregator (which IS in `init_seg(lib)`) invokes us pre-main.
+        # Calling `ReflMngr::Instance()` (a Meyers' singleton) is always safe.
+        lines.append(f'{indent}auto& mngr = ReflMngr::Instance();')
         lines.append('')
 
         lines.append(f'{indent}mngr.RegisterType(Ubpa::Type_of<{class_name}>, sizeof({class_name}), alignof({class_name}), std::is_polymorphic_v<{class_name}>, std::is_trivial_v<{class_name}>);')
