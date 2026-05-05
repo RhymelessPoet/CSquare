@@ -86,6 +86,23 @@ bool QuickSceneObjectModel::hasSelection() const
 
 void QuickSceneObjectModel::onDomainChanged()
 {
+    // Fast path: when the component count is unchanged we can keep the
+    // existing QuickComponentModel row adapters alive and just tell them
+    // their data is stale. This avoids a model reset which would blow away
+    // QML delegate state (scroll position, focused editor, etc.).
+    const size_t domainCount = (m_model != nullptr) ? m_model->GetComponentCount() : 0;
+    if (domainCount == m_quickComponents.size()) {
+        for (auto& qc : m_quickComponents) {
+            if (qc) {
+                qc->notifyAllChanged();
+            }
+        }
+        emit changed();
+        return;
+    }
+
+    // Slow path: structural change (selection swapped / component added or
+    // removed). Rebuild the list.
     rebuild();
     emit changed();
 }
@@ -98,7 +115,14 @@ void QuickSceneObjectModel::rebuild()
         const size_t n = m_model->GetComponentCount();
         m_quickComponents.reserve(n);
         for (size_t i = 0; i < n; ++i) {
-            m_quickComponents.emplace_back(std::make_unique<QuickComponentModel>(&m_model->GetComponent(i), this));
+            auto adapter = std::make_unique<QuickComponentModel>(&m_model->GetComponent(i), this);
+            // Bubble per-property edits up to interested QML listeners. We
+            // re-emit `changed()` which already drives name/active/hasSelection
+            // bindings; future viewport-side observers (gizmo, dirty flag)
+            // can listen to the same signal.
+            QObject::connect(adapter.get(), &QAbstractListModel::dataChanged, this,
+                             [this](const QModelIndex&, const QModelIndex&, const QList<int>&) { emit changed(); });
+            m_quickComponents.emplace_back(std::move(adapter));
         }
     }
     endResetModel();

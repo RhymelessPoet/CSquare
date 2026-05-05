@@ -18,7 +18,6 @@ enum class PropertyType
     Double,
     String,
     Vector3,
-    Matrix4,
 };
 
 // A type-erased handle to a single reflected property on a component.

@@ -47,7 +47,7 @@ void ComponentModel::build()
 
         auto getter = [fieldView]() -> std::any { return ObjectViewToAny(fieldView); };
 
-        const bool writable = (propType != PropertyType::Unknown) && (propType != PropertyType::Matrix4);
+        const bool writable = (propType != PropertyType::Unknown);
 
         PropertyItem::Setter setter;
         if (writable) {

@@ -4,6 +4,7 @@ vs_build/
 lib/
 .vs/
 .vscode/
+.qoder/
 # bin/
 _deps/
 

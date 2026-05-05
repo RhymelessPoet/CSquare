@@ -41,7 +41,14 @@ void Camera::LookAt(const Vector3f& eye, const Vector3f& center, const Vector3f&
     auto zAxis = (eye - center).Normalized();
     Vector3f xAxis = up.Cross(zAxis).Normalized();
     Vector3f yAxis = zAxis.Cross(xAxis);
-    _transform.SetRotation(xAxis, yAxis, zAxis);
+    // Build the rotation matrix from the orthonormal basis and reduce to
+    // Euler angles (Transform stores rotation as Vector3f radians).
+    Matrix4f m;
+    m.SetIdentity();
+    m.SetRow(0u, {xAxis[0], xAxis[1], xAxis[2], 0.0f});
+    m.SetRow(1u, {yAxis[0], yAxis[1], yAxis[2], 0.0f});
+    m.SetRow(2u, {zAxis[0], zAxis[1], zAxis[2], 0.0f});
+    _transform.SetRotation(Math::RotationMatrixToAnglesXYZ(m));
 }
 
 void Camera::Ortho(float left, float right, float bottom, float top, float nearPlane, float farPlane)

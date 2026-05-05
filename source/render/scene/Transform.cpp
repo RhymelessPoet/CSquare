@@ -37,20 +37,18 @@ const Vector3f& Transform::GetPosition() const
 
 void Transform::SetRotation(const Vector3f& rotation)
 {
-    m_rotation = Math::RotationToMatrix4(rotation);
+    m_rotation = rotation;
     m_dirty = true;
 }
 
-void Transform::SetRotation(const Vector3f& xAxis, const Vector3f& yAxis, const Vector3f& zAxis)
+const Vector3f& Transform::GetRotation() const
 {
-    m_rotation.SetRow(0u, {xAxis[0], xAxis[1], xAxis[2], 0.0f});
-    m_rotation.SetRow(1u, {yAxis[0], yAxis[1], yAxis[2], 0.0f});
-    m_rotation.SetRow(2u, {zAxis[0], zAxis[1], zAxis[2], 0.0f});
+    return m_rotation;
 }
 
-const Vector3f Transform::GetRotation() const
+Matrix4f Transform::GetRotationMatrix() const
 {
-    return Math::RotationMatrixToAnglesXYZ(m_rotation);
+    return Math::RotationToMatrix4(m_rotation);
 }
 
 void Transform::SetScale(const Vector3f& scale)
@@ -66,7 +64,7 @@ const Vector3f& Transform::GetScale() const
 
 Matrix4f CS::Transform::GetLocalModelMatrix() const
 {
-    return Math::Translation(m_position) * m_rotation * Math::Scaling(m_scale);
+    return Math::Translation(m_position) * Math::RotationToMatrix4(m_rotation) * Math::Scaling(m_scale);
 }
 
 const Matrix4f& Transform::GetWorldMatrix() const

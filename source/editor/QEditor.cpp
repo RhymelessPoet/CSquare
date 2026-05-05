@@ -14,6 +14,13 @@ QEditor::QEditor()
     m_sceneTreeModel = std::make_unique<QuickTreeModel>();
     m_sceneObjectDomain = std::make_unique<SceneObjectModel>();
     m_sceneObjectAdapter = std::make_unique<QuickSceneObjectModel>(m_sceneObjectDomain.get());
+    m_sceneSelection = std::make_unique<QItemSelectionModel>(m_sceneTreeModel.get());
+
+    // Route selection changes from the shared QItemSelectionModel directly
+    // into the domain model. Both Hierarchy and Inspector bind to this
+    // single selection source.
+    QObject::connect(m_sceneSelection.get(), &QItemSelectionModel::currentChanged, this,
+                     &QEditor::onSelectionCurrentChanged);
 }
 
 QEditor::~QEditor() = default;
@@ -64,6 +71,15 @@ void QEditor::clearSelectedSceneObject()
 void QEditor::updateModels(ProjectModel* project)
 {
     m_sceneTreeModel->setModel(project->GetSceneTreeModel());
+}
+
+void QEditor::onSelectionCurrentChanged(const QModelIndex& current, const QModelIndex& /*previous*/)
+{
+    if (current.isValid()) {
+        setSelectedSceneObject(current);
+    } else {
+        clearSelectedSceneObject();
+    }
 }
 
 } // namespace CSEditor

@@ -72,7 +72,13 @@ QString QuickComponentModel::componentName() const
         return {};
     }
     const auto name = m_model->GetTypeName();
-    return QString::fromUtf8(name.data(), static_cast<int>(name.size()));
+    QString full = QString::fromUtf8(name.data(), static_cast<int>(name.size()));
+    // Strip any namespace qualifiers for UI display (e.g. "CS::Transform" -> "Transform").
+    const int sep = full.lastIndexOf(QStringLiteral("::"));
+    if (sep >= 0) {
+        full.remove(0, sep + 2);
+    }
+    return full;
 }
 
 bool QuickComponentModel::setValue(int row, const QVariant& value)

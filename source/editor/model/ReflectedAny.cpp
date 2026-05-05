@@ -1,13 +1,11 @@
 #include "ReflectedAny.h"
 
-#include "base/math/Matrix.h"
 #include "base/math/Vector.h"
 
 #include <UDRefl/Basic.hpp>
 #include <UDRefl/Object.hpp>
 
 #include <array>
-#include <sstream>
 #include <string>
 
 namespace CSEditor
@@ -30,23 +28,6 @@ template <typename T>
 T* asPtr(Ubpa::UDRefl::ObjectView view)
 {
     return static_cast<T*>(view.RemoveConst().GetPtr());
-}
-
-std::string dumpMatrix(const CS::Matrix4f& m)
-{
-    std::ostringstream oss;
-    for (uint32_t r = 0; r < 4; ++r) {
-        for (uint32_t c = 0; c < 4; ++c) {
-            if (c != 0) {
-                oss << ' ';
-            }
-            oss << m[r][c];
-        }
-        if (r != 3) {
-            oss << '\n';
-        }
-    }
-    return oss.str();
 }
 } // namespace
 
@@ -75,9 +56,6 @@ PropertyType ClassifyType(Ubpa::UDRefl::ObjectView view)
     }
     if (isType(view, Ubpa::Type_of<CS::Vector3f>)) {
         return PropertyType::Vector3;
-    }
-    if (isType(view, Ubpa::Type_of<CS::Matrix4f>)) {
-        return PropertyType::Matrix4;
     }
     return PropertyType::Unknown;
 }
@@ -110,8 +88,6 @@ std::any ObjectViewToAny(Ubpa::UDRefl::ObjectView view)
         const auto& vec = *asPtr<const CS::Vector3f>(v);
         return std::any{std::array<float, 3>{vec[0], vec[1], vec[2]}};
     }
-    case PropertyType::Matrix4:
-        return std::any{dumpMatrix(*asPtr<const CS::Matrix4f>(v))};
     case PropertyType::Unknown:
     default:
         return {};
@@ -178,7 +154,6 @@ bool AnyToObjectView(Ubpa::UDRefl::ObjectView view, const std::any& value)
             return true;
         }
         return false;
-    case PropertyType::Matrix4:
     case PropertyType::Unknown:
     default:
         return false;

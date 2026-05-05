@@ -32,16 +32,12 @@ public:
 
     [[Method()]]
     void SetRotation(const Vector3f& rotation);
-    [[Method()]]
-    void SetRotation(const Vector3f& xAxis, const Vector3f& yAxis, const Vector3f& zAxis);
 
     [[Method()]]
-    const Vector3f GetRotation() const;
+    const Vector3f& GetRotation() const;
+
     [[Method()]]
-    const Matrix4f& GetRotationMatrix() const
-    {
-        return m_rotation;
-    }
+    Matrix4f GetRotationMatrix() const;
 
     [[Method()]]
     void SetScale(const Vector3f& scale);
@@ -65,8 +61,8 @@ private:
 private:
     [[Property(Setter = SetPosition, Getter = GetPosition, UIName = Position)]]
     Vector3f m_position{0.0f, 0.0f, 0.0f};
-    [[Property(Getter = GetRotationMatrix, UIName = Rotation)]]
-    Matrix4f m_rotation;
+    [[Property(Setter = SetRotation, Getter = GetRotation, UIName = Rotation)]]
+    Vector3f m_rotation{0.0f, 0.0f, 0.0f};
     [[Property(Setter = SetScale, Getter = GetScale, UIName = Scale)]]
     Vector3f m_scale{1.0f, 1.0f, 1.0f};
     Matrix4f m_worldMatrix;

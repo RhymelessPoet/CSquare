@@ -84,20 +84,26 @@ ApplicationWindow {
                         Layout.fillHeight: true
                     }
 
-                    CSQuickRenderView {
-                        id: renderView
-                        projectID: appWindow.projectID
+                    // Render view + overlay inspector stack. The inspector
+                    // floats over the render view on the right edge; when
+                    // collapsed it slides off, letting the render view
+                    // reclaim the full area.
+                    Item {
+                        id: renderStack
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                    }
 
-                    CSInspectorView {
-                        id: inspectorView
-                        Layout.preferredWidth: 360
-                        Layout.minimumWidth: 240
-                        Layout.fillHeight: true
-                    }
+                        CSQuickRenderView {
+                            id: renderView
+                            projectID: appWindow.projectID
+                            anchors.fill: parent
+                        }
 
+                        CSInspectorView {
+                            id: inspectorView
+                            // Anchors handled inside the component (top/bottom/right).
+                        }
+                    }
                 }
             }
 

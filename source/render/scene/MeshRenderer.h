@@ -52,11 +52,10 @@ private:
     GraphicsInputAssembly& getInputAssembly(GeometryDataMap& map, const std::shared_ptr<GeometryNode>& node);
 
 private:
+    [[Property(UIName = Geometry Nodes)]]
     std::vector<std::shared_ptr<GeometryNode>> m_geometryNodes;
     GeometryDataMap m_geometryData;
-    [[Property(UIName = VertexBufferSize)]]
     uint32_t m_vertexBufferSize{0u};
-    [[Property(UIName = IndexBufferSize)]]
     uint32_t m_indexBufferSize{0u};
 
     IndexBuffer m_indexBuffer;

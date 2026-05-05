@@ -68,7 +68,14 @@ ELightType Light::GetLightType() const
 void Light::SetDirection(const Vector3f& direction)
 {
     auto [xAxis, yAxis, zAxis] = Rotation::FromZAxis(-direction);
-    transform().SetRotation(xAxis, yAxis, zAxis);
+    // Compose an XYZ rotation matrix from the three orthonormal axes, then
+    // reduce to Euler angles for the Transform's Vector3f storage.
+    Matrix4f m;
+    m.SetIdentity();
+    m.SetRow(0u, {xAxis[0], xAxis[1], xAxis[2], 0.0f});
+    m.SetRow(1u, {yAxis[0], yAxis[1], yAxis[2], 0.0f});
+    m.SetRow(2u, {zAxis[0], zAxis[1], zAxis[2], 0.0f});
+    transform().SetRotation(Math::RotationMatrixToAnglesXYZ(m));
 }
 
 const Vector3f Light::GetDirection() const
