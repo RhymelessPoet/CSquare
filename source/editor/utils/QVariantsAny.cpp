@@ -1,4 +1,5 @@
 #include "QVariantsAny.h"
+#include <QJSValue>
 #include <QString>
 #include <QVariantList>
 #include <array>
@@ -36,6 +37,13 @@ QVariant AnyToQVariant(const std::any& anyVal)
 
 std::any QVariantToAny(const QVariant& variant)
 {
+    // QML passes JS values (numbers, arrays, objects) wrapped in QJSValue.
+    // Unwrap them into a native QVariant so our switch below matches.
+    if (variant.canConvert<QJSValue>() && variant.userType() == qMetaTypeId<QJSValue>()) {
+        const QJSValue jsVal = variant.value<QJSValue>();
+        return QVariantToAny(jsVal.toVariant());
+    }
+
     std::any anyVal;
 
     switch (variant.type()) {

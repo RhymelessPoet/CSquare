@@ -51,7 +51,15 @@ void ComponentModel::build()
 
         PropertyItem::Setter setter;
         if (writable) {
-            setter = [fieldView](const std::any& v) -> bool { return AnyToObjectView(fieldView, v); };
+            // Prefer a registered setter method (e.g. "SetPosition" for
+            // UIName "Position"). This lets the owning component run
+            // side-effects such as dirtying cached matrices. When no such
+            // method exists, fall back to a direct field write.
+            std::string setterName = "Set" + uiName;
+            Ubpa::UDRefl::ObjectView ownerView = m_view;
+            setter = [ownerView, fieldView, setterName](const std::any& v) -> bool {
+                return InvokeSetterOrWriteField(ownerView, fieldView, setterName, v);
+            };
         }
 
         m_properties.emplace_back(std::move(uiName), propType, writable, std::move(getter), std::move(setter));

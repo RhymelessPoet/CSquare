@@ -18,12 +18,19 @@
 . CSInspectorView.qml 增加title和工具栏（折叠/展开，搜索）
 . 修改Transform，将rotation属性改为欧拉角
 · 去掉ComponentView 和 ComponentModel 对matrix的支持
-· 实现 CSInspectorView 可以从侧边展开和收起 
+· 实现 CSInspectorView 可以从侧边展开和收起
+· 工具栏（折叠/展开，搜索）在同一行，title单独一行
 
 优化 CSSceneHierarchyView
 · 增加SelectionModel，关联起Hierarchy 和 Inspector
 · 点击空白处后取消选择
+· 增加工具栏（折叠/展开，搜索）在同一行，title单独一行
 
 MVVM
 · 梳理model和view之间的通信关系，修正错误
 · 增加model之间的通知关系
+
+
+完善ComponentView
+· float 或 float vector，左右拖拽可以调整值的大小
+· 使 ComponentView 的编辑真正生效

@@ -143,26 +143,54 @@ Item {
             NumberAnimation { duration: 180; easing.type: Easing.InOutQuad }
         }
 
-        // Transparent hover/mouse absorber. The QQuickRhiItem underneath
-        // declares setAcceptHoverEvents(true); without this sink, hover
-        // crossings at the drawer edge cascade to the RHI item and race
-        // against ToolTip popups, producing the ghost-frame artifact.
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-            propagateComposedEvents: false
-        }
-
         // Filter string (lower-cased) fed into each CSComponentView.
         property string filter: ""
 
         signal expandAllRequested(bool expand)
 
-        ColumnLayout {
+        // Transparent hover/mouse absorber AND blank-click focus sink.
+        //
+        // Hover side: the QQuickRhiItem underneath declares
+        // setAcceptHoverEvents(true); without absorbing hover here, hover
+        // crossings at the drawer edge cascade to the RHI item and race
+        // against ToolTip popups, producing the ghost-frame artifact.
+        //
+        // Click side: this MouseArea is the *parent* of all drawer UI
+        // (focusSink + ColumnLayout below are its children). Qt Quick mouse
+        // events bubble up the parent chain only, so a sibling MouseArea
+        // would not receive clicks that fall through inner Labels /
+        // Rectangles. As a parent, we receive any press that descendant
+        // controls (TextFields, Buttons, drag handles) did not accept, and
+        // pull active focus to `focusSink`. That commits any in-flight
+        // TextField edit via its onEditingFinished signal.
+        MouseArea {
+            id: drawerClickSink
             anchors.fill: parent
-            anchors.margins: 6
-            spacing: 6
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            propagateComposedEvents: false
+            onPressed: focusSink.forceActiveFocus()
+
+            // Invisible focus sink. Any time we want to defocus an active
+            // TextField (and trigger its onEditingFinished commit), we
+            // park focus here.
+            Item {
+                id: focusSink
+                width: 1
+                height: 1
+                activeFocusOnTab: false
+            }
+
+            // Filter string (lower-cased) fed into each CSComponentView.
+            // Hosted on the MouseArea so existing `drawer.filter`
+            // references keep working.
+            // (Moved out of `drawer` so the filter property and the
+            // expandAllRequested signal stay in scope for the children.)
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 6
+                spacing: 6
 
             // --- Title row (standalone) ---
             RowLayout {
@@ -280,31 +308,60 @@ Item {
                 clip: true
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                ColumnLayout {
+                // Wrap compColumn in a MouseArea-as-parent so blank-area
+                // clicks inside the scroll viewport (gaps between
+                // components, area below the last component, blank
+                // CSComponentView background) bubble up here and pull
+                // active focus to `focusSink`. Qt Quick mouse events bubble
+                // up the parent chain only, so a sibling MouseArea would
+                // miss these. ScrollView's internal Flickable also blocks
+                // events from reaching the drawer-level sink.
+                MouseArea {
+                    id: scrollClickSink
                     width: scroll.availableWidth
-                    spacing: 4
+                    // At least fill the viewport so blank space below the
+                    // last component still routes presses here. Grow with
+                    // content when components overflow so the Flickable
+                    // can scroll normally.
+                    implicitHeight: Math.max(compColumn.implicitHeight, scroll.availableHeight)
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onPressed: focusSink.forceActiveFocus()
 
-                    Repeater {
-                        id: compRepeater
-                        model: (inspector.som && inspector.som.hasSelection) ? inspector.som : null
-                        delegate: CSComponentView {
-                            Layout.fillWidth: true
-                            componentModel: model.component
-                            filter: drawer.filter
-                            // Hide components whose name does not match the
-                            // filter. (Per-property filtering lives inside
-                            // CSComponentView via rowVisible; matching at the
-                            // component level just controls container visibility.)
-                            visible: componentNameMatches
+                    ColumnLayout {
+                        id: compColumn
+                        // Top-anchor + width-only: keep components stacked
+                        // at the top with their implicit heights. Letting
+                        // anchors.fill: parent stretch the layout to the
+                        // (now viewport-sized) MouseArea would distribute
+                        // empty space between components.
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        spacing: 4
 
-                            Connections {
-                                target: drawer
-                                function onExpandAllRequested(state) { applyExpand(state) }
+                        Repeater {
+                            id: compRepeater
+                            model: (inspector.som && inspector.som.hasSelection) ? inspector.som : null
+                            delegate: CSComponentView {
+                                Layout.fillWidth: true
+                                componentModel: model.component
+                                filter: drawer.filter
+                                // Hide components whose name does not match the
+                                // filter. (Per-property filtering lives inside
+                                // CSComponentView via rowVisible; matching at the
+                                // component level just controls container visibility.)
+                                visible: componentNameMatches
+
+                                Connections {
+                                    target: drawer
+                                    function onExpandAllRequested(state) { applyExpand(state) }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
         }
     }
 }
