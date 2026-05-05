@@ -91,6 +91,13 @@ ApplicationWindow {
                         Layout.fillHeight: true
                     }
 
+                    CSInspectorView {
+                        id: inspectorView
+                        Layout.preferredWidth: 360
+                        Layout.minimumWidth: 240
+                        Layout.fillHeight: true
+                    }
+
                 }
             }
 

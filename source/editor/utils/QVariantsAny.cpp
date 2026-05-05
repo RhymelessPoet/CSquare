@@ -1,5 +1,7 @@
 #include "QVariantsAny.h"
 #include <QString>
+#include <QVariantList>
+#include <array>
 
 namespace CSEditor
 {
@@ -9,12 +11,22 @@ QVariant AnyToQVariant(const std::any& anyVal)
 
     if (anyVal.type() == typeid(int)) {
         var = std::any_cast<int>(anyVal);
+    } else if (anyVal.type() == typeid(float)) {
+        var = static_cast<double>(std::any_cast<float>(anyVal));
     } else if (anyVal.type() == typeid(double)) {
         var = std::any_cast<double>(anyVal);
     } else if (anyVal.type() == typeid(std::string)) {
         var = QString::fromStdString(std::any_cast<std::string>(anyVal));
     } else if (anyVal.type() == typeid(bool)) {
         var = std::any_cast<bool>(anyVal);
+    } else if (anyVal.type() == typeid(std::array<float, 3>)) {
+        const auto& arr = std::any_cast<const std::array<float, 3>&>(anyVal);
+        QVariantList list;
+        list.reserve(3);
+        list.append(static_cast<double>(arr[0]));
+        list.append(static_cast<double>(arr[1]));
+        list.append(static_cast<double>(arr[2]));
+        var = list;
     } else {
         // TODO: log error
     }
@@ -39,6 +51,17 @@ std::any QVariantToAny(const QVariant& variant)
     case QVariant::Bool:
         anyVal = variant.toBool();
         break;
+    case QVariant::List: {
+        const QVariantList list = variant.toList();
+        if (list.size() == 3) {
+            std::array<float, 3> arr{};
+            for (int i = 0; i < 3; ++i) {
+                arr[i] = static_cast<float>(list[i].toDouble());
+            }
+            anyVal = arr;
+        }
+        break;
+    }
     default: {
         // TODO: log error
     }

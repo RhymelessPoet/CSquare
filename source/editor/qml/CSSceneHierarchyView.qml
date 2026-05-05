@@ -18,7 +18,11 @@ TreeView {
     delegate: Rectangle {
         id: delegateItem
 
-        color: row === treeView.currentRow ? CSTheme.secondary : CSTheme.background
+        // Highlight is driven exclusively by the delegate-provided `current`
+        // flag, which reflects selectionModel.currentIndex. Do NOT mix with
+        // `treeView.currentRow` — that is a separate keyboard-focus cursor
+        // maintained by TreeView and would produce a second highlighted row.
+        color: delegateItem.current ? CSTheme.secondary : CSTheme.background
         opacity: 0.3
 
         implicitWidth: treeView.width
@@ -36,6 +40,27 @@ TreeView {
         required property int row
         required property int column
         required property bool current
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: {
+                var modelIdx = treeView.index(delegateItem.row, delegateItem.column)
+                var selModel = treeView.selectionModel
+                if (!selModel) return
+                var isSame = selModel.currentIndex === modelIdx
+                // console.log("[Hierarchy] tap row=" + delegateItem.row
+                //             + " current=" + selModel.currentIndex.row
+                //             + " isSame=" + isSame)
+                if (isSame) {
+                    selModel.clearCurrentIndex()
+                    selModel.clearSelection()
+                    CSEditor.clearSelectedSceneObject()
+                } else {
+                    selModel.setCurrentIndex(modelIdx, ItemSelectionModel.ClearAndSelect)
+                    CSEditor.setSelectedSceneObject(modelIdx)
+                }
+            }
+        }
 
         RowLayout {
             anchors.fill: parent

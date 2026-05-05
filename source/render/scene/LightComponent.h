@@ -1,4 +1,5 @@
 #pragma once
+#include "CSMetaDefine.h"
 #include "IComponent.h"
 #include "LightType.h"
 #include "base/math/Vector.h"
@@ -11,9 +12,11 @@ class TransformComponent;
 class Light;
 class AxisAlignedBoundingBox;
 
-class LightComponent : public IComponent
+class [[Meta()]] LightComponent : public IComponent
 {
 public:
+    friend void Register_LightComponent();
+
     using SystemType = LightSystem;
 
     LightComponent(std::shared_ptr<SceneObject> owner);
@@ -37,8 +40,10 @@ private:
     void update();
 
 private:
+    [[Property(Setter = SetColor, Getter = GetColor, UIName = Color)]]
     Vector3f m_color{1.0f, 1.0f, 1.0f};
     Vector2f m_shadowNormalBias{0.001f, 0.001f};
+    [[Property(Setter = SetIntensity, Getter = GetIntensity, UIName = Intensity)]]
     float m_intensity{1.0f};
     ELightType m_lightType;
 };

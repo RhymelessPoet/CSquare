@@ -1,4 +1,5 @@
 #pragma once
+#include "CSMetaDefine.h"
 #include "IRenderable.h"
 #include "graphics/GraphicsInputAssembly.h"
 #include "graphics/IndexBuffer.h"
@@ -12,9 +13,11 @@ namespace CS
 class MeshRenderSystem;
 class GeometryNode;
 
-class MeshRenderer : public IRenderable
+class [[Meta()]] MeshRenderer : public IRenderable
 {
 public:
+    friend void Register_MeshRenderer();
+
     using SystemType = MeshRenderSystem;
     explicit MeshRenderer(std::shared_ptr<SceneObject> owner);
     ~MeshRenderer() override = default;
@@ -51,7 +54,9 @@ private:
 private:
     std::vector<std::shared_ptr<GeometryNode>> m_geometryNodes;
     GeometryDataMap m_geometryData;
+    [[Property(UIName = VertexBufferSize)]]
     uint32_t m_vertexBufferSize{0u};
+    [[Property(UIName = IndexBufferSize)]]
     uint32_t m_indexBufferSize{0u};
 
     IndexBuffer m_indexBuffer;

@@ -286,6 +286,19 @@ def parse_directory(input_dir: str, config: dict, include_args: list,
         print(f'Output directory: {output_dir}')
         print('')
 
+    # Any change to the generator scripts themselves should invalidate all
+    # previously generated files. Use the newest mtime of the generator/config
+    # sources as an additional upper bound for "up-to-date" checks.
+    gen_dep_paths = [
+        os.path.join(SCRIPT_DIR, 'code_generator.py'),
+        os.path.join(SCRIPT_DIR, 'parser.py'),
+        os.path.join(SCRIPT_DIR, 'meta_info.py'),
+    ]
+    gen_mtime = 0.0
+    for p in gen_dep_paths:
+        if os.path.exists(p):
+            gen_mtime = max(gen_mtime, os.path.getmtime(p))
+
     all_class_names = []
     generated_outputs = set()  # Track output files that should exist
 
@@ -302,7 +315,7 @@ def parse_directory(input_dir: str, config: dict, include_args: list,
         if os.path.exists(output_file):
             input_mtime = os.path.getmtime(input_file)
             output_mtime = os.path.getmtime(output_file)
-            if output_mtime >= input_mtime:
+            if output_mtime >= input_mtime and output_mtime >= gen_mtime:
                 class_names = _extract_class_names_from_generated(output_file)
                 if class_names:
                     all_class_names.extend(class_names)

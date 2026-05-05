@@ -1,6 +1,8 @@
 #include "UIApplication.h"
 #include "QEditor.h"
+#include "QuickComponentModel.h"
 #include "QuickRenderView.h"
+#include "QuickSceneObjectModel.h"
 #include "QuickTreeModel.h"
 #include <QIcon>
 #include <QQuickStyle>
@@ -15,6 +17,10 @@ UIApplication::UIApplication(int argc, char* argv[]) : QGuiApplication(argc, arg
     m_qmlEngine.addImportPath("qrc:/");
     qmlRegisterType<CSEditor::QuickRenderView>("CSEditor.View", 1, 0, "CSQuickRenderView");
     qmlRegisterType<CSEditor::QuickTreeModel>("CSEditor.Model", 1, 0, "CSQuickTreeModel");
+    qmlRegisterUncreatableType<CSEditor::QuickSceneObjectModel>("CSEditor.Model", 1, 0, "CSQuickSceneObjectModel",
+                                                                "created in C++");
+    qmlRegisterUncreatableType<CSEditor::QuickComponentModel>("CSEditor.Model", 1, 0, "CSQuickComponentModel",
+                                                              "created in C++");
 
     m_editor = std::make_unique<CSEditor::QEditor>();
     qmlRegisterSingletonType<CSEditor::QEditor>(

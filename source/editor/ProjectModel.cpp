@@ -70,10 +70,10 @@ void ProjectModel::initializeScene()
     impl().directionalLight->SetIntensity(5.1f);
 
     // Path assetPath = "assets/shape/cube.gltf";
-    // Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
+    Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
     // Path assetPath = "assets/model/room/room.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
-    Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
+    // Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
     auto assetScene = AssetManager::Instance().GetAssetScene(assetPath);
 
     if (assetScene != nullptr) {

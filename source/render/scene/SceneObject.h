@@ -55,6 +55,8 @@ public:
 
     bool AddComponent(std::unique_ptr<IComponent> component);
 
+    const std::vector<std::unique_ptr<IComponent>>& GetComponents() const { return m_components; }
+
     [[Method()]]
     void SetParent(std::shared_ptr<SceneObject> parent);
     [[Method()]]

@@ -1,4 +1,5 @@
 #pragma once
+#include "CSMetaDefine.h"
 #include "IComponent.h"
 #include "base/math/Matrix.h"
 
@@ -6,9 +7,11 @@ namespace CS
 {
 class CameraSystem;
 
-class CameraComponent : public IComponent
+class [[Meta()]] CameraComponent : public IComponent
 {
 public:
+    friend void Register_CameraComponent();
+
     enum class ProjectionType
     {
         Perspective,
@@ -35,11 +38,17 @@ private:
     void updatePerspectiveMatrix();
 
 private:
+    [[Property(UIName = NearPlane)]]
     float m_nearPlane{0.1f};
+    [[Property(UIName = FarPlane)]]
     float m_farPlane{1000.0f};
+    [[Property(UIName = Top)]]
     float m_top{100.0f};
+    [[Property(UIName = Bottom)]]
     float m_bottom{-100.0f};
+    [[Property(UIName = Left)]]
     float m_left{-100.0f};
+    [[Property(UIName = Right)]]
     float m_right{100.0f};
     Matrix4f m_projectionMatrix;
     ProjectionType m_projectionType{ProjectionType::Perspective};

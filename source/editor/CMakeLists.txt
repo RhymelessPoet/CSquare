@@ -99,6 +99,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     ${SHADER_LIB}
     CSEngine
     CSRender
+    Ubpa::UDRefl_core
 )
 
 if(MSVC)
@@ -108,6 +109,7 @@ endif()
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Gui_PRIVATE_INCLUDE_DIRS})
 target_include_directories(${TARGET_NAME} PRIVATE ${Qt6Quick_PRIVATE_INCLUDE_DIRS})
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/meta)
+target_include_directories(${TARGET_NAME} PRIVATE ${THIRD_PARTY_PATH})
 
 target_compile_definitions(${TARGET_NAME} PRIVATE QT_QML_DEBUG)
 
