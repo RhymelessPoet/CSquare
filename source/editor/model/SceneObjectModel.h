@@ -47,6 +47,12 @@ public:
     ComponentModel& GetComponent(size_t i) { return *m_components[i]; }
     const ComponentModel& GetComponent(size_t i) const { return *m_components[i]; }
 
+    // Bumped every time the component set is rebuilt (selection swapped or
+    // cleared). Value-only mutations (SetName / SetActive) do NOT bump it.
+    // Observers cache this to decide whether their cached ComponentModel
+    // pointers are still valid or must be rebuilt.
+    size_t GetStructureRevision() const { return m_structureRevision; }
+
     // Observer registration. Listeners are invoked on every successful
     // mutation and every SetSceneObject / Clear call.
     void AddListener(Listener cb);
@@ -58,6 +64,7 @@ private:
     std::shared_ptr<CS::SceneObject> m_so;
     std::vector<std::unique_ptr<ComponentModel>> m_components;
     std::vector<Listener> m_listeners;
+    size_t m_structureRevision{0};
 };
 
 } // namespace CSEditor

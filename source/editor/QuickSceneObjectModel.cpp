@@ -12,6 +12,10 @@ QuickSceneObjectModel::QuickSceneObjectModel(SceneObjectModel* model, QObject* p
 {
     rebuild();
     if (m_model != nullptr) {
+        // Sync our revision cache with the domain state that `rebuild()`
+        // just snapshotted, so the next onDomainChanged() only takes the
+        // slow path if a genuine structural change happened afterwards.
+        m_lastStructureRevision = m_model->GetStructureRevision();
         m_model->AddListener([this] { onDomainChanged(); });
     }
 }
@@ -86,12 +90,21 @@ bool QuickSceneObjectModel::hasSelection() const
 
 void QuickSceneObjectModel::onDomainChanged()
 {
-    // Fast path: when the component count is unchanged we can keep the
-    // existing QuickComponentModel row adapters alive and just tell them
-    // their data is stale. This avoids a model reset which would blow away
-    // QML delegate state (scroll position, focused editor, etc.).
+    // If the domain signalled a structural change (selection swapped /
+    // SceneObjectModel::Clear), every ComponentModel* we stashed inside our
+    // QuickComponentModel adapters is now dangling. We MUST rebuild before
+    // emitting any dataChanged; otherwise the next QML role query will
+    // dereference freed memory and crash inside PropertyItem::GetValue().
+    const size_t domainRevision = (m_model != nullptr) ? m_model->GetStructureRevision() : 0;
+    const bool structuralChange = (domainRevision != m_lastStructureRevision);
+
+    // Fast path: when the component count is unchanged AND no structural
+    // revision happened we can keep the existing QuickComponentModel row
+    // adapters alive and just tell them their data is stale. This avoids
+    // a model reset which would blow away QML delegate state (scroll
+    // position, focused editor, etc.).
     const size_t domainCount = (m_model != nullptr) ? m_model->GetComponentCount() : 0;
-    if (domainCount == m_quickComponents.size()) {
+    if (!structuralChange && domainCount == m_quickComponents.size()) {
         for (auto& qc : m_quickComponents) {
             if (qc) {
                 qc->notifyAllChanged();
@@ -104,6 +117,7 @@ void QuickSceneObjectModel::onDomainChanged()
     // Slow path: structural change (selection swapped / component added or
     // removed). Rebuild the list.
     rebuild();
+    m_lastStructureRevision = domainRevision;
     emit changed();
 }
 

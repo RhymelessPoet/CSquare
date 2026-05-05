@@ -16,6 +16,10 @@ void SceneObjectModel::SetSceneObject(std::shared_ptr<CS::SceneObject> so)
     }
     m_so = std::move(so);
     rebuildComponents();
+    // Every ComponentModel the previous selection owned has just been
+    // destroyed; any outside raw pointer to them is now dangling. Bump the
+    // revision so observers force-rebuild their adapters before re-reading.
+    ++m_structureRevision;
     notify();
 }
 
@@ -26,6 +30,7 @@ void SceneObjectModel::Clear()
     }
     m_so.reset();
     m_components.clear();
+    ++m_structureRevision;
     notify();
 }
 

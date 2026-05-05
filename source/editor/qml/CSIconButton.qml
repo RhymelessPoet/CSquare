@@ -11,6 +11,12 @@ Button {
     Layout.preferredWidth: 24
     Layout.preferredHeight: 24
 
+    // Let the icon fill the full button box. The default QtQuickControls
+    // Button style reserves ~6px padding on each side, which was silently
+    // shrinking our icons (e.g. a 20x20 PNG was scaled down to 8x8 inside
+    // a 20x20 button).
+    padding: 0
+
     property alias stateMaskColor: background.color
     property real stateMaskAlpha: {
         if (!enabled) {
@@ -28,11 +34,15 @@ Button {
 
     property alias iconPath: icon.source
 
+    // Rasterization size of the icon PNG. Set this to match the final
+    // display size to avoid blur / unnecessary downscale.
+    property int iconSize: 20
+
     contentItem: Image {
         id: icon
         source: ""
-        sourceSize.width: 20
-        sourceSize.height: 20
+        sourceSize.width: button.iconSize
+        sourceSize.height: button.iconSize
         fillMode: Image.PreserveAspectFit
     }
 

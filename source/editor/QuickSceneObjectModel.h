@@ -51,6 +51,10 @@ private:
 
     SceneObjectModel* m_model{nullptr};
     std::vector<std::unique_ptr<QuickComponentModel>> m_quickComponents;
+    // Last structure revision observed from the domain model. A mismatch
+    // means the domain's ComponentModel objects were destroyed/recreated
+    // and our cached raw pointers are stale — we must rebuild.
+    size_t m_lastStructureRevision{0};
 };
 
 } // namespace CSEditor
