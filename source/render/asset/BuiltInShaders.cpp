@@ -107,12 +107,10 @@ highp vec4 GetLightSpacePosition(highp vec3 p, const highp vec3 n, const highp v
     highp float n_Lx = dot(n, L_right);
     highp float n_Ly = dot(n, L_up);
 
-    // float zOffset = lightFromWorldMatrix * vec4(p, 1.0f).z;
-    // Apply the anisotropic normal bias
-    // p += n * (abs(n_Lx * b.x) + abs(n_Ly * b.y));
+    // Apply the anisotropic normal bias (Castaño 2013)
+    p += n * (abs(n_Lx * b.x) + abs(n_Ly * b.y));
 
     vec4 lsPos = lightFromWorldMatrix * vec4(p, 1.0f);
-    // lsPos.w = zOffset;
     return lsPos;
 }
 
@@ -370,30 +368,19 @@ vec3 PBRShade(MetallicRoughnessParameters params)
     return directLight;
 }
 
-float SampleDepth(sampler2D map, vec2 uv, float depth)
+float SampleShadow(highp vec2 uv, float depth)
 {
-    uv = clamp(uv, vec2(0.0f), vec2(1.0f));
-    
-    return texture(map, uv).r < depth ? 1.0f : 0.0f;
+    // Clamp to shadow map bounds (cf. Filament's scissorNormalized clamp)
+    uv = clamp(uv, vec2(0.0), vec2(1.0));
+    return texture(shadow_map, uv).r < depth ? 1.0 : 0.0;
 }
 
-float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
+float CastanoBilinearPCF(highp vec2 pos, float depth, highp vec2 size, highp vec2 texelSize)
 {
-    highp vec3 position = light_space_position.xyz;
-
-    highp vec2 size = vec2(textureSize(shadow_map, 0));
-    highp vec2 texelSize = vec2(1.0) / size;
-
-    float bias = max(0.05 * (1.0 - dot(geoNormal, lightDirection)), 0.005);
-
     //  Castaño, 2013, "Shadow Mapping Summary Part 1"
-    highp float depth = position.z - bias;
-
-    // clamp position to avoid overflows below, which cause some GPUs to abort
-    position.xy = clamp(position.xy, vec2(-1.0), vec2(2.0));
-
+    //  Same algorithm as Filament's ShadowSample_PCF_Low
     vec2 offset = vec2(0.5);
-    highp vec2 uv = (position.xy * size) + offset;
+    highp vec2 uv = (pos * size) + offset;
     highp vec2 base = (floor(uv) - offset) * texelSize;
     highp vec2 st = fract(uv);
 
@@ -407,11 +394,40 @@ float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
     v *= texelSize.y;
 
     float sum = 0.0;
-    sum += uw.x * vw.x * SampleDepth(shadow_map, base + vec2(u.x, v.x), depth);
-    sum += uw.y * vw.x * SampleDepth(shadow_map, base + vec2(u.y, v.x), depth);
-    sum += uw.x * vw.y * SampleDepth(shadow_map, base + vec2(u.x, v.y), depth);
-    sum += uw.y * vw.y * SampleDepth(shadow_map, base + vec2(u.y, v.y), depth);
+    sum += uw.x * vw.x * SampleShadow(base + vec2(u.x, v.x), depth);
+    sum += uw.y * vw.x * SampleShadow(base + vec2(u.y, v.x), depth);
+    sum += uw.x * vw.y * SampleShadow(base + vec2(u.x, v.y), depth);
+    sum += uw.y * vw.y * SampleShadow(base + vec2(u.y, v.y), depth);
     return sum * (1.0 / 16.0);
+}
+
+float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
+{
+    highp vec3 position = light_space_position.xyz * (1.0 / light_space_position.w);
+    highp vec2 size = vec2(textureSize(shadow_map, 0));
+    highp vec2 texelSize = vec2(1.0) / size;
+
+    float bias = max(0.05 * (1.0 - dot(geoNormal, lightDirection)), 0.005);
+    highp float depth = position.z - bias;
+
+    // clamp position to avoid overflows below, which cause some GPUs to abort
+    position.xy = clamp(position.xy, vec2(-1.0), vec2(2.0));
+
+    // Multi-tap Castaño PCF for soft shadows.
+    // Filament's ShadowSample_PCF_Low uses sampler2DArrayShadow which gives
+    // 4 effective samples per texture fetch (hardware depth comparison + bilinear).
+    // With sampler2D + Nearest filtering, each fetch gives 1 effective sample,
+    // so we use multiple Castaño taps to cover a wider area for soft penumbra.
+    float shadow = 0.0;
+    const float spread = 2.0;
+
+    // 2x2 offset grid: 4 taps x 4 Castaño samples = 16 effective PCF samples
+    shadow += CastanoBilinearPCF(position.xy + vec2(-0.5, -0.5) * texelSize * spread, depth, size, texelSize);
+    shadow += CastanoBilinearPCF(position.xy + vec2( 0.5, -0.5) * texelSize * spread, depth, size, texelSize);
+    shadow += CastanoBilinearPCF(position.xy + vec2(-0.5,  0.5) * texelSize * spread, depth, size, texelSize);
+    shadow += CastanoBilinearPCF(position.xy + vec2( 0.5,  0.5) * texelSize * spread, depth, size, texelSize);
+
+    return shadow * 0.25;
 }
 
 void main()
@@ -592,7 +608,13 @@ void BuiltInShaders::createPBRShader()
     auto binding10 = ShaderBinding{10u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
     binding10.SetTexture(ShaderBindingTexture("glossiness_map", std::move(materialTexture)));
     auto binding11 = ShaderBinding{11u, ShaderStage::Fragment, ShaderBinding::Type::SampledTexture};
-    binding11.SetTexture(ShaderBindingTexture("shadow_map", std::make_unique<RenderTexture>()));
+    // Nearest filtering is required: Castaño PCF does manual depth comparison per texel.
+    // Linear filtering would bilinearly interpolate depth values before comparison,
+    // causing double-filtering artifacts at shadow edges.
+    // ClampToEdge prevents shadow wrapping at shadow map boundaries.
+    binding11.SetTexture(ShaderBindingTexture(
+        "shadow_map", std::make_unique<RenderTexture>(AddressMode::ClampToEdge, AddressMode::ClampToEdge,
+                                                      FilterMode::Nearest, FilterMode::Nearest)));
 
     fragShader->AddBinding(binding2);
     fragShader->AddBinding(binding3);
