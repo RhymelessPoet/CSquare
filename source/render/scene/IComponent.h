@@ -1,6 +1,5 @@
 #pragma once
-#include "base/ExtensibleEnum.h"
-#include <bitset>
+#include "base/ExtensibleFlagEnum.h"
 #include <memory>
 
 namespace CS
@@ -16,10 +15,10 @@ struct ComponentState
     static constexpr size_t MaxCount = 32u;
 };
 
-const inline EnumClass<ComponentState, "New", "Active", "Destroyed"> BaseComponentStates;
+const inline FlagEnumClass<ComponentState, "New", "Active", "Destroyed"> BaseComponentStates;
 
-using EComponentState = Enum<ComponentState>;
-using EComponentStateFlags = std::bitset<ComponentState::MaxCount>;
+using EComponentState = FlagEnum<ComponentState>;
+using EComponentStateFlags = EnumFlags<ComponentState>;
 
 class IComponent
 {

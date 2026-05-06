@@ -18,12 +18,16 @@ IComponent::~IComponent()
 
 void IComponent::setState(EComponentState state, bool value)
 {
-    m_stateFlags.set(static_cast<underlying_type_t<EComponentState>>(state), value);
+    if (value) {
+        m_stateFlags.Set(state);
+    } else {
+        m_stateFlags.Reset(state);
+    }
 }
 
 bool IComponent::isOn(EComponentState state) const
 {
-    return m_stateFlags.test(static_cast<underlying_type_t<EComponentState>>(state));
+    return m_stateFlags.Test(state);
 }
 
 } // namespace CS
