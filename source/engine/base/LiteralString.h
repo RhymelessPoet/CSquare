@@ -32,12 +32,9 @@ struct LiteralString final
         return *this;
     }
 
-    constexpr operator std::string_view() const noexcept { return std::string_view(value, Size); }
+    constexpr operator std::string_view() const noexcept { return std::string_view(value); }
 
-    constexpr bool operator==(std::string_view other) const noexcept
-    {
-        return std::equal(value, value + Size, other.begin());
-    }
+    constexpr bool operator==(std::string_view other) const noexcept { return std::string_view(value) == other; }
 
     char value[N]{}; // include '\0'
 };

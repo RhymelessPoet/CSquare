@@ -7,6 +7,7 @@
 #include "Transform.h"
 #include "TransformSystem.h"
 #include "asset/BuiltInShaders.h"
+#include "base/Logger.h"
 #include "geometry/GeometryNode.h"
 #include "graphics/GraphicsPipeline.h"
 #include "graphics/VertexInputLayout.h"
@@ -83,20 +84,20 @@ void PanoramicSky::SetImage(std::shared_ptr<Image> image)
     }
     auto texture = m_material->GetDefaultInstance().GetInstanceTexture("hdr_texture");
     if (texture == nullptr) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), "PanoramicSky: 'hdr_texture' not found in default instance");
         return;
     }
     auto insTextureUPtr = texture->Clone();
     instanceTexture = dynamic_cast<ImageTexture*>(insTextureUPtr.get());
     if (instanceTexture == nullptr) {
-        // TODO : log error
+        CS::LogError(::CS::BuiltInChannels::Render(), "PanoramicSky: 'hdr_texture' is not an ImageTexture");
         return;
     }
 
     instanceTexture->SetImage(image);
     auto noError = m_material->SetTexture("hdr_texture", std::move(insTextureUPtr));
     if (!noError) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), "PanoramicSky: SetTexture('hdr_texture') failed");
     }
 }
 

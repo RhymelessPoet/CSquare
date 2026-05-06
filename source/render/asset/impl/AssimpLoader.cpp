@@ -5,12 +5,12 @@
 #include "asset/Image.h"
 #include "assimp/GltfMaterial.h"
 #include "assimp/version.h"
+#include "base/Logger.h"
 #include "base/math/Math.h"
 #include "geometry/Mesh.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
 #include <cassert>
-#include <iostream>
 
 using namespace std::literals;
 
@@ -52,7 +52,7 @@ std::string_view GetPBRTextureControlName(aiTextureType type)
         return itr->second;
     }
 
-    // TODO: log error
+    CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Unknown aiTextureType: {}", static_cast<int>(type)));
 
     return ""sv;
 }
@@ -64,7 +64,7 @@ CS::AddressMode GetAddressMode(aiTextureMapMode mode)
     if (mode < 4) {
         return AddressModes[mode];
     }
-    // TODO: log error
+    CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Unknown aiTextureMapMode: {}", static_cast<int>(mode)));
     return CS::AddressMode::Repeat;
 }
 
@@ -74,7 +74,7 @@ static T GetProperty(const aiMaterial* material, const char* key, unsigned int t
     T value;
     auto ret = material->Get(key, type, idx, value);
     if (ret != aiReturn_SUCCESS) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("aiMaterial::Get failed for key '{}'", key));
     }
     return value;
 }
@@ -88,8 +88,8 @@ AssimpLoader::AssimpLoader() {}
 
 std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
 {
-    std::cerr << "Assimp version: " << aiGetVersionMajor() << "." << aiGetVersionMinor() << "."
-              << aiGetVersionRevision() << std::endl;
+    CS::LogInfo(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp version: {}.{}.{}", aiGetVersionMajor(), aiGetVersionMinor(),
+                aiGetVersionRevision()));
     Assimp::Importer importer;
 
     auto postprocessFlags =
@@ -98,12 +98,12 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
     const aiScene* aiscene = importer.ReadFile(path.string(), postprocessFlags);
 
     if (aiscene == nullptr) {
-        std::cerr << "Assimp error: " + std::string(importer.GetErrorString()) << "\n";
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp error: {}", importer.GetErrorString()));
         return nullptr;
     }
 
     if (aiscene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) {
-        std::cerr << "Assimp error: " + std::string(importer.GetErrorString()) << "\n";
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp incomplete scene: {}", importer.GetErrorString()));
     }
 
     std::vector<std::shared_ptr<Image>> textures;
@@ -133,7 +133,7 @@ bool AssimpLoader::parseTextures(const aiScene* aiscene, std::shared_ptr<AssetSc
     for (uint32_t index = 0u; index < aiscene->mNumTextures; ++index) {
         auto texture = aiscene->mTextures[index];
         if (texture == nullptr) {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Null texture at index {}", index));
             continue;
         }
         auto name = texture->mFilename.C_Str();
@@ -147,7 +147,7 @@ bool AssimpLoader::parseMaterials(const aiScene* aiscene, std::shared_ptr<AssetS
     for (uint32_t index = 0u; index < aiscene->mNumMaterials; ++index) {
         auto aimaterial = aiscene->mMaterials[index];
         if (aimaterial == nullptr) {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Null material at index {}", index));
             continue;
         }
         printMaterialInfo(aimaterial);
@@ -155,7 +155,7 @@ bool AssimpLoader::parseMaterials(const aiScene* aiscene, std::shared_ptr<AssetS
         if (mode == aiShadingMode_PBR_BRDF) {
             scene->AddMaterial(parsePBR(aimaterial, scene));
         }
-        std::cerr << "\n";
+        CS::LogDebug(::CS::BuiltInChannels::Asset(), "");
     }
 
     return true;
@@ -373,7 +373,8 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
 
         auto controlName = GetPBRTextureControlName(type);
         if (!material->SetUniformValue(controlName, false)) {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Failed to set texture control uniform '{}'",
+                         std::string(controlName)));
         }
 
         if (AI_SUCCESS != aimaterial->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
@@ -419,40 +420,40 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
 
 void AssimpLoader::printMaterialInfo(const aiMaterial* material)
 {
-    std::cerr << "------------------ Parse Material: " << material->GetName().C_Str() << " ------------------\n";
+    CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("--- Parse Material: {} ---", material->GetName().C_Str()));
     for (uint32_t index = 0u; index < material->mNumProperties; ++index) {
         auto aiproperty = material->mProperties[index];
-        std::cerr << aiproperty->mKey.C_Str() << ": ";
+        std::string value;
         if (aiproperty->mType == aiPTI_Float) {
             auto count = aiproperty->mDataLength / sizeof(float);
             auto data = reinterpret_cast<float*>(aiproperty->mData);
             for (uint32_t i = 0u; i < count; ++i) {
-                std::cerr << data[i] << " ";
+                value += std::format("{} ", data[i]);
             }
         } else if (aiproperty->mType == aiPTI_String) {
-            std::cerr << reinterpret_cast<char*>(aiproperty->mData);
+            value = reinterpret_cast<char*>(aiproperty->mData);
         } else if (aiproperty->mType == aiPTI_Integer) {
             auto count = aiproperty->mDataLength / sizeof(int);
             auto data = reinterpret_cast<int*>(aiproperty->mData);
             for (uint32_t i = 0u; i < count; ++i) {
-                std::cerr << data[i] << " ";
+                value += std::format("{} ", data[i]);
             }
         } else if (aiproperty->mType == aiPTI_Double) {
             auto count = aiproperty->mDataLength / sizeof(double);
             auto data = reinterpret_cast<double*>(aiproperty->mData);
             for (uint32_t i = 0u; i < count; ++i) {
-                std::cerr << data[i] << " ";
+                value += std::format("{} ", data[i]);
             }
         } else if (aiproperty->mType == aiPTI_Buffer) {
             if (strcmp(aiproperty->mKey.C_Str(), "$mat.twosided") == 0) {
                 bool twoSide = false;
                 material->Get(AI_MATKEY_TWOSIDED, twoSide);
-                std::cerr << twoSide << " ";
+                value = std::format("{}", twoSide);
             }
         } else {
-            std::cerr << "unknown type";
+            value = "unknown type";
         }
-        std::cerr << "\n";
+        CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("  {}: {}", aiproperty->mKey.C_Str(), value));
     }
     for (const auto& [type, name] : PBRTextureTypes) {
         aiString texPath;
@@ -463,7 +464,7 @@ void AssimpLoader::printMaterialInfo(const aiMaterial* material)
         aiTextureMapMode mapMode[2] = {aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
 
         if (AI_SUCCESS == material->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
-            std::cerr << name << " path: " << texPath.C_Str() << "\n";
+            CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("  {} path: {}", name, texPath.C_Str()));
         }
     }
 }

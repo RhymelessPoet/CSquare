@@ -1,4 +1,5 @@
 #include "AssetLoader.h"
+#include "base/Logger.h"
 #include "impl/AssimpLoader.h"
 
 namespace CS
@@ -18,7 +19,7 @@ AssetLoader::AssetLoader()
 std::shared_ptr<AssetScene> AssetLoader::Load(const Path& path)
 {
     if (!std::filesystem::exists(path)) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Asset not found: {}", path.string()));
         return nullptr;
     }
     return impl().loader->Load(path);

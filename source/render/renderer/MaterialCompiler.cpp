@@ -1,6 +1,7 @@
 #include "MaterialCompiler.h"
 #include "GraphicsResourceManager.h"
 #include "MaterialUniformIDCreator.h"
+#include "base/Logger.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/GraphicsShaderStage.h"
 #include "graphics/RenderTexture.h"
@@ -239,7 +240,8 @@ void MaterialCompiler::collectShaderbinding(std::map<uint32_t, ShaderBinding>& b
         if (itr->second == binding) {
             itr->second.EnableShaderStages(binding.GetShaderStages());
         } else {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("collectShaderbinding: conflicting binding {}",
+                         binding.GetBinding()));
         }
     } else {
         bindings.emplace(binding.GetBinding(), std::move(binding));

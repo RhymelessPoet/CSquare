@@ -1,9 +1,9 @@
 #include "ImageLoader.h"
 #define STB_IMAGE_IMPLEMENTATION
+#include "base/Logger.h"
 #include "stb/stb_image.h"
 #include <format>
 #include <fstream>
-#include <iostream>
 
 namespace CS
 {
@@ -16,7 +16,7 @@ ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat& format,
     }
 
     if (!FileSystem::exists(absolutePath)) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Image file not found: {}", absolutePath.string()));
         return std::vector<std::byte>();
     }
 
@@ -30,11 +30,12 @@ ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat& format,
     bool infoSuccess = stbi_info_from_memory(reinterpret_cast<stbi_uc*>(imageMemory.data()),
                                              static_cast<int>(imageMemory.size()), &width, &height, &channels);
     if (!infoSuccess) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Failed to read image info: {}", absolutePath.string()));
         return std::vector<std::byte>();
     }
 
-    std::cerr << std::format("Load Image {}, Size({}, {}, {}) \n", imagePath.string(), width, height, channels);
+    CS::LogInfo(::CS::BuiltInChannels::Asset(), CS::Fmt("Load Image {}, Size({}, {}, {})", imagePath.string(), width, height,
+                channels));
 
     int requiredChannels = channels;
     if (channels == 1) {
@@ -71,7 +72,7 @@ std::vector<std::byte> ImageLoader::LoadFloat(const Path& imagePath, Size3u& ima
     }
 
     if (!FileSystem::exists(absolutePath)) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Image (float) file not found: {}", absolutePath.string()));
         return std::vector<std::byte>();
     }
     int width, height, channels;

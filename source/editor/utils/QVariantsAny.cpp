@@ -1,4 +1,5 @@
 #include "QVariantsAny.h"
+#include "base/Logger.h"
 #include <QJSValue>
 #include <QString>
 #include <QVariantList>
@@ -29,7 +30,7 @@ QVariant AnyToQVariant(const std::any& anyVal)
         list.append(static_cast<double>(arr[2]));
         var = list;
     } else {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Editor(), CS::Fmt("AnyToQVariant: unsupported type '{}'", anyVal.type().name()));
     }
 
     return var;
@@ -71,7 +72,8 @@ std::any QVariantToAny(const QVariant& variant)
         break;
     }
     default: {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Editor(), CS::Fmt("QVariantToAny: unsupported QVariant type {}",
+                     static_cast<int>(variant.type())));
     }
     }
 

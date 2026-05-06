@@ -1,4 +1,5 @@
 #include "OrientedBoundingBox.h"
+#include "base/Logger.h"
 
 namespace CS
 {
@@ -68,7 +69,8 @@ void OrientedBoundingBox::check() const
     double dotYZ = m_axes[1].Dot(m_axes[2]);
     const double epsilon = 1e-6;
     if (std::abs(dotXY) > epsilon || std::abs(dotXZ) > epsilon || std::abs(dotYZ) > epsilon) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("OBB axes not orthogonal: dotXY={}, dotXZ={}, dotYZ={}", dotXY,
+                     dotXZ, dotYZ));
     }
 }
 

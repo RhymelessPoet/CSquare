@@ -118,6 +118,13 @@ add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
     COMMENT "Copying files form ${ASSETS_PATH} to $<TARGET_FILE_DIR:${TARGET_NAME}>"
 )
 
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_CURRENT_SOURCE_DIR}/editor_config.json"
+    "$<TARGET_FILE_DIR:${TARGET_NAME}>/editor_config.json"
+    COMMENT "Deploying editor_config.json"
+)
+
 if(MSVC)
     get_target_property(QT_QMAKE_EXE Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXE}" DIRECTORY)

@@ -1,5 +1,6 @@
 #include "MaterialInstance.h"
 #include "Material.h"
+#include "base/Logger.h"
 #include "graphics/MaterialTexture.h"
 #include "renderer/MaterialCompiler.h"
 
@@ -127,7 +128,7 @@ void MaterialInstance::Apply(MaterialCompiler& compiler)
         for (const auto& [name, _] : uniforms) {
             auto uniform = getUniform(name);
             if (uniform == nullptr) {
-                // TODO: log error
+                CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Uniform '{}' not found during Apply", name));
                 continue;
             }
             uniform->dirty = false;

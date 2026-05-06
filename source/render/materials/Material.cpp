@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "Shader.h"
+#include "base/Logger.h"
 #include "base/TypeTraits.h"
 #include "graphics/MaterialTexture.h"
 #include "renderer/MaterialCompiler.h"
@@ -74,7 +75,7 @@ Material::Builder& Material::Builder::AddRequisiteMaterial(std::shared_ptr<Mater
 Material::Builder& Material::Builder::Connect(const SlotID& from, uint16_t toSlotIndex)
 {
     if (!m_connects.emplace(from, toSlotIndex).second) {
-        // TODO: log warning
+        CS::LogWarning(::CS::BuiltInChannels::Render(), "Duplicate Connect from slot");
     }
     return *this;
 }
@@ -82,7 +83,7 @@ Material::Builder& Material::Builder::Connect(const SlotID& from, uint16_t toSlo
 Material::Builder& Material::Builder::Bind(uint16_t slotIndex, uint32_t binding)
 {
     if (!m_bindings.emplace(slotIndex, binding).second) {
-        // TODO: log warning
+        CS::LogWarning(::CS::BuiltInChannels::Render(), CS::Fmt("Duplicate Bind for slotIndex {}", slotIndex));
     }
     return *this;
 }
@@ -97,17 +98,17 @@ std::shared_ptr<Material> Material::Builder::End()
 
     for (const auto& [from, to] : m_connects) {
         if (!connectFrom(from, {ID, to})) {
-            // TODO: log warning
+            CS::LogWarning(::CS::BuiltInChannels::Render(), CS::Fmt("connectFrom failed for material ID {}", ID));
         }
         if (!connectTo(from, {ID, to})) {
             disconnectFrom(from);
-            // TODO: log warning
+            CS::LogWarning(::CS::BuiltInChannels::Render(), CS::Fmt("connectTo failed for material ID {}", ID));
         }
     }
 
     for (auto [slotIndex, binding] : m_bindings) {
         if (!configuration.Bind({ID, slotIndex}, binding)) {
-            // TODO: log warning
+            CS::LogWarning(::CS::BuiltInChannels::Render(), CS::Fmt("Bind failed: slotIndex={} binding={}", slotIndex, binding));
         }
     }
 
@@ -119,7 +120,7 @@ void Material::Builder::insertUniform(uint32_t binding, const ShaderBindingPrope
     if (auto itr = m_uniforms.find(property.name); itr != m_uniforms.end()) {
         auto& [value, _binding, _offset, _] = itr->second;
         if (_binding != binding || _offset != property.offset) {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Uniform '{}' binding/offset conflict", property.name));
         }
     } else {
         m_uniforms.emplace(property.name, MaterialInstance::Uniform{.binding = binding, .offset = property.offset});
@@ -134,7 +135,7 @@ void Material::Builder::insertUniformTexture(uint32_t binding, const ShaderBindi
                                              .texture = texture.texture->Clone(), .binding = binding, .dirty = true});
     } else {
         if (itr->second.binding != binding || itr->second.texture != texture.texture) {
-            // TODO: log error
+            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Texture uniform '{}' binding conflict", texture.name));
         }
     }
 }

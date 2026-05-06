@@ -1,5 +1,6 @@
 #include "ShaderBindingSetDescriptor.h"
 #include "GraphicsBufferDescriptor.h"
+#include "base/Logger.h"
 #include "graphics/GraphicsGLImpl.h"
 #include <stdexcept>
 
@@ -66,7 +67,8 @@ bool ShaderBindingSetDescriptor::IsDirty() const
 bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t bufferID, size_t offset, size_t range)
 {
     if (binding >= m_bindings.size()) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("BindUniformBuffer: binding {} out of range (size={})", binding,
+                     m_bindings.size()));
         return false;
     }
 
@@ -84,7 +86,8 @@ bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t buffer
 bool ShaderBindingSetDescriptor::BindSampledTexture(size_t binding, size_t textureID, size_t samplerID)
 {
     if (binding >= m_bindings.size()) {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("BindSampledTexture: binding {} out of range (size={})", binding,
+                     m_bindings.size()));
         return false;
     }
 

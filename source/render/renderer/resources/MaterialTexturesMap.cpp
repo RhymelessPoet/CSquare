@@ -1,5 +1,6 @@
 #include "MaterialTexturesMap.h"
 #include "asset/Image.h"
+#include "base/Logger.h"
 #include "graphics/GraphicsAPI.h"
 #include "graphics/RenderTexture.h"
 #include "graphics/Sampler.h"
@@ -106,7 +107,7 @@ void MaterialTexturesMap::SetTextureData(std::string_view name, std::shared_ptr<
     if (it != m_textures.end()) {
         m_toUpdateImages[std::string(name)] = image;
     } else {
-        // TODO: log error
+        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("SetTextureData: texture '{}' not found", std::string(name)));
     }
 }
 

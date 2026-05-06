@@ -34,3 +34,15 @@ MVVM
 完善ComponentView
 · float 或 float vector，左右拖拽可以调整值的大小
 · 使 ComponentView 的编辑真正生效
+
+
+日志系统 ✓
+· 日志库：纯 C++ 标准库实现（C++20 std::format），无第三方依赖，header-only 零侵入
+· log输出可设置为文件或者控制台，运行期可配置 ✓  (Logger::SetSink / Logger::Sink::Console|File|Both)
+· 在engine/base目录下，实现CS::Logger::Log的封装隐藏底层细节 ✓  (Logger.h / Logger.cpp)
+· 内容定义，支持format风格 ✓  (CS_LOG_ERROR(channel, "{}", value) 等宏)
+· 使用ExtensibleFlagEnum定义日志分级 ✓  (LogLevels: trace/debug/info/warning/error/fatal)
+· 支持日志分级运行期可配置 ✓  (Logger::SetMinLevel)
+· 配置文件唯一 ✓  (Logger::Initialize 单点调用)
+· 输出内容应包含（时间，分级，pid，tid，模块，函数，内容）✓
+· 识别现有代码中（如——// TODO: log error），添加log ✓  (全部 TODO: log 注释已替换)

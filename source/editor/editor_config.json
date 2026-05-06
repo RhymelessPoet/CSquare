@@ -1,0 +1,12 @@
+{
+    "logger": {
+        "file": "CSEditor.log",
+        "sinks": [
+            "console",
+            "file"
+        ],
+        "minLevel": "debug",
+        "showPid": false,
+        "showTid": false
+    }
+}
