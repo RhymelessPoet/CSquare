@@ -79,24 +79,27 @@
 ```cpp
 // source/engine/base/Logger.h
 using LogLevel = FlagEnum<LogLevelTag>;
+using LogLevelFlags = EnumFlags<LogLevelTag>;   // 可组合的级别集合
 
 struct LogLevels {
     static LogLevel Trace();
     static LogLevel Debug();
     static LogLevel Info();
+    static LogLevel Performance();
     static LogLevel Warning();
     static LogLevel Error();
     static LogLevel Fatal();
 };
 ```
 
-级别按顺序递增，`minLevel` 过滤时只输出 `>= minLevel` 的条目。
+`ShouldLog` 使用 `LogLevelFlags`（bitset）进行精确匹配过滤，每个级别独立开关，而非阈值式 `>=` 过滤。
 
 | 值 | 用途 |
 |----|------|
 | `Trace` | 最细粒度的跟踪信息，仅在深度调试时启用 |
 | `Debug` | 开发阶段诊断信息 |
-| `Info` | 正常流程关键节点（默认最低级别） |
+| `Info` | 正常流程关键节点（默认启用） |
+| `Performance` | 性能计时与阶段耗时统计 |
 | `Warning` | 潜在问题但程序可继续运行 |
 | `Error` | 操作失败，功能受损 |
 | `Fatal` | 严重错误，程序可能无法继续 |
@@ -148,12 +151,12 @@ struct BuiltInChannels {
 ```cpp
 // 签名（Logger.h）
 static void Initialize(
-    std::string_view logFilePath = "",
-    LogSinks         sinks       = LogSinkValues::Both(),
-    LogLevel         minLevel    = LogLevels::Info(),
-    bool             showPid     = false,
-    bool             showTid     = false,
-    uint64_t         maxFileSize = 0
+    std::string_view logFilePath   = "",
+    LogSinks         sinks         = LogSinkValues::Both(),
+    LogLevelFlags    enabledLevels = LogLevelFlags{},
+    bool             showPid       = false,
+    bool             showTid       = false,
+    uint64_t         maxFileSize   = 0
 );
 
 static void Shutdown();
@@ -184,8 +187,17 @@ int main(int argc, char* argv[])
 初始化后可动态调整：
 
 ```cpp
-CS::Logger::Instance().SetMinLevel(CS::LogLevels::Warning());
+CS::Logger::Instance().SetEnabledLevels(CS::LogLevels::Warning() | CS::LogLevels::Error() |
+                                         CS::LogLevels::Fatal());
 CS::Logger::Instance().SetSinks(CS::LogSinkValues::Console());
+```
+
+`SetEnabledLevels` 接受 `LogLevelFlags`（bitset），可精确控制每个级别的开关。例如要额外启用性能日志：
+
+```cpp
+auto levels = CS::Logger::Instance().GetEnabledLevels();
+levels |= CS::LogLevels::Performance();
+CS::Logger::Instance().SetEnabledLevels(levels);
 ```
 
 ---
@@ -221,6 +233,8 @@ void LogDebug  (LogChannel ch, std::string_view msg,
                 std::source_location loc = std::source_location::current());
 void LogInfo   (LogChannel ch, std::string_view msg,
                 std::source_location loc = std::source_location::current());
+void LogPerf   (LogChannel ch, std::string_view msg,
+                std::source_location loc = std::source_location::current());
 void LogWarning(LogChannel ch, std::string_view msg,
                 std::source_location loc = std::source_location::current());
 void LogError  (LogChannel ch, std::string_view msg,
@@ -244,6 +258,10 @@ CS::LogWarning(CS::BuiltInChannels::Render(),
 // std::format 等价写法（同样合法）
 CS::LogDebug(CS::BuiltInChannels::Asset(),
              std::format("loaded {} vertices", mesh.vertexCount));
+
+// 性能计时日志（需在 levels 中包含 "performance"）
+CS::LogPerf(CS::BuiltInChannels::Asset(),
+            CS::Fmt("parseMeshs completed in {:.2f}ms", elapsed));
 ```
 
 ### 5.3 CS::Log — 通用入口
@@ -289,7 +307,7 @@ CS::Log(level, CS::BuiltInChannels::General(), CS::Fmt("result: {}", code));
 | 字段 | 内容 | 说明 |
 |------|------|------|
 | `time` | `YYYY-MM-DD HH:MM:SS.mmm` | 本地时间，毫秒精度 |
-| `level` | `trace` / `debug` / `info` / `warning` / `error` / `fatal` | 日志级别 |
+| `level` | `trace` / `debug` / `info` / `performance` / `warning` / `error` / `fatal` | 日志级别 |
 | `channel` | `Engine` / `Render` / `Asset` / `Editor` / … | 来源模块频道 |
 | `pid` | 十进制进程 ID | `showPid = true` 时出现 |
 | `tid` | 十六进制线程 ID | `showTid = true` 时出现 |
@@ -305,6 +323,7 @@ CS::Log(level, CS::BuiltInChannels::General(), CS::Fmt("result: {}", code));
 | `trace` | 深灰 |
 | `debug` | 青色 |
 | `info` | 绿色 |
+| `performance` | 亮紫 |
 | `warning` | 黄色 |
 | `error` | 红色（输出到 stderr） |
 | `fatal` | 品红（输出到 stderr） |
@@ -326,7 +345,7 @@ CSEditor 通过 `source/editor/editor_config.json` 在启动时配置日志系�
     "logger": {
         "file":    "CSEditor.log",
         "sinks":   ["console", "file"],
-        "minLevel": "debug",
+        "levels":  ["debug", "info", "warning", "error", "fatal"],
         "showPid": false,
         "showTid": false,
         "maxFileSize": 0
@@ -338,22 +357,22 @@ CSEditor 通过 `source/editor/editor_config.json` 在启动时配置日志系�
 |----|------|--------|------|
 | `file` | string | `"CSEditor.log"` | 日志文件路径；空字符串表示不写文件 |
 | `sinks` | string[] | `["console","file"]` | 输出目标，可选值：`"console"`、`"file"` |
-| `minLevel` | string | `"info"` | 最低输出级别：`trace`/`debug`/`info`/`warning`/`error`/`fatal` |
+| `levels` | string[] | `["info","warning","error","fatal"]` | 启用的日志级别集合，可选值：`trace`/`debug`/`info`/`performance`/`warning`/`error`/`fatal` |
 | `maxFileSize` | int | `0` | 日志文件最大字节数；`0` 表示不限制，超限时自动截断前半部分 |
 | `showPid` | bool | `false` | 是否在每行输出进程 ID |
 | `showTid` | bool | `false` | 是否在每行输出线程 ID |
 
-文件缺失或 JSON 格式错误时，`LoggerConfig::Load` 静默回退到安全默认值（Console-only，`info` 级别），程序不会崩溃。
+文件缺失或 JSON 格式错误时，`LoggerConfig::Load` 静默回退到安全默认值（Console-only，`info|warning|error|fatal` 级别），程序不会崩溃。
 
 ### 加载流程
 
-```
+``` 
 main.cpp
   └─ CSEditor::LoggerConfig::Load("editor_config.json")
        ├─ QFile 读取 JSON
        ├─ 解析 logger 节点
        └─ .Apply()
-            └─ CS::Logger::Initialize(file, sinks, minLevel, showPid, showTid)
+            └─ CS::Logger::Initialize(file, sinks, enabledLevels, showPid, showTid)
 ```
 
 相关源文件：

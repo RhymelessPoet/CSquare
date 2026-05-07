@@ -1,6 +1,7 @@
 #include "AssetImporter.h"
 #include "asset/AssetNode.h"
 #include "asset/AssetScene.h"
+#include "base/Logger.h"
 #include "geometry/GeometryNode.h"
 #include "materials/MaterialInstance.h"
 #include "scene/MeshRenderSystem.h"
@@ -10,6 +11,7 @@
 #include "scene/SceneObjectComposer.h"
 #include "scene/Transform.h"
 #include "scene/TransformSystem.h"
+#include <chrono>
 
 namespace CS
 {
@@ -28,12 +30,18 @@ std::shared_ptr<SceneObject> AssetImporter::Import(const std::shared_ptr<AssetNo
 
 std::shared_ptr<Scene> AssetImporter::Import(const std::shared_ptr<AssetScene>& assetScene)
 {
+    auto t0 = std::chrono::steady_clock::now();
     importNode(assetScene->GetRoot(), m_scene->GetRoot());
+    CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                CS::Fmt("AssetImporter::Import scene total: {:.2f}ms",
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()));
     return m_scene;
 }
 
 void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std::shared_ptr<SceneObject> sceneObject)
 {
+    auto tNode = std::chrono::steady_clock::now();
+
     sceneObject->SetName(assetNode->GetName());
     // Create Transform component
     auto transform = createTransform(sceneObject);
@@ -54,6 +62,11 @@ void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std:
         auto childSceneObject = m_scene->CreateSceneObject(sceneObject);
         importNode(childAssetNode, childSceneObject);
     }
+
+    CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                CS::Fmt("Node '{}' imported in {:.2f}ms ({} meshes, {} children)", assetNode->GetName(),
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tNode).count(),
+                        assetNode->GetMeshs().size(), children.size()));
 }
 
 MeshRenderer* AssetImporter::createMeshRenderer(std::shared_ptr<SceneObject> sceneObject)

@@ -11,6 +11,7 @@
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
 #include <cassert>
+#include <chrono>
 
 using namespace std::literals;
 
@@ -84,6 +85,8 @@ AssimpLoader::AssimpLoader() {}
 
 std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
 {
+    auto t0 = std::chrono::steady_clock::now();
+
     CS::LogInfo(::CS::BuiltInChannels::Asset(),
                 CS::Fmt("Assimp version: {}.{}.{}", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision()));
     Assimp::Importer importer;
@@ -102,6 +105,10 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
         CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp incomplete scene: {}", importer.GetErrorString()));
     }
 
+    auto tRead = std::chrono::steady_clock::now();
+    CS::LogPerf(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp::ReadFile completed in {:.2f}ms",
+                                                        std::chrono::duration<double, std::milli>(tRead - t0).count()));
+
     std::vector<std::shared_ptr<Image>> textures;
     std::vector<std::shared_ptr<MaterialInstance>> materials;
     std::vector<std::shared_ptr<Mesh>> meshs;
@@ -111,10 +118,40 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
     auto scene = std::make_shared<AssetScene>(name.string(), path);
 
     bool noError = true;
-    noError = noError && parseTextures(aiscene, scene);
-    noError = noError && parseMaterials(aiscene, scene);
-    noError = noError && parseMeshs(aiscene, scene);
-    noError = noError && parseNodes(aiscene->mRootNode, scene);
+
+    {
+        auto t1 = std::chrono::steady_clock::now();
+        noError = noError && parseTextures(aiscene, scene);
+        CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                    CS::Fmt("parseTextures completed in {:.2f}ms",
+                            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t1).count()));
+    }
+    {
+        auto t1 = std::chrono::steady_clock::now();
+        noError = noError && parseMaterials(aiscene, scene);
+        CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                    CS::Fmt("parseMaterials completed in {:.2f}ms",
+                            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t1).count()));
+    }
+    {
+        auto t1 = std::chrono::steady_clock::now();
+        noError = noError && parseMeshs(aiscene, scene);
+        CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                    CS::Fmt("parseMeshs completed in {:.2f}ms",
+                            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t1).count()));
+    }
+    {
+        auto t1 = std::chrono::steady_clock::now();
+        noError = noError && parseNodes(aiscene->mRootNode, scene);
+        CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                    CS::Fmt("parseNodes completed in {:.2f}ms",
+                            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t1).count()));
+    }
+
+    CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                CS::Fmt("AssimpLoader::Load total: {:.2f}ms for '{}' ({} meshes, {} nodes)",
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count(),
+                        name.string(), aiscene->mNumMeshes, scene->GetRoot()->GetChildren().size()));
 
     return scene;
 }
@@ -149,7 +186,13 @@ bool AssimpLoader::parseMaterials(const aiScene* aiscene, std::shared_ptr<AssetS
         printMaterialInfo(aimaterial);
         const auto mode = GetProperty<int>(aimaterial, AI_MATKEY_SHADING_MODEL);
         if (mode == aiShadingMode_PBR_BRDF) {
-            scene->AddMaterial(parsePBR(aimaterial, scene));
+            auto tMat = std::chrono::steady_clock::now();
+            auto mat = parsePBR(aimaterial, scene);
+            CS::LogPerf(
+                ::CS::BuiltInChannels::Asset(),
+                CS::Fmt("Material '{}' parsed in {:.2f}ms", aimaterial->GetName().C_Str(),
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tMat).count()));
+            scene->AddMaterial(std::move(mat));
         }
         CS::LogDebug(::CS::BuiltInChannels::Asset(), "");
     }

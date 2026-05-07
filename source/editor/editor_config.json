@@ -5,7 +5,14 @@
             "console",
             "file"
         ],
-        "minLevel": "debug",
+        "levels": [
+            "debug",
+            "info",
+            "performance",
+            "warning",
+            "error",
+            "fatal"
+        ],
         "showPid": false,
         "showTid": false,
         "//maxFileSize": "10MB",

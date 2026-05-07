@@ -25,7 +25,7 @@ struct Logger::Impl
 {
     mutable std::mutex mutex;
     LogSinks sinks{LogSinkValues::Both()};
-    LogLevel minLevel{LogLevels::Info()};
+    LogLevelFlags enabledLevels{LogLevels::Info() | LogLevels::Warning() | LogLevels::Error() | LogLevels::Fatal()};
     bool showPid{false};
     bool showTid{false};
     uint64_t maxFileSize{0}; // 0 = unlimited
@@ -122,6 +122,8 @@ struct Logger::Impl
             return "\033[36m";
         if (levelName == "info")
             return "\033[32m";
+        if (levelName == "performance")
+            return "\033[95m";
         if (levelName == "warning")
             return "\033[33m";
         if (levelName == "error")
@@ -156,7 +158,7 @@ bool Logger::IsInitialized()
 
 void Logger::Initialize(std::string_view logFilePath,
                         LogSinks sinks,
-                        LogLevel minLevel,
+                        LogLevelFlags enabledLevels,
                         bool showPid,
                         bool showTid,
                         uint64_t maxFileSize)
@@ -167,7 +169,8 @@ void Logger::Initialize(std::string_view logFilePath,
 
     std::lock_guard lock(inst.m_impl->mutex);
     inst.m_impl->sinks = sinks;
-    inst.m_impl->minLevel = minLevel;
+    if (enabledLevels.Any())
+        inst.m_impl->enabledLevels = enabledLevels;
     inst.m_impl->showPid = showPid;
     inst.m_impl->showTid = showTid;
     inst.m_impl->maxFileSize = maxFileSize;
@@ -197,12 +200,12 @@ void Logger::Shutdown()
     inst.m_impl = nullptr;
 }
 
-void Logger::SetMinLevel(LogLevel level)
+void Logger::SetEnabledLevels(LogLevelFlags levels)
 {
     if (m_impl == nullptr)
         return;
     std::lock_guard lock(m_impl->mutex);
-    m_impl->minLevel = level;
+    m_impl->enabledLevels = levels;
 }
 
 void Logger::SetSinks(LogSinks sinks)
@@ -213,11 +216,11 @@ void Logger::SetSinks(LogSinks sinks)
     m_impl->sinks = sinks;
 }
 
-LogLevel Logger::GetMinLevel() const
+LogLevelFlags Logger::GetEnabledLevels() const
 {
     if (m_impl == nullptr)
-        return LogLevels::Info();
-    return m_impl->minLevel;
+        return LogLevelFlags{};
+    return m_impl->enabledLevels;
 }
 
 LogSinks Logger::GetSinks() const
@@ -231,8 +234,7 @@ bool Logger::ShouldLog(LogLevel level) const
 {
     if (m_impl == nullptr || !m_impl->initialized)
         return false;
-    return static_cast<LogLevelTag::UnderlyingType>(level) >=
-           static_cast<LogLevelTag::UnderlyingType>(m_impl->minLevel);
+    return m_impl->enabledLevels.Test(level);
 }
 
 void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, std::string_view message) const

@@ -52,21 +52,63 @@ LoggerConfig LoggerConfig::Load(const std::string& configPath)
         cfg.sinks = sinks;
     }
 
-    // ---- minLevel ----
-    if (loggerObj.contains("minLevel")) {
+    // ---- enabled levels (array) ----
+    if (loggerObj.contains("levels") && loggerObj.value("levels").isArray()) {
+        CS::LogLevelFlags levels{};
+        for (const auto& entry : loggerObj.value("levels").toArray()) {
+            auto name = entry.toString().toLower().toStdString();
+            if (name == "trace")
+                levels |= CS::LogLevels::Trace();
+            else if (name == "debug")
+                levels |= CS::LogLevels::Debug();
+            else if (name == "info")
+                levels |= CS::LogLevels::Info();
+            else if (name == "performance")
+                levels |= CS::LogLevels::Performance();
+            else if (name == "warning")
+                levels |= CS::LogLevels::Warning();
+            else if (name == "error")
+                levels |= CS::LogLevels::Error();
+            else if (name == "fatal")
+                levels |= CS::LogLevels::Fatal();
+        }
+        if (levels.Any())
+            cfg.enabledLevels = levels;
+    }
+    // ---- minLevel (backward compat, only used when "levels" absent) ----
+    else if (loggerObj.contains("minLevel"))
+    {
         auto levelStr = loggerObj.value("minLevel").toString().toLower().toStdString();
+        CS::LogLevel threshold = CS::LogLevels::Info();
         if (levelStr == "trace")
-            cfg.minLevel = CS::LogLevels::Trace();
+            threshold = CS::LogLevels::Trace();
         else if (levelStr == "debug")
-            cfg.minLevel = CS::LogLevels::Debug();
+            threshold = CS::LogLevels::Debug();
         else if (levelStr == "info")
-            cfg.minLevel = CS::LogLevels::Info();
+            threshold = CS::LogLevels::Info();
+        else if (levelStr == "performance")
+            threshold = CS::LogLevels::Performance();
         else if (levelStr == "warning")
-            cfg.minLevel = CS::LogLevels::Warning();
+            threshold = CS::LogLevels::Warning();
         else if (levelStr == "error")
-            cfg.minLevel = CS::LogLevels::Error();
+            threshold = CS::LogLevels::Error();
         else if (levelStr == "fatal")
-            cfg.minLevel = CS::LogLevels::Fatal();
+            threshold = CS::LogLevels::Fatal();
+        // Expand to all registered levels >= threshold
+        auto t = static_cast<uint8_t>(threshold);
+        CS::LogLevelFlags levels{};
+        auto setIfGeq = [&](CS::LogLevel lv) {
+            if (static_cast<uint8_t>(lv) >= t)
+                levels.Set(lv);
+        };
+        setIfGeq(CS::LogLevels::Trace());
+        setIfGeq(CS::LogLevels::Debug());
+        setIfGeq(CS::LogLevels::Info());
+        setIfGeq(CS::LogLevels::Performance());
+        setIfGeq(CS::LogLevels::Warning());
+        setIfGeq(CS::LogLevels::Error());
+        setIfGeq(CS::LogLevels::Fatal());
+        cfg.enabledLevels = levels;
     }
 
     // ---- showPid / showTid ----
