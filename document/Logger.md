@@ -152,7 +152,8 @@ static void Initialize(
     LogSinks         sinks       = LogSinkValues::Both(),
     LogLevel         minLevel    = LogLevels::Info(),
     bool             showPid     = false,
-    bool             showTid     = false
+    bool             showTid     = false,
+    uint64_t         maxFileSize = 0
 );
 
 static void Shutdown();
@@ -161,6 +162,8 @@ static void Shutdown();
 `Initialize` **必须在任何日志调用前执行**。未初始化时，`LogXxx` 函数会检查 `IsInitialized()` 并静默跳过，不会崩溃。
 
 `Shutdown` 刷新并关闭文件流，重置初始化状态。
+
+`maxFileSize` 指定日志文件的最大字节数（默认 `0` = 不限制）。当日志文件超过该值时，Logger 会自动截断前半部分，保留最近约一半的日志内容。检查在每次 `Emit` 写入文件后执行。
 
 **CSEditor 启动流程（`main.cpp`）：**
 
@@ -325,7 +328,8 @@ CSEditor 通过 `source/editor/editor_config.json` 在启动时配置日志系�
         "sinks":   ["console", "file"],
         "minLevel": "debug",
         "showPid": false,
-        "showTid": false
+        "showTid": false,
+        "maxFileSize": 0
     }
 }
 ```
@@ -335,6 +339,7 @@ CSEditor 通过 `source/editor/editor_config.json` 在启动时配置日志系�
 | `file` | string | `"CSEditor.log"` | 日志文件路径；空字符串表示不写文件 |
 | `sinks` | string[] | `["console","file"]` | 输出目标，可选值：`"console"`、`"file"` |
 | `minLevel` | string | `"info"` | 最低输出级别：`trace`/`debug`/`info`/`warning`/`error`/`fatal` |
+| `maxFileSize` | int | `0` | 日志文件最大字节数；`0` 表示不限制，超限时自动截断前半部分 |
 | `showPid` | bool | `false` | 是否在每行输出进程 ID |
 | `showTid` | bool | `false` | 是否在每行输出线程 ID |
 

@@ -28,8 +28,63 @@ struct Logger::Impl
     LogLevel minLevel{LogLevels::Info()};
     bool showPid{false};
     bool showTid{false};
+    uint64_t maxFileSize{0}; // 0 = unlimited
     std::ofstream fileStream;
+    std::string filePath; // stored for rotation
     bool initialized{false};
+
+    void RotateIfNeeded()
+    {
+        if (maxFileSize == 0 || !fileStream.is_open())
+            return;
+
+        auto pos = fileStream.tellp();
+        if (pos < 0 || static_cast<uint64_t>(pos) <= maxFileSize)
+            return;
+
+        // Exceeded maxFileSize: keep the latter half (≈ maxFileSize/2 bytes)
+        fileStream.close();
+
+        // Read entire file
+        std::ifstream in(filePath, std::ios::binary | std::ios::ate);
+        if (!in.is_open()) {
+            fileStream.open(filePath, std::ios::out | std::ios::app);
+            return;
+        }
+
+        auto totalSize = static_cast<size_t>(in.tellg());
+        size_t keepSize = static_cast<size_t>(maxFileSize / 2);
+        if (keepSize >= totalSize) {
+            in.close();
+            fileStream.open(filePath, std::ios::out | std::ios::app);
+            return;
+        }
+
+        // Seek to start of kept region, then forward to next line start
+        size_t seekPos = totalSize - keepSize;
+        in.seekg(static_cast<std::streamoff>(seekPos));
+        if (seekPos > 0) {
+            std::string discard;
+            std::getline(in, discard); // skip partial line
+        }
+
+        // Read the kept portion
+        std::string kept(std::istreambuf_iterator<char>(in), {});
+        in.close();
+
+        // Write back in truncate mode
+        fileStream.open(filePath, std::ios::out | std::ios::trunc);
+        if (fileStream.is_open() && !kept.empty()) {
+            fileStream << kept;
+            if (kept.back() != '\n')
+                fileStream << '\n';
+            fileStream.flush();
+        }
+
+        // Reopen in append mode for subsequent writes
+        fileStream.close();
+        fileStream.open(filePath, std::ios::out | std::ios::app);
+    }
 
     static int ProcessID()
     {
@@ -99,7 +154,12 @@ bool Logger::IsInitialized()
     return s_initialized;
 }
 
-void Logger::Initialize(std::string_view logFilePath, LogSinks sinks, LogLevel minLevel, bool showPid, bool showTid)
+void Logger::Initialize(std::string_view logFilePath,
+                        LogSinks sinks,
+                        LogLevel minLevel,
+                        bool showPid,
+                        bool showTid,
+                        uint64_t maxFileSize)
 {
     auto& inst = Instance();
     if (inst.m_impl == nullptr)
@@ -110,8 +170,10 @@ void Logger::Initialize(std::string_view logFilePath, LogSinks sinks, LogLevel m
     inst.m_impl->minLevel = minLevel;
     inst.m_impl->showPid = showPid;
     inst.m_impl->showTid = showTid;
+    inst.m_impl->maxFileSize = maxFileSize;
 
     if (!logFilePath.empty() && sinks.Test(LogSinkValues::File())) {
+        inst.m_impl->filePath = logFilePath;
         inst.m_impl->fileStream.open(std::string(logFilePath), std::ios::out | std::ios::app);
     }
     inst.m_impl->initialized = true;
@@ -240,6 +302,7 @@ void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, 
     if (m_impl->sinks.Test(LogSinkValues::File()) && m_impl->fileStream.is_open()) {
         m_impl->fileStream << line << '\n';
         m_impl->fileStream.flush();
+        m_impl->RotateIfNeeded();
     }
 }
 

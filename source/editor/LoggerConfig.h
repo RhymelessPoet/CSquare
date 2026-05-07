@@ -10,11 +10,12 @@ namespace CSEditor
 // Expected JSON layout:
 // {
 //   "logger": {
-//     "file":     "CSEditor.log",    // log file path; empty string = no file output
-//     "sinks":    ["console","file"], // array of sink names
-//     "minLevel": "debug",           // trace|debug|info|warning|error|fatal
-//     "showPid":  false,             // include process ID in log lines
-//     "showTid":  false              // include thread  ID in log lines
+//     "file":        "CSEditor.log",    // log file path; empty string = no file output
+//     "sinks":       ["console","file"], // array of sink names
+//     "minLevel":    "debug",           // trace|debug|info|warning|error|fatal
+//     "showPid":     false,             // include process ID in log lines
+//     "showTid":     false,             // include thread  ID in log lines
+//     "maxFileSize": 0                  // max log file size in bytes; 0 = unlimited
 //   }
 // }
 //
@@ -28,11 +29,12 @@ struct LoggerConfig
     CS::LogLevel minLevel{CS::LogLevels::Info()};
     bool showPid{false};
     bool showTid{false};
+    uint64_t maxFileSize{0}; // 0 = unlimited
 
     // Load from a JSON file next to the executable.
     static LoggerConfig Load(const std::string& configPath);
 
-    void Apply() const { CS::Logger::Initialize(logFile, sinks, minLevel, showPid, showTid); }
+    void Apply() const { CS::Logger::Initialize(logFile, sinks, minLevel, showPid, showTid, maxFileSize); }
 };
 
 } // namespace CSEditor

@@ -99,7 +99,8 @@ public:
                            LogSinks sinks = LogSinkValues::Both(),
                            LogLevel minLevel = LogLevels::Info(),
                            bool showPid = false,
-                           bool showTid = false);
+                           bool showTid = false,
+                           uint64_t maxFileSize = 0);
 
     static void Shutdown();
 

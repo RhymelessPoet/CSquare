@@ -75,6 +75,16 @@ LoggerConfig LoggerConfig::Load(const std::string& configPath)
     if (loggerObj.contains("showTid"))
         cfg.showTid = loggerObj.value("showTid").toBool(false);
 
+    // ---- maxFileSize ----
+    if (loggerObj.contains("maxFileSize") && !loggerObj.contains("//")) {
+        auto val = loggerObj.value("maxFileSize");
+        if (val.isDouble()) {
+            auto size = val.toDouble();
+            if (size >= 0)
+                cfg.maxFileSize = static_cast<uint64_t>(size) * 1024 * 1024;
+        }
+    }
+
     return cfg;
 }
 

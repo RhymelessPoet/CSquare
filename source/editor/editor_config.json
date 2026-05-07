@@ -7,6 +7,8 @@
         ],
         "minLevel": "debug",
         "showPid": false,
-        "showTid": false
+        "showTid": false,
+        "//maxFileSize": "10MB",
+        "maxFileSize": 10
     }
 }

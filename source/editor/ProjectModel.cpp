@@ -69,8 +69,8 @@ void ProjectModel::initializeScene()
     impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
     impl().directionalLight->SetIntensity(5.1f);
 
-    // Path assetPath = "assets/shape/cube.gltf";
-    Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
+    Path assetPath = "assets/shape/cube.gltf";
+    // Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
     // Path assetPath = "assets/model/room/room.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
