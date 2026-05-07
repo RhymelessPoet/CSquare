@@ -84,9 +84,10 @@ void Scene::OnRender(RenderContext& context)
         noError = noError && material->SetUniformValue("light_intensity", lightIntensity);
 
         auto& materialCompiler = context.GetMaterialCompiler();
-        material->GetDefaultInstance().Apply(materialCompiler);
 
         auto shaderBindingSet = materialCompiler.GetShaderBindingSet(material->GetDefaultInstance());
+
+        material->GetDefaultInstance().Apply(materialCompiler);
         context.GetCommandBuffer().Bind(shaderBindingSet);
     }
 

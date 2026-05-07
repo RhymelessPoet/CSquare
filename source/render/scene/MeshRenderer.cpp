@@ -155,11 +155,11 @@ void MeshRenderer::render(RenderContext& context, std::shared_ptr<GeometryNode> 
 
     auto& materialCompiler = context.GetMaterialCompiler();
 
-    material->Apply(materialCompiler);
-
     materialCompiler.SetVertexInputLayout(node->GetVertexInputLayout());
     auto pipeline = materialCompiler.GetPipeline(*material->GetMaterial());
     auto shaderBindingSet = materialCompiler.GetShaderBindingSet(*material);
+
+    material->Apply(materialCompiler);
 
     auto commandBuffer = context.GetCommandBuffer();
 

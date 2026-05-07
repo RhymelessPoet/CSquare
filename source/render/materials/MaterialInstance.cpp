@@ -128,7 +128,6 @@ void MaterialInstance::Apply(MaterialCompiler& compiler)
         for (const auto& [name, _] : uniforms) {
             auto uniform = getUniform(name);
             if (uniform == nullptr) {
-                CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Uniform '{}' not found during Apply", name));
                 continue;
             }
             uniform->dirty = false;
@@ -151,7 +150,7 @@ bool MaterialInstance::HasInstancedUniform() const
     if (m_id == 0u) {
         return true;
     } else {
-        return !m_uniforms.empty();
+        return !m_uniforms.empty() || !m_textures.empty();
     }
 }
 

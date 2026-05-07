@@ -208,6 +208,10 @@ void MaterialCompiler::Apply(const IMaterialConfiguration& configuration,
         auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
 
         if (auto imageTexture = dynamic_cast<ImageTexture*>(materialTexture.get()); imageTexture != nullptr && dirty) {
+            if (texturesMap.GetTexture(uniformID) == nullptr) {
+                auto sampledTexture = texturesMap.AllocateTexture(uniformID, *imageTexture);
+                bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
+            }
             texturesMap.SetTextureData(uniformID, imageTexture->GetImage());
             continue;
         }
@@ -240,8 +244,8 @@ void MaterialCompiler::collectShaderbinding(std::map<uint32_t, ShaderBinding>& b
         if (itr->second == binding) {
             itr->second.EnableShaderStages(binding.GetShaderStages());
         } else {
-            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("collectShaderbinding: conflicting binding {}",
-                         binding.GetBinding()));
+            CS::LogError(::CS::BuiltInChannels::Render(),
+                         CS::Fmt("collectShaderbinding: conflicting binding {}", binding.GetBinding()));
         }
     } else {
         bindings.emplace(binding.GetBinding(), std::move(binding));

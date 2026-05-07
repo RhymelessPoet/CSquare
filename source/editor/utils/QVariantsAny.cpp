@@ -30,7 +30,8 @@ QVariant AnyToQVariant(const std::any& anyVal)
         list.append(static_cast<double>(arr[2]));
         var = list;
     } else {
-        CS::LogError(::CS::BuiltInChannels::Editor(), CS::Fmt("AnyToQVariant: unsupported type '{}'", anyVal.type().name()));
+        CS::LogError(::CS::BuiltInChannels::Editor(),
+                     CS::Fmt("AnyToQVariant: unsupported type {}", anyVal.type().name()));
     }
 
     return var;
@@ -72,8 +73,8 @@ std::any QVariantToAny(const QVariant& variant)
         break;
     }
     default: {
-        CS::LogError(::CS::BuiltInChannels::Editor(), CS::Fmt("QVariantToAny: unsupported QVariant type {}",
-                     static_cast<int>(variant.type())));
+        CS::LogError(::CS::BuiltInChannels::Editor(),
+                     CS::Fmt("QVariantToAny: unsupported QVariant type {}", static_cast<int>(variant.type())));
     }
     }
 

@@ -21,10 +21,8 @@ std::map<aiTextureType, std::string_view> PBRTextureTypes = {
     {aiTextureType_BASE_COLOR, "base_color_map"sv},
     {aiTextureType_METALNESS, "metallic_map"sv},
     {aiTextureType_DIFFUSE_ROUGHNESS, "roughness_map"sv},
-    {aiTextureType_NORMAL_CAMERA, "normal_camera_map"sv},
-    {aiTextureType_AMBIENT_OCCLUSION, "ambient_occlusion_map"sv},
-    {aiTextureType_EMISSION_COLOR, "emissive_color_map"sv},
-    {aiTextureType_DIFFUSE, "diffuse_color_map"sv},
+    // {aiTextureType_AMBIENT_OCCLUSION, "ambient_occlusion_map"sv},
+    {aiTextureType_EMISSION_COLOR, "emission_color_map"sv},
     {aiTextureType_SPECULAR, "specular_color_map"sv},
     {aiTextureType_SHININESS, "glossiness_map"sv},
     {aiTextureType_NORMALS, "normal_map"sv}
@@ -38,11 +36,9 @@ std::string_view GetPBRTextureControlName(aiTextureType type)
         {aiTextureType_BASE_COLOR, "use_base_color_map"sv},
         {aiTextureType_METALNESS, "use_metallic_map"sv},
         {aiTextureType_DIFFUSE_ROUGHNESS, "use_roughness_map"sv},
-        {aiTextureType_NORMAL_CAMERA, "use_normal_camera_map"sv},
-        {aiTextureType_AMBIENT_OCCLUSION, "use_ambient_occlusion_map"sv},
-        {aiTextureType_EMISSION_COLOR, "use_emissive_color_map"sv},
-        {aiTextureType_DIFFUSE, "use_diffuse_color_map"sv},
-        {aiTextureType_SPECULAR, "use_specular_color_map"sv},
+        // {aiTextureType_AMBIENT_OCCLUSION, "use_ambient_occlusion_map"sv},
+        {aiTextureType_EMISSION_COLOR, "use_emission_color_map"sv},
+        {aiTextureType_SPECULAR, "use_specular_map"sv},
         {aiTextureType_SHININESS, "use_glossiness_map"sv},
         {aiTextureType_NORMALS, "use_normal_map"sv}
     };
@@ -88,8 +84,8 @@ AssimpLoader::AssimpLoader() {}
 
 std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
 {
-    CS::LogInfo(::CS::BuiltInChannels::Asset(), CS::Fmt("Assimp version: {}.{}.{}", aiGetVersionMajor(), aiGetVersionMinor(),
-                aiGetVersionRevision()));
+    CS::LogInfo(::CS::BuiltInChannels::Asset(),
+                CS::Fmt("Assimp version: {}.{}.{}", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision()));
     Assimp::Importer importer;
 
     auto postprocessFlags =
@@ -373,8 +369,8 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
 
         auto controlName = GetPBRTextureControlName(type);
         if (!material->SetUniformValue(controlName, false)) {
-            CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Failed to set texture control uniform '{}'",
-                         std::string(controlName)));
+            CS::LogError(::CS::BuiltInChannels::Asset(),
+                         CS::Fmt("Failed to set texture control uniform '{}'", std::string(controlName)));
         }
 
         if (AI_SUCCESS != aimaterial->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
