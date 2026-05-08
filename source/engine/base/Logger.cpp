@@ -299,11 +299,11 @@ void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, 
         auto color = Impl::LevelColor(levelName);
         auto* out = (levelName == "error" || levelName == "fatal") ? stderr : stdout;
         std::fprintf(out, "%s%s%s\n", color.data(), line.c_str(), Impl::kColorReset.data());
+        std::fflush(out);
     }
 
     if (m_impl->sinks.Test(LogSinkValues::File()) && m_impl->fileStream.is_open()) {
         m_impl->fileStream << line << '\n';
-        m_impl->fileStream.flush();
         m_impl->RotateIfNeeded();
     }
 }

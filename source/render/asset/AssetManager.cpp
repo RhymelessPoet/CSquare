@@ -21,6 +21,11 @@ std::shared_ptr<AssetScene> AssetManager::GetAssetScene(const std::filesystem::p
     return assetScene;
 }
 
+std::future<std::shared_ptr<AssetScene>> AssetManager::GetAssetSceneAsync(const std::filesystem::path& path)
+{
+    return m_loader->LoadAsync(path);
+}
+
 std::shared_ptr<Material> AssetManager::GetMaterial(const std::string& name)
 {
     return std::shared_ptr<Material>();

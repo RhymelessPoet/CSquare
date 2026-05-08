@@ -41,6 +41,8 @@ public:
     size_t GetByteSize() const { return m_data.size(); }
     size_t GetByteCapacity() const { return m_data.capacity(); }
 
+    void Reserve(size_t capacity) { m_data.reserve(capacity); }
+
     template <typename T>
         requires(std::is_trivially_copyable_v<T>)
     inline void PushBack(const T* data, size_t count)

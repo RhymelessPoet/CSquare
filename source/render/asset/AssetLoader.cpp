@@ -32,4 +32,9 @@ std::shared_ptr<AssetScene> AssetLoader::Load(const Path& path)
     return scene;
 }
 
+std::future<std::shared_ptr<AssetScene>> AssetLoader::LoadAsync(const Path& path)
+{
+    return std::async(std::launch::async, [this, path]() { return Load(path); });
+}
+
 } // namespace CS

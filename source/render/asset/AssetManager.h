@@ -1,6 +1,7 @@
 #pragma once
 #include "base/Singleton.h"
 #include <filesystem>
+#include <future>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -18,6 +19,7 @@ class AssetManager : public Singleton<AssetManager>
 {
 public:
     std::shared_ptr<AssetScene> GetAssetScene(const std::filesystem::path& path);
+    std::future<std::shared_ptr<AssetScene>> GetAssetSceneAsync(const std::filesystem::path& path);
     std::shared_ptr<Material> GetMaterial(const std::string& name);
     std::shared_ptr<Mesh> GetMesh(const std::string& name);
 

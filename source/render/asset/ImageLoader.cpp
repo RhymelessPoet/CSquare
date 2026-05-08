@@ -34,8 +34,8 @@ ImageLoader::Load(const Path& imagePath, Size3u& imageSize, ImageFormat& format,
         return std::vector<std::byte>();
     }
 
-    CS::LogInfo(::CS::BuiltInChannels::Asset(), CS::Fmt("Load Image {}, Size({}, {}, {})", imagePath.string(), width, height,
-                channels));
+    CS::LogTrace(::CS::BuiltInChannels::Asset(),
+                 CS::Fmt("Load Image {}, Size({}, {}, {})", imagePath.string(), width, height, channels));
 
     int requiredChannels = channels;
     if (channels == 1) {
@@ -72,7 +72,8 @@ std::vector<std::byte> ImageLoader::LoadFloat(const Path& imagePath, Size3u& ima
     }
 
     if (!FileSystem::exists(absolutePath)) {
-        CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Image (float) file not found: {}", absolutePath.string()));
+        CS::LogError(::CS::BuiltInChannels::Asset(),
+                     CS::Fmt("Image (float) file not found: {}", absolutePath.string()));
         return std::vector<std::byte>();
     }
     int width, height, channels;

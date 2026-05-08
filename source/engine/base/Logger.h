@@ -155,7 +155,7 @@ template <typename... Args>
 }
 
 // clang-format off
-inline void Log      (LogLevel l, LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { if (Logger::IsInitialized()) Logger::Instance().Emit(l, ch, loc, msg); }
+inline void Log      (LogLevel l, LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { if (Logger::IsInitialized() && Logger::Instance().ShouldLog(l)) Logger::Instance().Emit(l, ch, loc, msg); }
 inline void LogTrace  (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Trace(),   ch, msg, loc); }
 inline void LogDebug  (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Debug(),   ch, msg, loc); }
 inline void LogInfo   (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Info(),    ch, msg, loc); }

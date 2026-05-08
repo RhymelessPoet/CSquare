@@ -38,7 +38,7 @@ ProjectModel::ProjectModel() : ImplBase()
         impl().scene = std::make_shared<Scene>(renderModule->GetSOComposer());
         renderModule->GetMainView()->SetScene(impl().scene);
     }
-    initializeScene();
+    initializeSceneAsync();
     createSceneTreeModel();
 }
 
@@ -57,6 +57,11 @@ TreeModel* ProjectModel::GetSceneTreeModel()
     return &(impl().sceneTree);
 }
 
+void ProjectModel::setOnAssetLoaded(std::function<void()> callback)
+{
+    m_onAssetLoaded = std::move(callback);
+}
+
 void ProjectModel::initializeScene()
 {
     impl().sky = std::make_unique<PanoramicSky>(impl().scene);
@@ -69,13 +74,13 @@ void ProjectModel::initializeScene()
     impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
     impl().directionalLight->SetIntensity(5.1f);
 
-    Path assetPath = "assets/shape/cube.gltf";
+    // Path assetPath = "assets/shape/cube.gltf";
     // Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
     // Path assetPath = "assets/model/room/room.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/lost_empire/lost_empire.gltf";
-    // Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
+    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/fireplace_room/fireplace_room.gltf";
 
     auto assetScene = AssetManager::Instance().GetAssetScene(assetPath);
@@ -85,6 +90,47 @@ void ProjectModel::initializeScene()
         auto sceneObject = importer.Import(assetScene->GetRoot());
     } else {
         // std::cerr << "Failed to load asset scene.\n";
+    }
+}
+
+void ProjectModel::initializeSceneAsync()
+{
+    impl().sky = std::make_unique<PanoramicSky>(impl().scene);
+    auto image = std::make_shared<Image>("assets/hdr/moonrise_puresky_4k.hdr", ImageFormat::RGB32Float);
+    impl().sky->SetImage(image);
+
+    impl().directionalLight = std::make_unique<Light>(impl().scene);
+    impl().directionalLight->SetLightType(ELightType::Make<"Directional">());
+    impl().directionalLight->SetDirection(-Vector3f{0.5f, 1.0f, 0.3f});
+    impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
+    impl().directionalLight->SetIntensity(5.1f);
+
+    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
+    m_assetLoadFuture = AssetManager::Instance().GetAssetSceneAsync(assetPath);
+}
+
+bool ProjectModel::pollAsyncLoad()
+{
+    if (!m_assetLoadFuture.valid()) {
+        return true;
+    }
+    if (m_assetLoadFuture.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+        return false;
+    }
+    auto assetScene = m_assetLoadFuture.get();
+    onAssetLoaded(assetScene);
+    return true;
+}
+
+void ProjectModel::onAssetLoaded(std::shared_ptr<CS::AssetScene> assetScene)
+{
+    if (assetScene != nullptr) {
+        AssetImporter importer(impl().scene);
+        auto sceneObject = importer.Import(assetScene->GetRoot());
+    }
+    createSceneTreeModel();
+    if (m_onAssetLoaded) {
+        m_onAssetLoaded();
     }
 }
 

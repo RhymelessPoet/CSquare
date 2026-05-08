@@ -23,8 +23,12 @@ AssetImporter::AssetImporter(std::shared_ptr<Scene> scene) : m_scene(std::move(s
 
 std::shared_ptr<SceneObject> AssetImporter::Import(const std::shared_ptr<AssetNode>& assetNode)
 {
+    auto t0 = std::chrono::steady_clock::now();
     auto sceneObject = m_scene->CreateSceneObject();
     importNode(assetNode, sceneObject);
+    CS::LogPerf(::CS::BuiltInChannels::Asset(),
+                CS::Fmt("AssetImporter::Import node '{}' completed in {:.2f}ms", assetNode->GetName(),
+                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count()));
     return sceneObject;
 }
 
@@ -40,8 +44,6 @@ std::shared_ptr<Scene> AssetImporter::Import(const std::shared_ptr<AssetScene>& 
 
 void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std::shared_ptr<SceneObject> sceneObject)
 {
-    auto tNode = std::chrono::steady_clock::now();
-
     sceneObject->SetName(assetNode->GetName());
     // Create Transform component
     auto transform = createTransform(sceneObject);
@@ -62,11 +64,6 @@ void AssetImporter::importNode(const std::shared_ptr<AssetNode>& assetNode, std:
         auto childSceneObject = m_scene->CreateSceneObject(sceneObject);
         importNode(childAssetNode, childSceneObject);
     }
-
-    CS::LogPerf(::CS::BuiltInChannels::Asset(),
-                CS::Fmt("Node '{}' imported in {:.2f}ms ({} meshes, {} children)", assetNode->GetName(),
-                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tNode).count(),
-                        assetNode->GetMeshs().size(), children.size()));
 }
 
 MeshRenderer* AssetImporter::createMeshRenderer(std::shared_ptr<SceneObject> sceneObject)

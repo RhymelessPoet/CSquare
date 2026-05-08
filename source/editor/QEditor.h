@@ -5,6 +5,7 @@
 #include <QModelIndex>
 #include <QObject>
 #include <QString>
+#include <QTimer>
 #include <memory>
 
 namespace CSEditor
@@ -43,11 +44,15 @@ private:
     void onSelectionCurrentChanged(const QModelIndex& current, const QModelIndex& previous);
 
 private:
+    void startAsyncLoadPolling(ProjectModel* project);
+
+private:
     QString m_projectID;
     std::unique_ptr<QuickTreeModel> m_sceneTreeModel;
     std::unique_ptr<SceneObjectModel> m_sceneObjectDomain;
     std::unique_ptr<QuickSceneObjectModel> m_sceneObjectAdapter;
     std::unique_ptr<QItemSelectionModel> m_sceneSelection;
+    std::unique_ptr<QTimer> m_asyncLoadTimer;
 };
 
 } // namespace CSEditor

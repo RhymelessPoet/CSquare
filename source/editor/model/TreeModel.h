@@ -116,6 +116,9 @@ private:
             const TreeNode* GetParent() const override
             {
                 auto parentNode = OpStrategy::GetParent(m_node);
+                if (!OpStrategy::IsValid(parentNode)) {
+                    return nullptr;
+                }
                 auto parent = m_extStrategy.Get(parentNode);
                 if (parent == nullptr) {
                     return new TreeNodeExternal(m_extStrategy, parentNode);
@@ -129,6 +132,9 @@ private:
             {
                 if (index < GetChildCount()) {
                     auto childNode = OpStrategy::GetChild(m_node, index);
+                    if (!OpStrategy::IsValid(childNode)) {
+                        return nullptr;
+                    }
                     auto node = m_extStrategy.Get(childNode);
                     if (node == nullptr) {
                         return new TreeNodeExternal(m_extStrategy, childNode);

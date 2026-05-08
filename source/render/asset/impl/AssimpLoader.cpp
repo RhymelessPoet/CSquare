@@ -10,6 +10,8 @@
 #include "geometry/Mesh.h"
 #include "materials/ImageTexture.h"
 #include "materials/Material.h"
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <chrono>
 
@@ -18,7 +20,7 @@ using namespace std::literals;
 namespace
 {
 // clang-format off
-std::map<aiTextureType, std::string_view> PBRTextureTypes = {
+constexpr std::array<std::pair<aiTextureType, std::string_view>, 7> PBRTextureTypes = {{
     {aiTextureType_BASE_COLOR, "base_color_map"sv},
     {aiTextureType_METALNESS, "metallic_map"sv},
     {aiTextureType_DIFFUSE_ROUGHNESS, "roughness_map"sv},
@@ -27,13 +29,13 @@ std::map<aiTextureType, std::string_view> PBRTextureTypes = {
     {aiTextureType_SPECULAR, "specular_color_map"sv},
     {aiTextureType_SHININESS, "glossiness_map"sv},
     {aiTextureType_NORMALS, "normal_map"sv}
-};
+}};
 // clang-format on
 
 std::string_view GetPBRTextureControlName(aiTextureType type)
 {
     // clang-format off
-    static std::map<aiTextureType, std::string_view> PBRTextureControls = {
+    constexpr std::array<std::pair<aiTextureType, std::string_view>, 7> PBRTextureControls = {{
         {aiTextureType_BASE_COLOR, "use_base_color_map"sv},
         {aiTextureType_METALNESS, "use_metallic_map"sv},
         {aiTextureType_DIFFUSE_ROUGHNESS, "use_roughness_map"sv},
@@ -42,11 +44,13 @@ std::string_view GetPBRTextureControlName(aiTextureType type)
         {aiTextureType_SPECULAR, "use_specular_map"sv},
         {aiTextureType_SHININESS, "use_glossiness_map"sv},
         {aiTextureType_NORMALS, "use_normal_map"sv}
-    };
+    }};
     // clang-format on
 
-    if (auto itr = PBRTextureControls.find(type); itr != PBRTextureControls.end()) {
-        return itr->second;
+    for (const auto& [texType, name] : PBRTextureControls) {
+        if (texType == type) {
+            return name;
+        }
     }
 
     CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Unknown aiTextureType: {}", static_cast<int>(type)));
@@ -91,8 +95,15 @@ std::shared_ptr<AssetScene> AssimpLoader::Load(const Path& path)
                 CS::Fmt("Assimp version: {}.{}.{}", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision()));
     Assimp::Importer importer;
 
-    auto postprocessFlags =
-        aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType;
+    auto postprocessFlags = aiProcess_Triangulate | aiProcess_SortByPType;
+
+    auto ext = path.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
+    bool isGltf = (ext == ".gltf" || ext == ".glb");
+
+    if (!isGltf) {
+        postprocessFlags |= aiProcess_JoinIdenticalVertices | aiProcess_CalcTangentSpace;
+    }
 
     const aiScene* aiscene = importer.ReadFile(path.string(), postprocessFlags);
 
@@ -183,18 +194,14 @@ bool AssimpLoader::parseMaterials(const aiScene* aiscene, std::shared_ptr<AssetS
             CS::LogError(::CS::BuiltInChannels::Asset(), CS::Fmt("Null material at index {}", index));
             continue;
         }
-        printMaterialInfo(aimaterial);
+        if (CS::Logger::Instance().ShouldLog(CS::LogLevels::Trace())) {
+            printMaterialInfo(aimaterial);
+        }
         const auto mode = GetProperty<int>(aimaterial, AI_MATKEY_SHADING_MODEL);
         if (mode == aiShadingMode_PBR_BRDF) {
-            auto tMat = std::chrono::steady_clock::now();
             auto mat = parsePBR(aimaterial, scene);
-            CS::LogPerf(
-                ::CS::BuiltInChannels::Asset(),
-                CS::Fmt("Material '{}' parsed in {:.2f}ms", aimaterial->GetName().C_Str(),
-                        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - tMat).count()));
             scene->AddMaterial(std::move(mat));
         }
-        CS::LogDebug(::CS::BuiltInChannels::Asset(), "");
     }
 
     return true;
@@ -214,7 +221,22 @@ std::shared_ptr<Mesh> AssimpLoader::parseMesh(const aiMesh* aimesh)
     auto builder = Mesh::Builder();
     builder.SetName(aimesh->mName.C_Str());
 
+    size_t estimatedBytes = aimesh->mNumVertices * sizeof(float) *
+                            ((aimesh->mVertices ? 3u : 0u) + (aimesh->mNormals ? 3u : 0u) +
+                             (aimesh->mTangents ? 3u : 0u) + (aimesh->mBitangents ? 3u : 0u));
+    for (uint32_t i = 0u; i < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++i) {
+        if (aimesh->mTextureCoords[i] == nullptr)
+            break;
+        estimatedBytes += aimesh->mNumVertices * 2 * sizeof(float);
+    }
+    for (uint32_t i = 0u; i < AI_MAX_NUMBER_OF_COLOR_SETS; ++i) {
+        if (aimesh->mColors[i] == nullptr)
+            break;
+        estimatedBytes += aimesh->mNumVertices * 4 * sizeof(float);
+    }
+
     Buffer vertexBuffer;
+    vertexBuffer.Reserve(estimatedBytes);
     uint32_t offset = vertexBuffer.GetByteSize();
     uint32_t end = vertexBuffer.GetByteSize();
 
@@ -252,12 +274,13 @@ std::shared_ptr<Mesh> AssimpLoader::parseMesh(const aiMesh* aimesh)
         auto componentCount = static_cast<uint8_t>(aimesh->mNumUVComponents[texCoordIndex]);
         auto attributeName = "_texcoord" + std::to_string(texCoordIndex);
         offset = end;
+        std::vector<aiVector2D> uvs;
+        uvs.reserve(aimesh->mNumVertices);
         for (uint32_t i = 0u; i < aimesh->mNumVertices; ++i) {
-            // Assimp always use 3 components for texture coordinates
             aiVector3D uvw = aimesh->mTextureCoords[texCoordIndex][i];
-            aiVector2D uv{uvw.x, uvw.y};
-            vertexBuffer.PushBack(&uv, 1u);
+            uvs.emplace_back(uvw.x, uvw.y);
         }
+        vertexBuffer.PushBack(uvs.data(), uvs.size());
         end = vertexBuffer.GetByteSize();
         builder.AddAttribute({attributeName, offset, end, 0u, componentCount, DataType::Float32});
     }
@@ -275,13 +298,11 @@ std::shared_ptr<Mesh> AssimpLoader::parseMesh(const aiMesh* aimesh)
     builder.AddVertexBuffer(vertexBuffer);
 
     std::vector<uint32_t> indices;
-    indices.reserve(aimesh->mFaces[0].mNumIndices * aimesh->mNumFaces);
+    indices.reserve(3 * aimesh->mNumFaces);
 
     for (uint32_t faceIndex = 0u; faceIndex < aimesh->mNumFaces; ++faceIndex) {
-        auto aiface = aimesh->mFaces[faceIndex];
-        for (uint32_t index = 0u; index < aiface.mNumIndices; ++index) {
-            indices.push_back(aiface.mIndices[index]);
-        }
+        auto& aiface = aimesh->mFaces[faceIndex];
+        indices.insert(indices.end(), aiface.mIndices, aiface.mIndices + aiface.mNumIndices);
     }
     builder.SetIndices(Buffer(indices), DataType::UInt32).SetVertexCount(aimesh->mNumVertices);
 
@@ -459,7 +480,7 @@ bool AssimpLoader::parsePBRPTextures(const aiMaterial* aimaterial,
 
 void AssimpLoader::printMaterialInfo(const aiMaterial* material)
 {
-    CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("--- Parse Material: {} ---", material->GetName().C_Str()));
+    CS::LogTrace(::CS::BuiltInChannels::Asset(), CS::Fmt("--- Parse Material: {} ---", material->GetName().C_Str()));
     for (uint32_t index = 0u; index < material->mNumProperties; ++index) {
         auto aiproperty = material->mProperties[index];
         std::string value;
@@ -492,7 +513,7 @@ void AssimpLoader::printMaterialInfo(const aiMaterial* material)
         } else {
             value = "unknown type";
         }
-        CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("  {}: {}", aiproperty->mKey.C_Str(), value));
+        CS::LogTrace(::CS::BuiltInChannels::Asset(), CS::Fmt("  {}: {}", aiproperty->mKey.C_Str(), value));
     }
     for (const auto& [type, name] : PBRTextureTypes) {
         aiString texPath;
@@ -503,7 +524,7 @@ void AssimpLoader::printMaterialInfo(const aiMaterial* material)
         aiTextureMapMode mapMode[2] = {aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
 
         if (AI_SUCCESS == material->GetTexture(type, 0, &texPath, &mapping, &uvIndex, &blend, &op, mapMode)) {
-            CS::LogDebug(::CS::BuiltInChannels::Asset(), CS::Fmt("  {} path: {}", name, texPath.C_Str()));
+            CS::LogTrace(::CS::BuiltInChannels::Asset(), CS::Fmt("  {} path: {}", name, texPath.C_Str()));
         }
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "base/FileSystem.h"
 #include "base/PImpl.h"
+#include <future>
 
 namespace CS
 {
@@ -15,6 +16,7 @@ public:
     AssetLoader(/* args */);
 
     std::shared_ptr<AssetScene> Load(const Path& path);
+    std::future<std::shared_ptr<AssetScene>> LoadAsync(const Path& path);
 };
 
 } // namespace CS

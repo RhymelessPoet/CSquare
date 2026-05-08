@@ -31,6 +31,28 @@ void QEditor::loadProject()
     m_projectID = QString::fromStdString(std::string(projecIDView));
     auto project = ProjectManager::Instance().GetProject(m_projectID.toStdString());
     updateModels(project);
+    startAsyncLoadPolling(project);
+}
+
+void QEditor::startAsyncLoadPolling(ProjectModel* project)
+{
+    if (project == nullptr) {
+        return;
+    }
+    project->setOnAssetLoaded([this, project]() {
+        updateModels(project);
+        if (m_asyncLoadTimer != nullptr) {
+            m_asyncLoadTimer->stop();
+        }
+    });
+
+    m_asyncLoadTimer = std::make_unique<QTimer>(this);
+    QObject::connect(m_asyncLoadTimer.get(), &QTimer::timeout, [this, project]() {
+        if (project->pollAsyncLoad()) {
+            m_asyncLoadTimer->stop();
+        }
+    });
+    m_asyncLoadTimer->start(100);
 }
 
 const QString QEditor::getProjectID() const
