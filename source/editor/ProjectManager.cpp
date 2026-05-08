@@ -1,6 +1,7 @@
 #include "ProjectManager.h"
 #include "ProjectModel.h"
 #include "base/utils/UUID.h"
+#include "scene/View.h"
 
 namespace CSEditor
 {
@@ -27,6 +28,21 @@ ProjectModel* ProjectManager::GetProject(ProjectID id)
         return it->second.get();
     }
     return nullptr;
+}
+
+void ProjectManager::AttachAllToView(const std::shared_ptr<CS::View>& view)
+{
+    if (view == nullptr) {
+        return;
+    }
+    for (auto& [id, project] : m_projects) {
+        if (project == nullptr) {
+            continue;
+        }
+        if (auto scene = project->GetScene()) {
+            view->SetScene(scene);
+        }
+    }
 }
 
 } // namespace CSEditor

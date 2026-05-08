@@ -20,9 +20,25 @@ GLRendererBuilder& GLRendererBuilder::SetSharedContext(void* context)
     return *this;
 }
 
+GLRendererBuilder& GLRendererBuilder::SetNativeWindow(void* hwnd, void* sharedHGLRC)
+{
+    m_hwnd = hwnd;
+    m_sharedHGLRC = sharedHGLRC;
+    m_useNativeWindow = true;
+    return *this;
+}
+
 std::unique_ptr<Renderer> GLRendererBuilder::Build(std::shared_ptr<GraphicsResourceCache> resourceCache) const
 {
-    auto context = std::make_unique<OpenGLContext>(m_sharedContext);
+    std::unique_ptr<OpenGLContext> context;
+    if (m_useNativeWindow) {
+        auto native =
+            std::make_unique<WGLWindowContext>(reinterpret_cast<HWND>(m_hwnd), reinterpret_cast<HGLRC>(m_sharedHGLRC));
+        native->MakeCurrent();
+        context = std::make_unique<OpenGLContext>(std::move(native));
+    } else {
+        context = std::make_unique<OpenGLContext>(m_sharedContext);
+    }
     auto graphicImpl = std::make_unique<GraphicsGLImpl>(std::move(context), resourceCache);
     auto graphicAPI = GraphicsAPI::Create(std::move(graphicImpl), resourceCache);
 

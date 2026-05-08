@@ -82,6 +82,9 @@ const Matrix4f& Transform::GetWorldMatrix()
 
 OBB Transform::Trans(const AABB& box)
 {
+    if (!box.IsValid()) {
+        return OBB::Invalid();
+    }
     const auto& [min, max] = box;
     auto aabbCenter = box.GetCenter();
     auto aabbExtents = box.GetSize();

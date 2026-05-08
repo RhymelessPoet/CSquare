@@ -23,6 +23,25 @@ bool OpenGLContext::IsShared() const
     return false;
 }
 
+bool OpenGLContext::MakeCurrent()
+{
+    return m_nativeContext ? m_nativeContext->MakeCurrent() : false;
+}
+
+void OpenGLContext::DoneCurrent()
+{
+    if (m_nativeContext) {
+        m_nativeContext->DoneCurrent();
+    }
+}
+
+void OpenGLContext::SwapBuffers()
+{
+    if (m_nativeContext) {
+        m_nativeContext->SwapBuffers();
+    }
+}
+
 std::string_view OpenGLContext::GetVersion()
 {
     if (m_version.empty()) {

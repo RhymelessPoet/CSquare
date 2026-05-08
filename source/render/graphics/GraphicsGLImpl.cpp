@@ -164,6 +164,25 @@ bool GraphicsGLImpl::Initialize()
     return glLoad;
 }
 
+bool GraphicsGLImpl::MakeContextCurrent()
+{
+    return m_glContext ? m_glContext->MakeCurrent() : false;
+}
+
+void GraphicsGLImpl::DoneContextCurrent()
+{
+    if (m_glContext) {
+        m_glContext->DoneCurrent();
+    }
+}
+
+void GraphicsGLImpl::SwapBuffers()
+{
+    if (m_glContext) {
+        m_glContext->SwapBuffers();
+    }
+}
+
 bool GraphicsGLImpl::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
     m_glContext->GLViewport(x, y, width, height);

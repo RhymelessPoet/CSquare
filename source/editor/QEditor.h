@@ -32,12 +32,19 @@ public:
     ~QEditor();
 
     Q_INVOKABLE void loadProject();
+    Q_INVOKABLE void beginAssetLoading();
     Q_INVOKABLE const QString getProjectID() const;
     Q_INVOKABLE void setSelectedSceneObject(const QModelIndex& index);
     Q_INVOKABLE void clearSelectedSceneObject();
     QuickTreeModel* getSceneTreeModel() { return m_sceneTreeModel.get(); }
     QuickSceneObjectModel* getSceneObjectModel() { return m_sceneObjectAdapter.get(); }
     QItemSelectionModel* getSceneSelection() { return m_sceneSelection.get(); }
+
+signals:
+    // Emitted after the current project's asset load completes and its
+    // scene tree model is updated. QML listeners use this to trigger
+    // view-side operations such as fitToScene.
+    void sceneAssetLoaded();
 
 private:
     void updateModels(ProjectModel* project);

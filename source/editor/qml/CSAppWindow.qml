@@ -97,6 +97,21 @@ ApplicationWindow {
                             id: renderView
                             projectID: appWindow.projectID
                             anchors.fill: parent
+                            focus: true
+
+                            // Kick off asset loading only after the engine
+                            // renderer/main View is ready.
+                            onEngineReady: CSEditor.beginAssetLoading()
+                        }
+
+                        Connections {
+                            target: CSEditor
+                            // After the project's asset finishes loading
+                            // and the scene has real geometry, fit the
+                            // camera to the scene AABB.
+                            function onSceneAssetLoaded() {
+                                renderView.FitToScene(true)
+                            }
                         }
 
                         CSInspectorView {

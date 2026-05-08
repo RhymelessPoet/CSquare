@@ -5,6 +5,11 @@
 #include <memory>
 #include <unordered_map>
 
+namespace CS
+{
+class View;
+} // namespace CS
+
 namespace CSEditor
 {
 
@@ -20,6 +25,11 @@ public:
     bool SaveProject(ProjectID id);
 
     ProjectModel* GetProject(ProjectID id);
+
+    // Attach every known project's scene to the supplied view. Used by
+    // QuickRenderView once its engine renderer is ready, in case projects
+    // were created before the view existed.
+    void AttachAllToView(const std::shared_ptr<CS::View>& view);
 
 private:
     friend class CS::Singleton<ProjectManager>;

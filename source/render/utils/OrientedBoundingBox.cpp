@@ -3,6 +3,11 @@
 
 namespace CS
 {
+OrientedBoundingBox OrientedBoundingBox::Invalid()
+{
+    return OrientedBoundingBox(Vector3d::Zero(), Vector3d::Zero(), Vector3d::Zero(), Vector3d::Zero(), {0.0, 0.0, 0.0});
+}
+
 OrientedBoundingBox::OrientedBoundingBox()
     : m_center(Vector3d{0.0, 0.0, 0.0}),
       m_axes{Vector3d{1.0, 0.0, 0.0}, Vector3d{0.0, 1.0, 0.0}, Vector3d{0.0, 0.0, 1.0}},
@@ -16,6 +21,11 @@ OrientedBoundingBox::OrientedBoundingBox(const Vector3d& center,
                                          const Size3d& size)
     : m_center(center), m_axes{axisX.Normalized(), axisY.Normalized(), axisZ.Normalized()}, m_halfSizes(size * 0.5)
 {}
+
+bool OrientedBoundingBox::IsValid() const
+{
+    return !(m_axes[0].IsZero() || m_axes[1].IsZero() || m_axes[2].IsZero());
+}
 
 void OrientedBoundingBox::SetAxes(const Vector3d& axisX, const Vector3d& axisY, const Vector3d& axisZ)
 {
@@ -69,8 +79,8 @@ void OrientedBoundingBox::check() const
     double dotYZ = m_axes[1].Dot(m_axes[2]);
     const double epsilon = 1e-6;
     if (std::abs(dotXY) > epsilon || std::abs(dotXZ) > epsilon || std::abs(dotYZ) > epsilon) {
-        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("OBB axes not orthogonal: dotXY={}, dotXZ={}, dotYZ={}", dotXY,
-                     dotXZ, dotYZ));
+        CS::LogError(::CS::BuiltInChannels::Render(),
+                     CS::Fmt("OBB axes not orthogonal: dotXY={}, dotXZ={}, dotYZ={}", dotXY, dotXZ, dotYZ));
     }
 }
 

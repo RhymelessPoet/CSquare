@@ -10,10 +10,6 @@
 #include "scene/View.h"
 #include "scene/ViewGraph.h"
 
-#include <condition_variable>
-#include <mutex>
-#include <thread>
-
 namespace CS
 {
 template <>
@@ -28,10 +24,6 @@ struct ImplData<RenderModule>
     std::shared_ptr<GraphicsResourceCache> resourceCache;
     std::shared_ptr<SystemGraph> systemGraph;
     std::unique_ptr<ViewGraph> viewGraph;
-
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool ready = false;
 };
 
 RenderModule::RenderModule() : ImplBase() {}
@@ -42,21 +34,30 @@ void RenderModule::Initialize() {}
 
 void RenderModule::Update()
 {
-    std::unique_lock<std::mutex> lock(impl().mtx);
-    impl().cv.wait(lock, [=] { return !impl().ready; });
     RenderModuleContext context(this);
     impl().systemGraph->OnUpdate(context);
     Dispatch();
-    impl().ready = true;
+
+    if (impl().renderer && impl().viewGraph) {
+        auto api = impl().renderer->GetGraphicsAPI();
+        const bool made = api ? api->MakeContextCurrent() : false;
+        impl().renderer->Render(*impl().viewGraph);
+        if (made) {
+            api->DoneContextCurrent();
+        }
+    }
 }
 
 void RenderModule::Render()
 {
-    std::unique_lock<std::mutex> lock(impl().mtx);
-    if (impl().ready) {
-        impl().ready = false;
-        impl().cv.notify_all();
-        impl().renderer->Render(*impl().viewGraph);
+    if (!impl().renderer || !impl().viewGraph) {
+        return;
+    }
+    auto api = impl().renderer->GetGraphicsAPI();
+    const bool made = api ? api->MakeContextCurrent() : false;
+    impl().renderer->Render(*impl().viewGraph);
+    if (made) {
+        api->DoneContextCurrent();
     }
 }
 

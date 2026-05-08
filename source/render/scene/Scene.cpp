@@ -118,8 +118,12 @@ const AABB& Scene::GetAABB(bool reCompute)
 {
     if (reCompute) {
         traverseWith(m_root, [this](std::shared_ptr<SceneObject> object) {
-            if (auto meshRenderer = object->GetComponent<MeshRenderer>()) {
-                auto obb = meshRenderer->GetWorldBoundingBox();
+            auto meshRenderer = object->GetComponent<MeshRenderer>();
+            if (meshRenderer == nullptr) {
+                return;
+            }
+            auto obb = meshRenderer->GetWorldBoundingBox();
+            if (obb.IsValid()) {
                 m_box.Include(obb);
             }
         });

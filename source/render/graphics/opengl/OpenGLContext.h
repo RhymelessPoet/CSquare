@@ -17,6 +17,13 @@ public:
 
     bool IsShared() const;
 
+    // Activate / deactivate the underlying native GL context on the current
+    // thread. Must be wrapped around any sequence of GL calls when coexisting
+    // with another GL context (e.g. Qt's RHI HGLRC).
+    bool MakeCurrent();
+    void DoneCurrent();
+    void SwapBuffers();
+
     std::string_view GetVersion();
 
     OpenGLContext& GLViewport(GLint x, GLint y, GLsizei width, GLsizei height);

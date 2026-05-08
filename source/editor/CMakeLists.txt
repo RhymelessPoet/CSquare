@@ -77,14 +77,16 @@ endforeach()
 set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders/qsb")
 
 # message(${SHADER_FILES} ${SHADER_OUTPUT_DIR})
-qt_add_shaders(${TARGET_NAME} "CS_GL45Shaders"
-    GLSL "450"
-    PREFIX ""
-    FILES ${SHADER_FILES}
-    OUTPUT_TARGETS SHADER_LIB
-    OUTPUT_DIRECTORY ${SHADER_OUTPUT_DIR}
-    PLATFORMS "OpenGL"
-)
+if(SHADER_FILES)
+    qt_add_shaders(${TARGET_NAME} "CS_GL45Shaders"
+        GLSL "450"
+        PREFIX ""
+        FILES ${SHADER_FILES}
+        OUTPUT_TARGETS SHADER_LIB
+        OUTPUT_DIRECTORY ${SHADER_OUTPUT_DIR}
+        PLATFORMS "OpenGL"
+    )
+endif()
 
 target_link_libraries(${TARGET_NAME} PRIVATE
     Qt6::Core

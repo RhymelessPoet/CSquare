@@ -36,15 +36,28 @@ ProjectModel::ProjectModel() : ImplBase()
     if (_renderModule.has_value()) {
         auto renderModule = _renderModule.value();
         impl().scene = std::make_shared<Scene>(renderModule->GetSOComposer());
-        renderModule->GetMainView()->SetScene(impl().scene);
+        // The main View may not yet exist if the engine renderer is still
+        // being initialized asynchronously (see QuickRenderView). In that
+        // case the scene will be attached when QuickRenderView finishes
+        // initializing by calling ProjectManager::AttachAllToView().
+        if (auto mainView = renderModule->GetMainView()) {
+            mainView->SetScene(impl().scene);
+        }
     }
-    initializeSceneAsync();
-    createSceneTreeModel();
+    // NOTE: Scene setup (sky/light) and scene-hierarchy tree creation are
+    // deferred to initializeScene(), which is invoked by
+    // QEditor::beginAssetLoading() AFTER the engine renderer/main view is
+    // ready and BEFORE any asset loading begins.
 }
 
 const CS::UUID& ProjectModel::GetUUID() const
 {
     return impl().uuid;
+}
+
+std::shared_ptr<CS::Scene> ProjectModel::GetScene() const
+{
+    return impl().scene;
 }
 
 const TreeModel* ProjectModel::GetSceneTreeModel() const
@@ -64,6 +77,7 @@ void ProjectModel::setOnAssetLoaded(std::function<void()> callback)
 
 void ProjectModel::initializeScene()
 {
+    // Synchronous scene setup: sky + directional light. No asset I/O.
     impl().sky = std::make_unique<PanoramicSky>(impl().scene);
     auto image = std::make_shared<Image>("assets/hdr/moonrise_puresky_4k.hdr", ImageFormat::RGB32Float);
     impl().sky->SetImage(image);
@@ -74,38 +88,22 @@ void ProjectModel::initializeScene()
     impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
     impl().directionalLight->SetIntensity(5.1f);
 
+    // Create the scene-hierarchy tree now so QML's SceneHierarchyView
+    // reflects the sky + directional light BEFORE asset loading begins.
+    createSceneTreeModel();
+}
+
+void ProjectModel::startAssetLoad()
+{
     // Path assetPath = "assets/shape/cube.gltf";
-    // Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
+    Path assetPath = "assets/model/monkeysun/monkeysun.gltf";
     // Path assetPath = "assets/model/room/room.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/lost_empire/lost_empire.gltf";
-    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
+    // Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/fireplace_room/fireplace_room.gltf";
 
-    auto assetScene = AssetManager::Instance().GetAssetScene(assetPath);
-
-    if (assetScene != nullptr) {
-        AssetImporter importer(impl().scene);
-        auto sceneObject = importer.Import(assetScene->GetRoot());
-    } else {
-        // std::cerr << "Failed to load asset scene.\n";
-    }
-}
-
-void ProjectModel::initializeSceneAsync()
-{
-    impl().sky = std::make_unique<PanoramicSky>(impl().scene);
-    auto image = std::make_shared<Image>("assets/hdr/moonrise_puresky_4k.hdr", ImageFormat::RGB32Float);
-    impl().sky->SetImage(image);
-
-    impl().directionalLight = std::make_unique<Light>(impl().scene);
-    impl().directionalLight->SetLightType(ELightType::Make<"Directional">());
-    impl().directionalLight->SetDirection(-Vector3f{0.5f, 1.0f, 0.3f});
-    impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
-    impl().directionalLight->SetIntensity(5.1f);
-
-    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
     m_assetLoadFuture = AssetManager::Instance().GetAssetSceneAsync(assetPath);
 }
 

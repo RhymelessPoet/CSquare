@@ -14,6 +14,15 @@ template <typename T, uint32_t N>
 class Vector
 {
 public:
+    // Return a zero-initialized vector (all components equal T()).
+    static constexpr Vector Zero()
+    {
+        Vector result;
+        for (int i = 0; i < N; ++i)
+            result.m_data[i] = T();
+        return result;
+    }
+
     Vector() = default;
     Vector(const Vector& other) { m_data = other.m_data; }
     Vector(std::initializer_list<T> list)
@@ -169,6 +178,28 @@ public:
     bool operator!=(const Vector& rhs) const { return !(*this == rhs); }
 
     void SetZero() { std::fill(m_data, m_data + N, T()); }
+
+    // Exact zero check for integer element types.
+    constexpr bool IsZero() const
+        requires std::is_integral_v<T>
+    {
+        for (int i = 0; i < N; ++i) {
+            if (m_data[i] != T())
+                return false;
+        }
+        return true;
+    }
+
+    // Epsilon zero check for floating-point element types.
+    constexpr bool IsZero(T epsilon = std::numeric_limits<T>::epsilon()) const
+        requires(std::is_floating_point_v<T>)
+    {
+        for (int i = 0; i < N; ++i) {
+            if (std::abs(m_data[i]) > epsilon)
+                return false;
+        }
+        return true;
+    }
 
     void Set(const T (&arr)[N]) { std::copy(arr, arr + N, m_data); }
 

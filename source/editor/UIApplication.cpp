@@ -6,6 +6,7 @@
 #include "QuickTreeModel.h"
 #include <QIcon>
 #include <QQuickStyle>
+#include <QTimer>
 
 namespace CS
 {
@@ -28,16 +29,18 @@ UIApplication::UIApplication(int argc, char* argv[]) : QGuiApplication(argc, arg
 
     qmlRegisterSingletonType(QStringLiteral("qrc:/CSQML/qml/CSThemePalette.qml"), "CSEditor.Theme", 1, 0, "CSTheme");
 
-    m_qmlEngine.load(QUrl("qrc:/CSQML/qml/CSAppWindow.qml"));
+    // Defer QML loading until the event loop is running. Loading inside this
+    // constructor triggers synchronous native-window creation while we are
+    // still unwinding from Engine::AddModule, which under QSG_RENDER_LOOP=basic
+    // causes Qt to re-enter QCoreApplication::notify() via
+    // flushWindowSystemEvents() recursively (observed stack overflow).
+    QTimer::singleShot(0, this, [this]() { m_qmlEngine.load(QUrl("qrc:/CSQML/qml/CSAppWindow.qml")); });
 }
 
 UIApplication::~UIApplication() {}
 
 bool UIApplication::notify(QObject* object, QEvent* event)
 {
-    if (event->type() == QEvent::Close) {
-        exit();
-    }
     return QGuiApplication::notify(object, event);
 }
 

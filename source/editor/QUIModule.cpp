@@ -16,6 +16,9 @@ struct QUIModuleImpl
 QUIModule::QUIModule(int argc, char* argv[])
 {
     qputenv("QSG_RHI_BACKEND", "opengl");
+    // Force Qt's scene graph render to run on the main thread so it cannot
+    // race with the engine's independent HGLRC via wglMakeCurrent.
+    qputenv("QSG_RENDER_LOOP", "basic");
     QSurfaceFormat format;
     format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setVersion(4, 5);
@@ -23,9 +26,6 @@ QUIModule::QUIModule(int argc, char* argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
     m_impl = std::make_unique<QUIModuleImpl>(argc, argv);
-
-    // HGLRC qtHGLRC = ...;                            // 从 Qt 上下文获取
-    // wglShareLists(qtHGLRC, wglGetCurrentContext()); // 关键：共享资源列表
 }
 
 void QUIModule::Initialize() {}

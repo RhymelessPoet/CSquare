@@ -46,3 +46,12 @@ MVVM
 · 配置文件唯一 ✓  (Logger::Initialize 单点调用)
 · 输出内容应包含（时间，分级，pid，tid，模块，函数，内容）✓
 · 识别现有代码中（如——// TODO: log error），添加log ✓  (全部 TODO: log 注释已替换)
+
+
+渲染上屏重构
+· 梳理现在渲染结果到CSEditor的上屏方式 —— QuickRenderView.h/.cpp, QuickRenderer.h/.cpp, CSAppWindow.qml
+· 修改现有的上屏方式，使渲染引擎通过windows平台原生窗口ID创建独立Opengl Context —— GLRendererBuilder.h/.cpp, GraphicsGLImpl.h/.cpp
+· 使渲染窗口依旧能嵌入qml主窗口 CSAppWindow.qml
+. 将RenderModule（RenderModule.h/.cpp）的Update 和 Render 简化至单一线程（主线程）
+· 在新的渲染窗口保留 QuickRenderView 中事件处理逻辑（鼠标，键盘，resize）
+· 保持现有CSEditor主窗口布局不变

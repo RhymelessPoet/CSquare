@@ -1,9 +1,11 @@
 #pragma once
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <tuple>
+#include <type_traits>
 
 namespace CS
 {
@@ -22,6 +24,20 @@ public:
 
     float AspectRatioWH() const;
     float AspectRatioHW() const;
+
+    // Exact zero check for integer element types.
+    constexpr bool IsZero() const
+        requires std::is_integral_v<DataType>
+    {
+        return data[0] == DataType(0) && data[1] == DataType(0);
+    }
+
+    // Epsilon zero check for floating-point element types.
+    constexpr bool IsZero(DataType epsilon = std::numeric_limits<DataType>::epsilon()) const
+        requires std::is_floating_point_v<DataType>
+    {
+        return std::abs(data[0]) <= epsilon && std::abs(data[1]) <= epsilon;
+    }
 
     union {
         struct
@@ -86,6 +102,20 @@ public:
     Size2<DataType> XY() const { return Size2<DataType>(x, y); }
     Size2<DataType> XZ() const { return Size2<DataType>(x, z); }
     Size2<DataType> YZ() const { return Size2<DataType>(y, z); }
+
+    // Exact zero check for integer element types.
+    constexpr bool IsZero() const
+        requires std::is_integral_v<DataType>
+    {
+        return data[0] == DataType(0) && data[1] == DataType(0) && data[2] == DataType(0);
+    }
+
+    // Epsilon zero check for floating-point element types.
+    constexpr bool IsZero(DataType epsilon = std::numeric_limits<DataType>::epsilon()) const
+        requires std::is_floating_point_v<DataType>
+    {
+        return std::abs(data[0]) <= epsilon && std::abs(data[1]) <= epsilon && std::abs(data[2]) <= epsilon;
+    }
 
     template <typename T>
         requires std::is_arithmetic_v<T>

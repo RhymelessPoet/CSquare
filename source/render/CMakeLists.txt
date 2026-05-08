@@ -21,6 +21,10 @@ target_link_libraries(${TARGET_NAME} PRIVATE assimp)
 target_link_libraries(${TARGET_NAME} PRIVATE CSEngine)
 target_link_libraries(${TARGET_NAME} PRIVATE Ubpa::UDRefl_core)
 
+if(WIN32)
+    target_link_libraries(${TARGET_NAME} PRIVATE opengl32 gdi32 user32)
+endif()
+
 # ---- Meta code generation ----
 set(META_GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
 file(MAKE_DIRECTORY ${META_GENERATED_DIR})
@@ -41,18 +45,19 @@ file(GLOB_RECURSE META_HEADER_FILES CONFIGURE_DEPENDS
 message(STATUS "Running UDRefl meta parser (configure-time)...")
 execute_process(
     COMMAND ${Python3_EXECUTABLE} ${META_PARSER}
-            ${META_SCENE_DIR}
-            ${META_CONFIG}
-            --output-dir ${META_GENERATED_DIR}
+    ${META_SCENE_DIR}
+    ${META_CONFIG}
+    --output-dir ${META_GENERATED_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     RESULT_VARIABLE META_GEN_RESULT
     OUTPUT_VARIABLE META_GEN_STDOUT
-    ERROR_VARIABLE  META_GEN_STDERR
+    ERROR_VARIABLE META_GEN_STDERR
 )
+
 if(NOT META_GEN_RESULT EQUAL 0)
     message(WARNING "Meta parser (configure-time) failed (code=${META_GEN_RESULT}):\n"
-                    "stdout: ${META_GEN_STDOUT}\n"
-                    "stderr: ${META_GEN_STDERR}")
+        "stdout: ${META_GEN_STDOUT}\n"
+        "stderr: ${META_GEN_STDERR}")
 else()
     message(STATUS "Meta parser finished successfully.")
 endif()

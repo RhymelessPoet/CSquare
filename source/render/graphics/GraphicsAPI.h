@@ -27,6 +27,12 @@ public:
 
     void Initialize();
 
+    // Context lifecycle: wrap any GL work on the current thread between
+    // MakeContextCurrent()/DoneContextCurrent() when coexisting with another
+    // GL context (e.g. Qt RHI).
+    bool MakeContextCurrent();
+    void DoneContextCurrent();
+
     VertexBuffer CreateVertexBuffer(size_t size);
     IndexBuffer CreateIndexBuffer(size_t size);
     UniformBuffer CreateUniformBuffer(size_t size);

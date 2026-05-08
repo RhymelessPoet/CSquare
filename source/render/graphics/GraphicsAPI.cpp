@@ -29,6 +29,16 @@ void GraphicsAPI::Initialize()
     }
 }
 
+bool GraphicsAPI::MakeContextCurrent()
+{
+    return m_impl->MakeContextCurrent();
+}
+
+void GraphicsAPI::DoneContextCurrent()
+{
+    m_impl->DoneContextCurrent();
+}
+
 VertexBuffer GraphicsAPI::CreateVertexBuffer(size_t size)
 {
     auto resourceCache = m_impl->GetResourceCache();

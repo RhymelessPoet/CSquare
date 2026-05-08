@@ -10,12 +10,15 @@ namespace CS
 class OrientedBoundingBox final
 {
 public:
+    static OrientedBoundingBox Invalid();
     OrientedBoundingBox(/* args */);
     OrientedBoundingBox(const Vector3d& center,
                         const Vector3d& axisX,
                         const Vector3d& axisY,
                         const Vector3d& axisZ,
                         const Size3d& size);
+
+    bool IsValid() const;
 
     void SetCenter(const Vector3d& center) { m_center = center; }
     void SetAxes(const Vector3d& axisX, const Vector3d& axisY, const Vector3d& axisZ);
