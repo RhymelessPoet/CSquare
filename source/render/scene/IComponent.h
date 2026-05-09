@@ -15,7 +15,7 @@ struct ComponentState
     static constexpr size_t MaxCount = 32u;
 };
 
-const inline FlagEnumClass<ComponentState, "New", "Active", "Destroyed"> BaseComponentStates;
+const inline FlagEnumClass<ComponentState, "New", "Active", "Destroyed", "Dirty"> BaseComponentStates;
 
 using EComponentState = FlagEnum<ComponentState>;
 using EComponentStateFlags = EnumFlags<ComponentState>;
@@ -34,6 +34,8 @@ public:
 
     std::shared_ptr<SceneObject> GetSO() const { return owner(); }
 
+    bool IsOn(EComponentState state) const;
+
 protected:
     std::shared_ptr<SceneObject> owner() const { return m_owner.lock(); }
     std::shared_ptr<SceneObject> owner() { return m_owner.lock(); }
@@ -41,7 +43,6 @@ protected:
     ISystem* system() const { return m_system; }
 
     void setState(EComponentState state, bool value);
-    bool isOn(EComponentState state) const;
 
 private:
     EComponentStateFlags m_stateFlags;

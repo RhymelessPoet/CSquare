@@ -70,12 +70,32 @@ public:
     Matrix<T, N> operator*(const Matrix<T, N>& rhs) const
     {
         Matrix<T, N> result;
-        for (int i = 0; i < N; ++i)
-            for (int j = 0; j < N; ++j) {
-                result.m_data[i * N + j] = T(0);
-                for (int k = 0; k < N; ++k)
-                    result.m_data[i * N + j] += m_data[i * N + k] * rhs.m_data[k * N + j];
+        if constexpr (N == 4) {
+            // Unrolled 4x4 multiply. Row-major, cache-friendly: each output row
+            // is computed from a single row of *this and all rows of rhs.
+            const T* a = m_data.data();
+            const T* b = rhs.m_data.data();
+            T* r = result.m_data.data();
+            for (int i = 0; i < 4; ++i) {
+                const T a0 = a[i * 4 + 0];
+                const T a1 = a[i * 4 + 1];
+                const T a2 = a[i * 4 + 2];
+                const T a3 = a[i * 4 + 3];
+                r[i * 4 + 0] = a0 * b[0] + a1 * b[4] + a2 * b[8] + a3 * b[12];
+                r[i * 4 + 1] = a0 * b[1] + a1 * b[5] + a2 * b[9] + a3 * b[13];
+                r[i * 4 + 2] = a0 * b[2] + a1 * b[6] + a2 * b[10] + a3 * b[14];
+                r[i * 4 + 3] = a0 * b[3] + a1 * b[7] + a2 * b[11] + a3 * b[15];
             }
+        } else {
+            for (int i = 0; i < N; ++i) {
+                for (int j = 0; j < N; ++j) {
+                    T sum = T(0);
+                    for (int k = 0; k < N; ++k)
+                        sum += m_data[i * N + k] * rhs.m_data[k * N + j];
+                    result.m_data[i * N + j] = sum;
+                }
+            }
+        }
         return result;
     }
 
@@ -508,6 +528,53 @@ Matrix<T, N> Extract(const Matrix<T, U>& mat)
             result[i][j] = mat[i][j];
     return result;
 };
+
+// Closed-form TRS composition: out = Translation(t) * R_zyx(euler) * Scale(s).
+// Uses the same Euler convention as Math::RotationToMatrix4 (Rz * Ry * Rx).
+// Avoids building three intermediate matrices and running two 4x4 multiplies,
+// writing the result directly in ~20 multiplies.
+template <typename T>
+void ComposeTRS(Matrix4<T>& out, const Vector3<T>& translation, const Vector3<T>& eulerXYZ, const Vector3<T>& scale)
+{
+    const T cx = std::cos(eulerXYZ.X());
+    const T sx = std::sin(eulerXYZ.X());
+    const T cy = std::cos(eulerXYZ.Y());
+    const T sy = std::sin(eulerXYZ.Y());
+    const T cz = std::cos(eulerXYZ.Z());
+    const T sz = std::sin(eulerXYZ.Z());
+
+    // Pre-compute shared products.
+    const T sx_sy = sx * sy;
+    const T cx_sy = cx * sy;
+
+    const T sX = scale.X();
+    const T sY = scale.Y();
+    const T sZ = scale.Z();
+
+    // Row 0.
+    out[0][0] = (cz * cy) * sX;
+    out[0][1] = (cz * sx_sy - sz * cx) * sY;
+    out[0][2] = (cz * cx_sy + sz * sx) * sZ;
+    out[0][3] = translation.X();
+
+    // Row 1.
+    out[1][0] = (sz * cy) * sX;
+    out[1][1] = (sz * sx_sy + cz * cx) * sY;
+    out[1][2] = (sz * cx_sy - cz * sx) * sZ;
+    out[1][3] = translation.Y();
+
+    // Row 2.
+    out[2][0] = (-sy) * sX;
+    out[2][1] = (cy * sx) * sY;
+    out[2][2] = (cy * cx) * sZ;
+    out[2][3] = translation.Z();
+
+    // Row 3.
+    out[3][0] = T(0);
+    out[3][1] = T(0);
+    out[3][2] = T(0);
+    out[3][3] = T(1);
+}
 
 } // namespace Math
 

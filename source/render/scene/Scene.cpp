@@ -51,7 +51,7 @@ void Scene::OnRender(RenderContext& context)
     if (!m_lights.empty()) {
         auto light = Light(m_lights[0].lock());
         auto lightCamera = Camera(m_lights[0].lock());
-        if (context.GetTargetViewType() == EViewType::Make<"Shadow_Map">()) {
+        if (context.GetTargetViewType() == EViewType::Make<"Shadow_Map">() && light.IsDirty()) {
             updateShadowCamera(*camera, light);
         }
 

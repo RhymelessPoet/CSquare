@@ -10,6 +10,11 @@ namespace CS
 
 class TransformSystem;
 
+// Transform-specific state flags registered on top of BaseComponentStates.
+// "Fresh" marks that this transform's world matrix has been updated this frame
+// and child transforms should propagate the change.
+const inline FlagEnumClass<ComponentState, "Fresh"> TransformComponentStates;
+
 class [[Meta()]] Transform : public IComponent
 {
 public:
@@ -65,9 +70,8 @@ private:
     Vector3f m_rotation{0.0f, 0.0f, 0.0f};
     [[Property(Setter = SetScale, Getter = GetScale, UIName = Scale)]]
     Vector3f m_scale{1.0f, 1.0f, 1.0f};
+    Matrix4f m_localMatrix;
     Matrix4f m_worldMatrix;
-    bool m_dirty : 1;
-    bool m_fresh : 1;
 };
 
 } // namespace CS

@@ -36,6 +36,8 @@ public:
     void SetShadowNormalBias(const Vector2f& bias);
     const Vector2f& GetShadowNormalBias() const;
 
+    bool IsDirty() const;
+
 private:
     inline LightComponent& lightComponent(this Light& self);
     inline const LightComponent& lightComponent(this const Light& self);

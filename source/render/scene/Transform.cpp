@@ -4,9 +4,25 @@
 
 namespace CS
 {
+namespace
+{
+// Cached state flag handles to avoid repeated name-lookups in the hot path.
+inline EComponentState DirtyState()
+{
+    static const auto s = EComponentState::Make<"Dirty">();
+    return s;
+}
+inline EComponentState FreshState()
+{
+    static const auto s = EComponentState::Make<"Fresh">();
+    return s;
+}
+} // namespace
+
 Transform::Transform(std::shared_ptr<SceneObject> owner) : IComponent(std::move(owner))
 {
-    m_dirty = false;
+    setState(DirtyState(), true);
+    setState(FreshState(), false);
 }
 
 Transform::Transform(std::shared_ptr<SceneObject> owner, const Vector3f& position) : Transform(std::move(owner))
@@ -16,18 +32,20 @@ Transform::Transform(std::shared_ptr<SceneObject> owner, const Vector3f& positio
 
 void Transform::OnUpdate(SystemContext& context)
 {
+    setState(FreshState(), false);
+
     update();
 }
 
 bool Transform::IsFresh() const
 {
-    return m_fresh;
+    return IsOn(FreshState());
 }
 
 void Transform::SetPosition(const Vector3f& position)
 {
     m_position = position;
-    m_dirty = true;
+    setState(DirtyState(), true);
 }
 
 const Vector3f& Transform::GetPosition() const
@@ -38,7 +56,7 @@ const Vector3f& Transform::GetPosition() const
 void Transform::SetRotation(const Vector3f& rotation)
 {
     m_rotation = rotation;
-    m_dirty = true;
+    setState(DirtyState(), true);
 }
 
 const Vector3f& Transform::GetRotation() const
@@ -54,7 +72,7 @@ Matrix4f Transform::GetRotationMatrix() const
 void Transform::SetScale(const Vector3f& scale)
 {
     m_scale = scale;
-    m_dirty = true;
+    setState(DirtyState(), true);
 }
 
 const Vector3f& Transform::GetScale() const
@@ -64,7 +82,14 @@ const Vector3f& Transform::GetScale() const
 
 Matrix4f CS::Transform::GetLocalModelMatrix() const
 {
-    return Math::Translation(m_position) * Math::RotationToMatrix4(m_rotation) * Math::Scaling(m_scale);
+    // If the cache is clean, return it; otherwise compose on the fly without
+    // mutating the cache (that is update()'s job).
+    if (!IsOn(DirtyState())) {
+        return m_localMatrix;
+    }
+    Matrix4f out;
+    Math::ComposeTRS(out, m_position, m_rotation, m_scale);
+    return out;
 }
 
 const Matrix4f& Transform::GetWorldMatrix() const
@@ -74,7 +99,7 @@ const Matrix4f& Transform::GetWorldMatrix() const
 
 const Matrix4f& Transform::GetWorldMatrix()
 {
-    if (m_dirty) {
+    if (IsOn(DirtyState())) {
         update();
     }
     return m_worldMatrix;
@@ -111,14 +136,22 @@ void Transform::update()
         parentTransformIsFresh = parentTransform != nullptr && parentTransform->IsFresh();
     }
 
-    if (m_dirty || parentTransformIsFresh) {
-        m_worldMatrix = GetLocalModelMatrix();
+    const bool dirty = IsOn(DirtyState());
+    if (dirty || parentTransformIsFresh) {
+        // Only rebuild the local matrix when our own TRS changed. If only the
+        // parent moved, the cached local matrix is still valid.
+        if (dirty) {
+            Math::ComposeTRS(m_localMatrix, m_position, m_rotation, m_scale);
+        }
 
         if (parentTransform != nullptr) {
-            m_worldMatrix = parentTransform->GetWorldMatrix() * m_worldMatrix;
+            m_worldMatrix = parentTransform->GetWorldMatrix();
+            //       *m_localMatrix;
+        } else {
+            m_worldMatrix = m_localMatrix;
         }
-        m_dirty = false;
-        m_fresh = true;
+        setState(DirtyState(), false);
+        setState(FreshState(), true);
     }
 }
 
@@ -126,7 +159,7 @@ void Transform::notifyChildrenDirty()
 {
     for (const auto& child : owner()->GetChildren()) {
         if (auto childTransform = child->GetComponent<Transform>()) {
-            childTransform->m_dirty = true;
+            childTransform->setState(DirtyState(), true);
             childTransform->notifyChildrenDirty();
         }
     }

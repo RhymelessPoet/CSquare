@@ -25,7 +25,7 @@ void IComponent::setState(EComponentState state, bool value)
     }
 }
 
-bool IComponent::isOn(EComponentState state) const
+bool IComponent::IsOn(EComponentState state) const
 {
     return m_stateFlags.Test(state);
 }

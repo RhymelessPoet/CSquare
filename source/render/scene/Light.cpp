@@ -124,6 +124,11 @@ const Vector2f& Light::GetShadowNormalBias() const
     return lightComponent().GetShadowNormalBias();
 }
 
+bool Light::IsDirty() const
+{
+    return lightComponent().IsOn(EComponentState::Make<"Dirty">());
+}
+
 LightComponent& Light::lightComponent(this Light& self)
 {
     return GetComponent<LightComponent>(self.m_sceneObject);

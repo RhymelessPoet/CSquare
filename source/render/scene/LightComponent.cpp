@@ -39,7 +39,7 @@ void LightComponent::OnUpdate(SystemContext& context)
 {
     auto eventDispatcher = context.GetEventDispatcher();
     auto stateNew = EComponentState::Make<"New">();
-    if (isOn(stateNew)) {
+    if (IsOn(stateNew)) {
         eventDispatcher->PushEvent<NewLight>(this);
         setState(stateNew, false);
     }
