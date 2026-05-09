@@ -73,7 +73,12 @@ public:
     void Apply(const IMaterialConfiguration& configuration,
                uint16_t materialID,
                uint32_t instanceID,
-               const MaterialInstance::Textures& textures);
+               MaterialInstance::Textures& textures);
+
+    // Fast-path helpers used by MaterialInstance::Apply to bypass the per-uniform
+    // map copy and std::format string construction in the default-instance path.
+    std::string MakeUniformIdentifier(uint16_t materialID, uint32_t instanceID, std::string_view name);
+    void UpdateUniformMemory(std::string_view identifier, const MaterialInstance::UniformValue& value);
 
 private:
     void collectShaderbinding(std::map<uint32_t, ShaderBinding>& bindings, ShaderBinding binding);

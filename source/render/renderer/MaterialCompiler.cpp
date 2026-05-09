@@ -142,7 +142,8 @@ MaterialCompiler& MaterialCompiler::SetTexture(const IMaterialConfiguration& con
 {
     assert(m_materialInstanceStates.has_value());
 
-    auto& [materialTexture, binding, _] = uniform.second;
+    const auto& materialTexture = uniform.second.texture;
+    auto binding = uniform.second.binding;
 
     if (auto imageTexture = dynamic_cast<const ImageTexture*>(materialTexture.get()); imageTexture != nullptr) {
         bindTexture(binding, uniform.first, imageTexture);
@@ -189,25 +190,52 @@ void MaterialCompiler::Apply(uint16_t materialID, uint32_t instanceID, const Mat
         if (!uniform.dirty) {
             continue;
         }
-        auto uniformSize = ByteSizeOf(uniform.value);
-        auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
+        auto uniformID = !uniform.identifier.empty()
+                             ? uniform.identifier
+                             : m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
         generalUniformMemory.SetUniformMemory(uniformID, ToBytes(uniform.value));
     }
+}
+
+std::string MaterialCompiler::MakeUniformIdentifier(uint16_t materialID, uint32_t instanceID, std::string_view name)
+{
+    return m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
+}
+
+void MaterialCompiler::UpdateUniformMemory(std::string_view identifier, const MaterialInstance::UniformValue& value)
+{
+    auto& generalUniformMemory = m_resourceManager->GetMaterialGeneralUniforms();
+    generalUniformMemory.SetUniformMemory(identifier, ToBytes(value));
 }
 
 void MaterialCompiler::Apply(const IMaterialConfiguration& configuration,
                              uint16_t materialID,
                              uint32_t instanceID,
-                             const MaterialInstance::Textures& textures)
+                             MaterialInstance::Textures& textures)
 {
     auto bindingSet = m_resourceManager->GetShaderBindingSet(materialID, instanceID);
     auto& texturesMap = m_resourceManager->GetMaterialTextures();
 
     for (auto& [name, texture] : textures) {
-        auto& [materialTexture, binding, dirty] = texture;
-        auto uniformID = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
+        auto& materialTexture = texture.texture;
+        auto binding = texture.binding;
+        auto dirty = texture.dirty;
 
-        if (auto imageTexture = dynamic_cast<ImageTexture*>(materialTexture.get()); imageTexture != nullptr && dirty) {
+        // Cache the identifier + kind once so subsequent frames skip std::format and dynamic_cast.
+        if (texture.identifier.empty()) {
+            texture.identifier = m_uniformIDCreator->GetUniformIdentifier(materialID, instanceID, name);
+        }
+        if (texture.kind == MaterialInstance::ETextureKind::Unknown) {
+            if (dynamic_cast<const ImageTexture*>(materialTexture.get()) != nullptr) {
+                texture.kind = MaterialInstance::ETextureKind::Image;
+            } else if (dynamic_cast<const RenderTexture*>(materialTexture.get()) != nullptr) {
+                texture.kind = MaterialInstance::ETextureKind::Render;
+            }
+        }
+        const auto& uniformID = texture.identifier;
+
+        if (texture.kind == MaterialInstance::ETextureKind::Image && dirty) {
+            auto imageTexture = static_cast<ImageTexture*>(materialTexture.get());
             if (texturesMap.GetTexture(uniformID) == nullptr) {
                 auto sampledTexture = texturesMap.AllocateTexture(uniformID, *imageTexture);
                 bindingSet.BindSampledTexture(binding, sampledTexture->texture, sampledTexture->sampler);
@@ -216,7 +244,8 @@ void MaterialCompiler::Apply(const IMaterialConfiguration& configuration,
             continue;
         }
 
-        if (auto renderTexture = dynamic_cast<RenderTexture*>(materialTexture.get()); renderTexture != nullptr) {
+        if (texture.kind == MaterialInstance::ETextureKind::Render) {
+            auto renderTexture = static_cast<RenderTexture*>(materialTexture.get());
             auto bindingTexture = texturesMap.GetTexture(uniformID);
             if (bindingTexture == nullptr) {
                 continue;

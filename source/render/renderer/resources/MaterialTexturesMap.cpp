@@ -107,14 +107,18 @@ void MaterialTexturesMap::SetTextureData(std::string_view name, std::shared_ptr<
     if (it != m_textures.end()) {
         m_toUpdateImages[std::string(name)] = image;
     } else {
-        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("SetTextureData: texture '{}' not found", std::string(name)));
+        CS::LogError(::CS::BuiltInChannels::Render(),
+                     CS::Fmt("SetTextureData: texture '{}' not found", std::string(name)));
     }
 }
 
 void MaterialTexturesMap::UpdateTextures()
 {
     for (auto& [name, sampledTexture] : m_textures) {
-        sampledTexture.sampler.Build();
+        // Sampler state is immutable after creation; only build once.
+        if (!sampledTexture.sampler.IsBuild()) {
+            sampledTexture.sampler.Build();
+        }
 
         auto itr = m_toUpdateImages.find(name);
         if (itr == m_toUpdateImages.end() || itr->second == nullptr) {
@@ -122,7 +126,9 @@ void MaterialTexturesMap::UpdateTextures()
         }
         auto& image = itr->second;
 
-        sampledTexture.texture.Build();
+        if (!sampledTexture.texture.IsBuild()) {
+            sampledTexture.texture.Build();
+        }
         sampledTexture.texture.UpdateData(reinterpret_cast<const void*>(image->GetData()), image->GetSize().XY());
     }
     m_toUpdateImages.clear();

@@ -33,6 +33,8 @@ std::span<std::byte> MaterialGeneralUniformMemory::AllocateUniform(std::string_v
 {
     m_uniforms.emplace(name, MemoryView{offset, size});
     m_dirty = true;
+    m_dirtyBegin = std::min(m_dirtyBegin, offset);
+    m_dirtyEnd = std::max(m_dirtyEnd, offset + size);
     return std::span<std::byte>(m_memory.data() + offset, size);
 }
 
@@ -55,6 +57,8 @@ bool MaterialGeneralUniformMemory::SetUniformMemory(std::string_view name, std::
             auto data = std::span<std::byte>(m_memory.data() + offset, size);
             std::copy(memory.begin(), memory.end(), data.begin());
             m_dirty = true;
+            m_dirtyBegin = std::min(m_dirtyBegin, offset);
+            m_dirtyEnd = std::max(m_dirtyEnd, offset + memory.size());
             return true;
         }
     }
@@ -68,8 +72,17 @@ void MaterialGeneralUniformMemory::UpdateUniformBuffer()
     }
 
     if (m_dirty) {
-        m_uniformBuffer.UpdateData(m_memory.data(), m_offset);
+        // Upload only the dirty byte range instead of the entire used pool.
+        // Falls back to a full upload if the tracked range is somehow invalid.
+        if (m_dirtyBegin < m_dirtyEnd && m_dirtyEnd <= m_memory.size()) {
+            auto size = m_dirtyEnd - m_dirtyBegin;
+            m_uniformBuffer.UpdateData(std::span<const std::byte>(m_memory.data() + m_dirtyBegin, size), m_dirtyBegin);
+        } else {
+            m_uniformBuffer.UpdateData(m_memory.data(), m_offset);
+        }
         m_dirty = false;
+        m_dirtyBegin = std::numeric_limits<size_t>::max();
+        m_dirtyEnd = 0u;
     }
 }
 

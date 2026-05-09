@@ -1,6 +1,7 @@
 #pragma once
 #include "base/Macros.h"
 #include "graphics/UniformBuffer.h"
+#include <limits>
 #include <map>
 #include <span>
 #include <string>
@@ -33,6 +34,9 @@ public:
 private:
     size_t m_offset{0u};
     bool m_dirty{false};
+    // Dirty byte range [m_dirtyBegin, m_dirtyEnd) for partial glBufferSubData uploads.
+    size_t m_dirtyBegin{std::numeric_limits<size_t>::max()};
+    size_t m_dirtyEnd{0u};
     std::map<std::string, MemoryView> m_uniforms;
     std::vector<std::byte> m_memory;
     UniformBuffer m_uniformBuffer;

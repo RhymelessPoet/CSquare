@@ -108,7 +108,8 @@ std::shared_ptr<Material> Material::Builder::End()
 
     for (auto [slotIndex, binding] : m_bindings) {
         if (!configuration.Bind({ID, slotIndex}, binding)) {
-            CS::LogWarning(::CS::BuiltInChannels::Render(), CS::Fmt("Bind failed: slotIndex={} binding={}", slotIndex, binding));
+            CS::LogWarning(::CS::BuiltInChannels::Render(),
+                           CS::Fmt("Bind failed: slotIndex={} binding={}", slotIndex, binding));
         }
     }
 
@@ -118,9 +119,10 @@ std::shared_ptr<Material> Material::Builder::End()
 void Material::Builder::insertUniform(uint32_t binding, const ShaderBindingProperty& property)
 {
     if (auto itr = m_uniforms.find(property.name); itr != m_uniforms.end()) {
-        auto& [value, _binding, _offset, _] = itr->second;
-        if (_binding != binding || _offset != property.offset) {
-            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Uniform '{}' binding/offset conflict", property.name));
+        const auto& existing = itr->second;
+        if (existing.binding != binding || existing.offset != property.offset) {
+            CS::LogError(::CS::BuiltInChannels::Render(),
+                         CS::Fmt("Uniform '{}' binding/offset conflict", property.name));
         }
     } else {
         m_uniforms.emplace(property.name, MaterialInstance::Uniform{.binding = binding, .offset = property.offset});
@@ -135,7 +137,8 @@ void Material::Builder::insertUniformTexture(uint32_t binding, const ShaderBindi
                                              .texture = texture.texture->Clone(), .binding = binding, .dirty = true});
     } else {
         if (itr->second.binding != binding || itr->second.texture != texture.texture) {
-            CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("Texture uniform '{}' binding conflict", texture.name));
+            CS::LogError(::CS::BuiltInChannels::Render(),
+                         CS::Fmt("Texture uniform '{}' binding conflict", texture.name));
         }
     }
 }

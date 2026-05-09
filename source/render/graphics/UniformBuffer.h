@@ -1,5 +1,6 @@
 #pragma once
 #include "IGraphicsResource.h"
+#include <span>
 
 namespace CS
 {
@@ -13,6 +14,8 @@ public:
     ~UniformBuffer() = default;
 
     void UpdateData(const void* data, size_t size);
+    // Partial upload: uploads `data` starting at byte `offset` in the GPU buffer (glBufferSubData).
+    void UpdateData(std::span<const std::byte> data, size_t offset);
 
 private:
     UniformBuffer(GraphicsBufferDescriptor* descriptor);

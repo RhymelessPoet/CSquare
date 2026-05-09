@@ -40,6 +40,7 @@ std::shared_ptr<MaterialInstance> MaterialInstance::Clone() const
         clonedInstance->m_requisiteMaterials.push_back(requisiteInstance->Clone());
     }
     clonedInstance->m_name = m_name;
+    clonedInstance->m_dirty = true;
     return clonedInstance;
 }
 
@@ -59,6 +60,7 @@ bool MaterialInstance::SetTexture(std::string_view name, std::unique_ptr<Materia
         if (itr->second.texture != texture) {
             itr->second.texture = std::move(texture);
             itr->second.dirty = true;
+            m_dirty = true;
         }
         return true;
     } else if (m_id == 0u) {
@@ -67,6 +69,7 @@ bool MaterialInstance::SetTexture(std::string_view name, std::unique_ptr<Materia
         auto defaultTexture = GetDefaultInstance().getTextureUniform(name);
         if (defaultTexture != nullptr) {
             m_textures.emplace(name, TextureUniform{std::move(texture), defaultTexture->binding, true});
+            m_dirty = true;
             return true;
         } else {
             return false;
@@ -94,6 +97,7 @@ MaterialTexture* MaterialInstance::GetInstanceTexture(std::string_view name)
 
     if (itr != m_textures.end()) {
         itr->second.dirty = true;
+        m_dirty = true;
         return itr->second.texture.get();
     }
     if (m_id != 0u) {
@@ -120,17 +124,40 @@ void MaterialInstance::Compile(MaterialCompiler& compiler) const
 
 void MaterialInstance::Apply(MaterialCompiler& compiler)
 {
-    auto materialID = GetMaterialID();
-    for (const auto& binding : instancedUniformBindings()) {
-        auto uniforms = getUniforms(binding);
-        compiler.Apply(materialID, m_id, uniforms);
+    if (!m_dirty) {
+        return;
+    }
 
-        for (const auto& [name, _] : uniforms) {
-            auto uniform = getUniform(name);
-            if (uniform == nullptr) {
+    auto materialID = GetMaterialID();
+
+    if (m_id == 0u) {
+        // Fast path for the default instance: iterate m_uniforms directly and
+        // cache the identifier string to avoid a per-frame std::format allocation
+        // and the per-binding map copy from getUniforms().
+        for (auto& [name, uniform] : m_uniforms) {
+            if (!uniform.dirty) {
                 continue;
             }
-            uniform->dirty = false;
+            if (uniform.identifier.empty()) {
+                uniform.identifier = compiler.MakeUniformIdentifier(materialID, m_id, name);
+            }
+            compiler.UpdateUniformMemory(uniform.identifier, uniform.value);
+            uniform.dirty = false;
+        }
+    } else {
+        // Non-default instance: preserve the merge-with-default semantics. Use the
+        // legacy path where MaterialCompiler computes identifiers for the merged view.
+        for (const auto& binding : instancedUniformBindings()) {
+            auto uniforms = getUniforms(binding);
+            compiler.Apply(materialID, m_id, uniforms);
+
+            for (const auto& [name, _] : uniforms) {
+                auto uniform = getUniform(name);
+                if (uniform == nullptr) {
+                    continue;
+                }
+                uniform->dirty = false;
+            }
         }
     }
 
@@ -138,6 +165,8 @@ void MaterialInstance::Apply(MaterialCompiler& compiler)
     for (auto& [_, texture] : m_textures) {
         texture.dirty = false;
     }
+
+    m_dirty = false;
 }
 
 uint16_t MaterialInstance::GetMaterialID() const

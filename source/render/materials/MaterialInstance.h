@@ -29,6 +29,15 @@ public:
         uint32_t binding{0};
         uint32_t offset{0};
         bool dirty{true};
+        // Cached identifier "M{mat:x}I{inst:x}{name}" to avoid std::format per frame.
+        std::string identifier;
+    };
+
+    enum class ETextureKind : uint8_t
+    {
+        Unknown = 0,
+        Image,
+        Render
     };
 
     struct TextureUniform
@@ -36,6 +45,9 @@ public:
         std::unique_ptr<MaterialTexture> texture;
         uint32_t binding;
         bool dirty{true};
+        // Cached identifier + kind to avoid std::format + dynamic_cast per frame.
+        ETextureKind kind{ETextureKind::Unknown};
+        std::string identifier;
     };
 
     using Uniforms = std::map<std::string, Uniform>;
@@ -45,10 +57,16 @@ public:
         requires type_traits::is_in_variant_v<std::remove_cvref_t<T>, UniformValue>
     [[nodiscard]] bool SetUniformValue(std::string_view name, T&& value)
     {
+        using DT = std::remove_cvref_t<T>;
         auto itr = m_uniforms.find(std::string(name));
         if (itr != m_uniforms.end()) {
+            // Skip value-equal writes so static frame uniforms don't dirty the apply path.
+            if (auto* cur = std::get_if<DT>(&itr->second.value); cur != nullptr && *cur == value) {
+                return true;
+            }
             itr->second.value = std::forward<T>(value);
             itr->second.dirty = true;
+            m_dirty = true;
             return true;
         } else if (m_id == 0u) {
             return false;
@@ -56,6 +74,7 @@ public:
             auto uniform = GetDefaultInstance().getUniform(name);
             if (uniform != nullptr) {
                 m_uniforms.emplace(name, Uniform{std::forward<T>(value), uniform->binding, uniform->offset, true});
+                m_dirty = true;
                 return true;
             } else {
                 return false;
@@ -145,6 +164,11 @@ private:
     Textures m_textures;
 
     std::string m_name;
+
+    // Aggregate dirty flag: true when any uniform/texture changed since last Apply.
+    // Inherited uniform changes (on the default instance) are tracked separately via
+    // per-uniform dirty flags propagated through getUniforms().
+    bool m_dirty{true};
 
     std::vector<std::shared_ptr<MaterialInstance>> m_requisiteMaterials;
 };
