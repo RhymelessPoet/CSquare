@@ -9,6 +9,13 @@ file(GLOB_RECURSE HEADER_FILES LIST_DIRECTORIES false
     "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
 )
 
+# Exclude the standalone samples folder: its sources compile into each
+# per-sample executable (see samples/CMakeLists.txt), not into the CSRender
+# static library. Including them here would pull main() into the library
+# and duplicate SampleModule across link units.
+list(FILTER SRC_FILES EXCLUDE REGEX "/samples/")
+list(FILTER HEADER_FILES EXCLUDE REGEX "/samples/")
+
 add_library(${TARGET_NAME} STATIC ${SRC_FILES} ${HEADER_FILES})
 
 target_include_directories(${TARGET_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -93,3 +100,7 @@ if(META_GENERATED_SOURCES)
 else()
     message(STATUS "No meta-annotated classes produced generated sources.")
 endif()
+
+# Standalone sample executables (GLFW, no Qt). Defined after CSRender so
+# they can link against it.
+add_subdirectory(samples)

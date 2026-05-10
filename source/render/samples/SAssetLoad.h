@@ -7,6 +7,7 @@ namespace CS
 
 class Scene;
 class PanoramicSky;
+class Light;
 
 class SAssetLoad : public IRenderSample
 {
@@ -23,6 +24,7 @@ public:
 private:
     std::shared_ptr<Scene> m_scene;
     std::unique_ptr<PanoramicSky> m_sky;
+    std::unique_ptr<Light> m_directionalLight;
 };
 
 } // namespace CS

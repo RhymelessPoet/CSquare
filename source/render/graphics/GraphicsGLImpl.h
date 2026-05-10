@@ -45,6 +45,10 @@ public:
     void DoneContextCurrent();
     void SwapBuffers();
 
+    // Blit a color attachment from the given FBO to the default framebuffer
+    // (id 0), scaling source rect to the destination window size.
+    void BlitToScreen(uint32_t srcFBO, const Size2u& srcSize, const Size2u& dstSize);
+
     bool SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
     bool BuildGraphicsBuffer(GraphicsBufferDescriptor* descriptor);

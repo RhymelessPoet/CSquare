@@ -145,8 +145,7 @@ void Transform::update()
         }
 
         if (parentTransform != nullptr) {
-            m_worldMatrix = parentTransform->GetWorldMatrix();
-            //       *m_localMatrix;
+            m_worldMatrix = parentTransform->GetWorldMatrix() * m_localMatrix;
         } else {
             m_worldMatrix = m_localMatrix;
         }

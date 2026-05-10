@@ -39,6 +39,22 @@ void GraphicsAPI::DoneContextCurrent()
     m_impl->DoneContextCurrent();
 }
 
+void GraphicsAPI::Present(RenderTarget source, const Size2u& windowSize)
+{
+    auto& rtDescriptor = source.descriptor<RenderTargetDescriptor>();
+    auto nativeFBO = rtDescriptor.GetNativeFBO();
+    if (!nativeFBO.has_value()) {
+        return;
+    }
+    m_impl->BlitToScreen(nativeFBO.value(), rtDescriptor.GetSize(), windowSize);
+    m_impl->SwapBuffers();
+}
+
+void GraphicsAPI::SwapBuffers()
+{
+    m_impl->SwapBuffers();
+}
+
 VertexBuffer GraphicsAPI::CreateVertexBuffer(size_t size)
 {
     auto resourceCache = m_impl->GetResourceCache();

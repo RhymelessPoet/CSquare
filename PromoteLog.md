@@ -55,3 +55,10 @@ MVVM
 . 将RenderModule（RenderModule.h/.cpp）的Update 和 Render 简化至单一线程（主线程）
 · 在新的渲染窗口保留 QuickRenderView 中事件处理逻辑（鼠标，键盘，resize）
 · 保持现有CSEditor主窗口布局不变
+
+
+Render Samples
+· 为每个render sample创建可执行程序，samples（HelloTriangles, PanoramicHDRSky, AssetLoad）
+· 不依赖qt，使用glfw
+· 每个可执行程序里的窗口都支持鼠标事件，支持相机控制 CameraManipulator
+· 在samples文件夹下增加单独CMakeLists.txt

@@ -51,7 +51,7 @@ void Scene::OnRender(RenderContext& context)
     if (!m_lights.empty()) {
         auto light = Light(m_lights[0].lock());
         auto lightCamera = Camera(m_lights[0].lock());
-        if (context.GetTargetViewType() == EViewType::Make<"Shadow_Map">() && light.IsDirty()) {
+        if (context.GetTargetViewType() == EViewType::Make<"Shadow_Map">()) {
             updateShadowCamera(*camera, light);
         }
 
@@ -221,14 +221,14 @@ void Scene::updateShadowCamera(Camera& camera, const Light& light)
 
     auto viewMatrix = camera.GetViewMatrix();
     AABB viewBox;
-    for (auto point : GetAABB(true).GetCorners()) {
+    for (const auto& point : GetAABB(true).GetCorners()) {
         auto point3f = point.Cast<float>();
         auto pointInView = viewMatrix * Vector4f(point3f, 1.0f);
         viewBox.Include(pointInView.Slice<0, 3>().Cast<double>());
     }
 
-    auto [minX, minY, minZ] = viewBox.GetMin();
-    auto [maxX, maxY, maxZ] = viewBox.GetMax();
+    const auto& [minX, minY, minZ] = viewBox.GetMin();
+    const auto& [maxX, maxY, maxZ] = viewBox.GetMax();
 
     camera.Ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
 }

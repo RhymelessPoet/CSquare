@@ -33,6 +33,13 @@ public:
     bool MakeContextCurrent();
     void DoneContextCurrent();
 
+    // Present the given render target's color attachment to the default
+    // framebuffer of the currently bound GL context and swap buffers.
+    // Standalone samples (no Qt) call this once per frame; the editor path
+    // does not use Present because Qt consumes the texture directly.
+    void Present(RenderTarget source, const Size2u& windowSize);
+    void SwapBuffers();
+
     VertexBuffer CreateVertexBuffer(size_t size);
     IndexBuffer CreateIndexBuffer(size_t size);
     UniformBuffer CreateUniformBuffer(size_t size);

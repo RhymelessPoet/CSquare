@@ -183,6 +183,22 @@ void GraphicsGLImpl::SwapBuffers()
     }
 }
 
+void GraphicsGLImpl::BlitToScreen(uint32_t srcFBO, const Size2u& srcSize, const Size2u& dstSize)
+{
+    // Blit the source FBO's color attachment to the default framebuffer (id 0)
+    // scaling to the destination window size with a linear filter.
+    m_glContext->GLBindFramebuffer(GL_READ_FRAMEBUFFER, srcFBO);
+    m_glContext->GLBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+    const auto [srcW, srcH] = srcSize;
+    const auto [dstW, dstH] = dstSize;
+    glBlitFramebuffer(0, 0, static_cast<GLint>(srcW), static_cast<GLint>(srcH), 0, 0, static_cast<GLint>(dstW),
+                      static_cast<GLint>(dstH), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+    m_glContext->GLBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    m_glContext->GLBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
 bool GraphicsGLImpl::SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
     m_glContext->GLViewport(x, y, width, height);
