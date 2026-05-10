@@ -2,6 +2,7 @@
 #include "EngineController.h"
 #include "UIApplication.h"
 #include <QSurfaceFormat>
+#include <QWindow>
 
 namespace CS
 {
@@ -11,6 +12,7 @@ struct QUIModuleImpl
 
     std::shared_ptr<EngineController> engineController;
     UIApplication guiApp;
+    bool everHadVisibleWindow{false};
 };
 
 QUIModule::QUIModule(int argc, char* argv[])
@@ -33,12 +35,31 @@ void QUIModule::Initialize() {}
 void QUIModule::Update()
 {
     impl().guiApp.processEvents();
+
+    // QGuiApplication::lastWindowClosed / aboutToQuit are only emitted
+    // from within QGuiApplication::exec() (guarded by d->in_exec). Since
+    // the engine drives its own loop via processEvents(), signal-based
+    // hooks never fire — we must detect window closure by polling the
+    // top-level window list. The latch (everHadVisibleWindow) prevents
+    // exiting before the QML window first becomes visible (it is created
+    // asynchronously via QTimer::singleShot in UIApplication).
+    bool anyVisible = false;
+    for (QWindow* w : QGuiApplication::topLevelWindows()) {
+        if (w->isVisible()) {
+            anyVisible = true;
+            break;
+        }
+    }
+    if (anyVisible) {
+        impl().everHadVisibleWindow = true;
+    } else if (impl().everHadVisibleWindow && impl().engineController) {
+        impl().engineController->exit();
+    }
 }
 
 void QUIModule::SetEngineController(std::shared_ptr<EngineController> controller)
 {
     impl().engineController = std::move(controller);
-    QObject::connect(&impl().guiApp, &QGuiApplication::aboutToQuit, [=]() { impl().engineController->exit(); });
 }
 
 QUIModuleImpl& QUIModule::impl()

@@ -189,15 +189,24 @@ void Logger::Shutdown()
     if (inst.m_impl == nullptr)
         return;
 
-    std::lock_guard lock(inst.m_impl->mutex);
-    if (inst.m_impl->fileStream.is_open()) {
-        inst.m_impl->fileStream.flush();
-        inst.m_impl->fileStream.close();
+    // Transfer ownership and null out the instance pointer inside the
+    // critical section, then release the lock before deleting the Impl.
+    // The lock_guard must not outlive the mutex it guards — deleting
+    // inst.m_impl while the lock is still held would make ~lock_guard
+    // unlock a destroyed mutex (use-after-free).
+    Impl* victim = nullptr;
+    {
+        std::lock_guard lock(inst.m_impl->mutex);
+        if (inst.m_impl->fileStream.is_open()) {
+            inst.m_impl->fileStream.flush();
+            inst.m_impl->fileStream.close();
+        }
+        inst.m_impl->initialized = false;
+        s_initialized = false;
+        victim = inst.m_impl;
+        inst.m_impl = nullptr;
     }
-    inst.m_impl->initialized = false;
-    s_initialized = false;
-    delete inst.m_impl;
-    inst.m_impl = nullptr;
+    delete victim;
 }
 
 void Logger::SetEnabledLevels(LogLevelFlags levels)
