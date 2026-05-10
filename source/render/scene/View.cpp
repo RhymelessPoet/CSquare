@@ -22,6 +22,7 @@ struct ImplData<View>
     std::shared_ptr<Camera> camera;
     ViewID id;
     EViewType type;
+    Color clearColor{61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f};
 };
 
 View::View(ConstructorTag, ViewID id, EViewType type) : PImpl<View>(id, type) {}
@@ -68,9 +69,7 @@ void View::OnRender(RenderContext& context)
     context.GetMaterialCompiler().SetInputs(impl().inputs | std::views::all);
 
     auto cmdBuf = context.GetCommandBuffer();
-    cmdBuf.BeginPass(GetRenderTarget())
-        .Clear(Color(61.0f / 255.0f, 61.0f / 255.0f, 61.0f / 255.0f, 1.0f), 1.0f)
-        .SetViewport(0, 0, rtSize.width, rtSize.height);
+    cmdBuf.BeginPass(GetRenderTarget()).Clear(impl().clearColor, 1.0f).SetViewport(0, 0, rtSize.width, rtSize.height);
     impl().scene->OnRender(context);
     cmdBuf.EndPass();
 }
@@ -93,6 +92,16 @@ void View::SetCamera(std::shared_ptr<Camera> camera)
 void View::SetInput(uint32_t slotID, Texture texture)
 {
     impl().inputs.emplace(slotID, texture);
+}
+
+void View::SetClearColor(const Color& color)
+{
+    impl().clearColor = color;
+}
+
+Color View::GetClearColor() const
+{
+    return impl().clearColor;
 }
 
 } // namespace CS

@@ -80,6 +80,18 @@ OpenGLContext& OpenGLContext::GLDepthMask(GLboolean flag)
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+    glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha)
+{
+    glBlendEquationSeparate(modeRGB, modeAlpha);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLBindFramebuffer(GLenum target, GLuint framebuffer)
 {
     glBindFramebuffer(target, framebuffer);
@@ -102,6 +114,21 @@ OpenGLContext&
 OpenGLContext::GLFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
     glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBlitFramebuffer(GLint srcX0,
+                                                GLint srcY0,
+                                                GLint srcX1,
+                                                GLint srcY1,
+                                                GLint dstX0,
+                                                GLint dstY0,
+                                                GLint dstX1,
+                                                GLint dstY1,
+                                                GLbitfield mask,
+                                                GLenum filter)
+{
+    glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     return *this;
 }
 

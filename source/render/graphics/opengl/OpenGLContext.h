@@ -32,11 +32,24 @@ public:
     OpenGLContext& GLDepthFunc(GLenum func);
     OpenGLContext& GLDepthMask(GLboolean flag);
 
+    OpenGLContext& GLBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+    OpenGLContext& GLBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
+
     OpenGLContext& GLBindFramebuffer(GLenum target, GLuint framebuffer);
     OpenGLContext& GLGenFramebuffers(GLsizei n, GLuint* ids);
     OpenGLContext& GLDeleteFramebuffers(GLsizei n, const GLuint* framebuffers);
     OpenGLContext&
     GLFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+    OpenGLContext& GLBlitFramebuffer(GLint srcX0,
+                                     GLint srcY0,
+                                     GLint srcX1,
+                                     GLint srcY1,
+                                     GLint dstX0,
+                                     GLint dstY0,
+                                     GLint dstX1,
+                                     GLint dstY1,
+                                     GLbitfield mask,
+                                     GLenum filter);
     bool GLCheckFramebufferStatus(GLenum target);
 
     OpenGLContext& GLGenTextures(GLsizei n, GLuint* textures);

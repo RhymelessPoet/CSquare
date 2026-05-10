@@ -57,6 +57,36 @@ enum class DepthCompareOp : uint8_t
     Max
 };
 
+enum class BlendFactor : uint8_t
+{
+    Zero = 0u,
+    One,
+    SrcColor,
+    OneMinusSrcColor,
+    DstColor,
+    OneMinusDstColor,
+    SrcAlpha,
+    OneMinusSrcAlpha,
+    DstAlpha,
+    OneMinusDstAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SrcAlphaSaturate,
+    Max
+};
+
+enum class BlendOp : uint8_t
+{
+    Add = 0u,
+    Subtract,
+    ReverseSubtract,
+    Min,
+    Max_,
+    Max
+};
+
 static constexpr inline size_t GetTextureFormatSize(TextureFormat format)
 {
     switch (format) {

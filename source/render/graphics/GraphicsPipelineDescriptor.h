@@ -17,6 +17,23 @@ public:
     {
         DepthCompareOp depthCompareOp{DepthCompareOp::Less};
         bool depthTestEnable : 1 {true};
+        // When true, rasterizer clamps gl_Position.z into [near, far] instead
+        // of clipping primitives against the near/far planes. Equivalent to
+        // GL_DEPTH_CLAMP in OpenGL. Useful for "infinite" geometry (skyboxes,
+        // infinite grids) whose far horizon would otherwise be near-plane
+        // clipped at the frustum boundary.
+        bool depthClampEnable : 1 {false};
+    };
+
+    struct BlendState
+    {
+        BlendFactor srcColorFactor{BlendFactor::One};
+        BlendFactor dstColorFactor{BlendFactor::Zero};
+        BlendOp colorOp{BlendOp::Add};
+        BlendFactor srcAlphaFactor{BlendFactor::One};
+        BlendFactor dstAlphaFactor{BlendFactor::Zero};
+        BlendOp alphaOp{BlendOp::Add};
+        bool blendEnable : 1 {false};
     };
     GraphicsPipelineDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
     ~GraphicsPipelineDescriptor() = default;
@@ -36,7 +53,25 @@ public:
     void SetDepthCompareOp(DepthCompareOp op) { m_depthStencilState.depthCompareOp = op; }
     DepthCompareOp GetDepthCompareOp() const { return m_depthStencilState.depthCompareOp; }
 
+    void SetDepthClamp(bool enable) { m_depthStencilState.depthClampEnable = enable; }
+    bool IsDepthClampEnabled() const { return m_depthStencilState.depthClampEnable; }
+
     const DepthStencilState& GetDepthStencilState() const { return m_depthStencilState; }
+
+    void SetBlendEnable(bool enable) { m_blendState.blendEnable = enable; }
+    void SetBlendColorFactors(BlendFactor src, BlendFactor dst)
+    {
+        m_blendState.srcColorFactor = src;
+        m_blendState.dstColorFactor = dst;
+    }
+    void SetBlendAlphaFactors(BlendFactor src, BlendFactor dst)
+    {
+        m_blendState.srcAlphaFactor = src;
+        m_blendState.dstAlphaFactor = dst;
+    }
+    void SetBlendColorOp(BlendOp op) { m_blendState.colorOp = op; }
+    void SetBlendAlphaOp(BlendOp op) { m_blendState.alphaOp = op; }
+    const BlendState& GetBlendState() const { return m_blendState; }
 
     template <typename PipelineNativeDataType>
     PipelineNativeDataType GetNativePipelineData() const
@@ -57,6 +92,7 @@ private:
     std::shared_ptr<VertexInputLayout> m_vertexInputLayout;
     std::map<ShaderStage, std::unique_ptr<GraphicsShaderStage>> m_shaderStages;
     DepthStencilState m_depthStencilState;
+    BlendState m_blendState;
     std::any m_nativePipelineData;
 };
 

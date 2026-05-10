@@ -475,6 +475,214 @@ void main()
 
 )";
 
+static inline constexpr std::string_view Infinite_Grid_VS = R"(
+#version 450 core
+layout(location = 0) in vec2 position;
+layout(location = 0) out highp vec3 world_position;
+// |cos(angle(ray.direction, plane_normal))| evaluated from the un-projected
+// per-vertex ray BEFORE the world_position clamp. This is the physically
+// correct grazing cosine: it goes to 0 exactly where the ray is parallel
+// to the plane (the horizon), regardless of whether the intersection
+// parameter t blows up. Computing it per-pixel from world_position is
+// unsafe because adjacent vertices that straddle the horizon clamp to
+// +/-1e30 with opposite signs, so the linearly-interpolated world_position
+// near the horizon row collapses toward 0 and yields a bogus "looking
+// straight down" cosine, leaving a bright band of unfaded grid at the
+// horizon. Interpolating this pre-clamp cosine across the 8x8 quad keeps
+// the horizon band well-defined and linearly ramps through 0 there.
+layout(location = 1) out highp float ray_cos_normal;
+
+layout(std140, binding = 0) uniform VPMatrix
+{
+    mat4 view;
+    mat4 projection;
+};
+
+layout(std140, binding = 1) uniform GridParams
+{
+    vec3 camera_position;
+    vec3 plane_origin;
+    vec3 plane_normal;
+    vec3 major_grid_color;
+    vec3 sub_grid_color;
+    vec3 x_axis_color;
+    vec3 y_axis_color;
+    vec3 z_axis_color;
+    float grid_size;
+    float sub_grid_count;
+    float axis_width;
+};
+
+struct Ray
+{
+    vec3 origin;
+    vec3 direction;
+};
+
+Ray GetRay(mat4 viewMatrix, mat4 projMatrix, vec2 ndc)
+{
+    // Un-project the NDC corner at both the near (z=-1) and far (z=+1) planes
+    // back to world space. The perspective divide by w is MANDATORY here:
+    // under a perspective projection, inverse(proj)*(x,y,-1,1) and
+    // inverse(proj)*(x,y,+1,1) share identical xyz components and differ only
+    // in their homogeneous w (1/near vs 1/far). Skipping the divide collapses
+    // the direction to a constant (independent of screen x,y), which degenerates
+    // the ray-plane intersection and produces a missing/distorted grid.
+    vec4 clipNear = vec4(ndc, -1.0, 1.0);
+    vec4 clipFar  = vec4(ndc,  1.0, 1.0);
+
+    mat4 invViewProj = inverse(projMatrix * viewMatrix);
+    vec4 worldNearH = invViewProj * clipNear;
+    vec4 worldFarH  = invViewProj * clipFar;
+
+    vec3 worldNear = worldNearH.xyz / worldNearH.w;
+    vec3 worldFar  = worldFarH.xyz  / worldFarH.w;
+
+    Ray ray;
+    ray.origin    = worldNear;
+    ray.direction = normalize(worldFar - worldNear);
+    return ray;
+}
+
+vec3 GetIntersectionPoint(mat4 viewMatrix, mat4 projMatrix, vec2 ndc, out float rayCosNormal)
+{
+    Ray ray = GetRay(viewMatrix, projMatrix, ndc);
+    // Record the grazing cosine BEFORE any ray-plane intersection or clamp.
+    rayCosNormal = abs(dot(ray.direction, plane_normal));
+    ray.origin -= plane_origin;
+    float t = dot(-ray.origin, plane_normal) / dot(ray.direction, plane_normal);
+    return ray.origin + t * ray.direction;
+}
+
+void main()
+{
+    world_position = GetIntersectionPoint(view, projection, position, ray_cos_normal);
+    world_position.x = clamp(world_position.x, -1e30, 1e30);
+    world_position.y = clamp(world_position.y, -1e30, 1e30);
+    world_position.z = clamp(world_position.z, -1e30, 1e30);
+
+    gl_Position = projection * view * vec4(world_position + plane_origin, 1.0);
+}
+
+)";
+
+static inline constexpr std::string_view Infinite_Grid_FS = R"(
+#version 450 core
+
+layout(location = 0) in highp vec3 world_position;
+// Per-pixel grazing cosine forwarded from the VS. See the VS declaration
+// for why this is computed from the pre-clamp ray direction instead of
+// being reconstructed here from (world_position - camera_position).
+layout(location = 1) in highp float ray_cos_normal;
+layout(location = 0) out vec4 FragColor;
+
+layout(std140, binding = 0) uniform VPMatrix
+{
+    mat4 view;
+    mat4 projection;
+};
+
+layout(std140, binding = 1) uniform GridParams
+{
+    vec3 camera_position;
+    vec3 plane_origin;
+    vec3 plane_normal;
+    vec3 major_grid_color;
+    vec3 sub_grid_color;
+    vec3 x_axis_color;
+    vec3 y_axis_color;
+    vec3 z_axis_color;
+    float grid_size;
+    float sub_grid_count;
+    float axis_width;
+};
+
+vec3 GetAlpha(highp vec3 position, vec3 delta, vec3 width)
+{
+    vec3 exDistance = 0.5 * (width - 1.0);
+    return 1.0 - clamp(position / delta - exDistance, vec3(0.0), vec3(1.0));
+}
+
+void main()
+{
+    float dxx = dFdx(world_position.x);
+    float dxy = dFdy(world_position.x);
+    float dx  = length(vec2(dxx, dxy));
+
+    float dyx = dFdx(world_position.y);
+    float dyy = dFdy(world_position.y);
+    float dy  = length(vec2(dyx, dyy));
+
+    float dzx = dFdx(world_position.z);
+    float dzy = dFdy(world_position.z);
+    float dz  = length(vec2(dzx, dzy));
+
+    vec3 delta = vec3(dx, dy, dz);
+    vec3 axes  = 1.0 - plane_normal;
+
+    vec3 disToPlane = step(abs(world_position), axis_width * delta);
+    disToPlane = disToPlane * axes;
+
+    vec3 axisColor = disToPlane.yzx + disToPlane.zxy;
+    vec3 width     = 1.0 + (axis_width - 1.0) * disToPlane;
+
+    vec3 quotient    = abs(world_position / grid_size);
+    vec3 integer     = trunc(quotient);
+    vec3 decimal     = quotient - integer;
+    vec3 greaterHalf = step(vec3(0.5), decimal);
+    vec3 gridNum     = integer + greaterHalf;
+    vec3 distance    = abs(greaterHalf - decimal) * grid_size;
+
+    vec3 alphas = GetAlpha(distance, delta, width);
+    alphas = alphas * axes;
+    vec3 mask = step(alphas.yzx, alphas) * step(alphas.zxy, alphas);
+    mask = (mask.yzx + mask.zxy) * axes;
+
+    vec3 isMajorGrids = step(mod(gridNum, vec3(sub_grid_count)), vec3(0.5))
+                      * step(vec3(4e-3), alphas);
+    float isMajorGrid = max(isMajorGrids.x, max(isMajorGrids.y, isMajorGrids.z));
+    vec3 gridColor    = mix(sub_grid_color, major_grid_color, isMajorGrid);
+
+    vec3 xColor = x_axis_color * axisColor.x + (1.0 - axisColor.x) * gridColor;
+    vec3 yColor = y_axis_color * axisColor.y + (1.0 - axisColor.y) * gridColor;
+    vec3 zColor = z_axis_color * axisColor.z + (1.0 - axisColor.z) * gridColor;
+
+    vec3  color = mask.x * xColor + mask.y * yColor + mask.z * zColor;
+    float alpha = max(max(alphas.x, alphas.y), alphas.z);
+
+    // Grazing-angle fade.
+    // Use the grazing cosine computed per-vertex from the real un-projected
+    // ray direction (see VS). Reconstructing it here from
+    // `normalize(world_position - camera_position)` leaves a visible bright
+    // band at the horizon because near-horizon pixels interpolate across a
+    // pair of vertices whose world_position was clamped to +/-1e30 with
+    // opposite signs, so the midpoint collapses to ~0 and fakes a "looking
+    // straight down" direction even though the fragment is visually at the
+    // horizon.
+    //
+    // smoothstep(kFadeEnd, kFadeStart, cosTheta) spreads the fade over an
+    // explicit ~20-degree window with a C^1-continuous hermite curve, so
+    // fragments closer to perpendicular than kFadeStart stay fully opaque,
+    // fragments closer to grazing than kFadeEnd are fully transparent, and
+    // the middle ramps smoothly (no visible rim at the horizon).
+    // Tuning knobs:
+    //   kFadeStart - increase to keep more of the grid opaque (smaller fade)
+    //   kFadeEnd   - decrease to push the fully-faded rim closer to horizon
+    float cosTheta = clamp(ray_cos_normal, 0.0, 1.0);
+    const float kFadeEnd   = 0.05;
+    const float kFadeStart = 0.35;
+    float cosFade  = smoothstep(kFadeEnd, kFadeStart, cosTheta);
+    alpha *= cosFade;
+
+    if (alpha > 4e-3) {
+        FragColor = vec4(color, alpha);
+    } else {
+        discard;
+    }
+}
+
+)";
+
 static inline constexpr std::string_view Depth_Map_VS = R"(
 #version 450 core
 layout(location = 0) in vec3 in_position;
@@ -512,6 +720,7 @@ BuiltInShaders::BuiltInShaders()
     createPanoramicSkyShader();
     createPBRShader();
     createShadowMapShader();
+    createInfiniteGrid3DShader();
 }
 
 std::shared_ptr<Shader> BuiltInShaders::GetVertexShader(std::string_view name)
@@ -643,6 +852,39 @@ void BuiltInShaders::createShadowMapShader()
 
     auto fragShader = std::make_shared<Shader>(std::string(Depth_Map_FS), ShaderStage::Fragment);
     m_fragmentShaders["Depth_Map_FS"] = fragShader;
+}
+
+void BuiltInShaders::createInfiniteGrid3DShader()
+{
+    // Layout of the GridParams uniform block (std140). Sizes are in bytes.
+    // vec3 entries carry size 12 so that ShaderBinding::SetLayout aligns them on
+    // 16-byte boundaries, which matches GLSL std140 padding for vec3 members.
+    const std::vector<ShaderBindingProperty> gridParamsLayout = {
+        {"camera_position", 3 * sizeof(float)}, {"plane_origin", 3 * sizeof(float)},
+        {"plane_normal", 3 * sizeof(float)},    {"major_grid_color", 3 * sizeof(float)},
+        {"sub_grid_color", 3 * sizeof(float)},  {"x_axis_color", 3 * sizeof(float)},
+        {"y_axis_color", 3 * sizeof(float)},    {"z_axis_color", 3 * sizeof(float)},
+        {"grid_size", sizeof(float)},           {"sub_grid_count", sizeof(float)},
+        {"axis_width", sizeof(float)},
+    };
+
+    auto vertShader = std::make_shared<Shader>(std::string(Infinite_Grid_VS), ShaderStage::Vertex);
+    auto vsBinding0 = ShaderBinding{0u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    vsBinding0.SetLayout({{"view", 16 * sizeof(float)}, {"projection", 16 * sizeof(float)}});
+    auto vsBinding1 = ShaderBinding{1u, ShaderStage::Vertex, ShaderBinding::Type::UniformBuffer};
+    vsBinding1.SetLayout(gridParamsLayout);
+    vertShader->AddBinding(vsBinding0);
+    vertShader->AddBinding(vsBinding1);
+    m_vertexShaders["InfiniteGrid3D_VS"] = vertShader;
+
+    auto fragShader = std::make_shared<Shader>(std::string(Infinite_Grid_FS), ShaderStage::Fragment);
+    auto fsBinding0 = ShaderBinding{0u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
+    fsBinding0.SetLayout({{"view", 16 * sizeof(float)}, {"projection", 16 * sizeof(float)}});
+    auto fsBinding1 = ShaderBinding{1u, ShaderStage::Fragment, ShaderBinding::Type::UniformBuffer};
+    fsBinding1.SetLayout(gridParamsLayout);
+    fragShader->AddBinding(fsBinding0);
+    fragShader->AddBinding(fsBinding1);
+    m_fragmentShaders["InfiniteGrid3D_FS"] = fragShader;
 }
 
 } // namespace CS

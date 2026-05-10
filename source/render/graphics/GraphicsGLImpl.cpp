@@ -148,6 +148,62 @@ static GLenum GetGLCompareOp(DepthCompareOp op)
     }
 }
 
+static GLenum GetGLBlendFactor(BlendFactor factor)
+{
+    switch (factor) {
+    case BlendFactor::Zero:
+        return GL_ZERO;
+    case BlendFactor::One:
+        return GL_ONE;
+    case BlendFactor::SrcColor:
+        return GL_SRC_COLOR;
+    case BlendFactor::OneMinusSrcColor:
+        return GL_ONE_MINUS_SRC_COLOR;
+    case BlendFactor::DstColor:
+        return GL_DST_COLOR;
+    case BlendFactor::OneMinusDstColor:
+        return GL_ONE_MINUS_DST_COLOR;
+    case BlendFactor::SrcAlpha:
+        return GL_SRC_ALPHA;
+    case BlendFactor::OneMinusSrcAlpha:
+        return GL_ONE_MINUS_SRC_ALPHA;
+    case BlendFactor::DstAlpha:
+        return GL_DST_ALPHA;
+    case BlendFactor::OneMinusDstAlpha:
+        return GL_ONE_MINUS_DST_ALPHA;
+    case BlendFactor::ConstantColor:
+        return GL_CONSTANT_COLOR;
+    case BlendFactor::OneMinusConstantColor:
+        return GL_ONE_MINUS_CONSTANT_COLOR;
+    case BlendFactor::ConstantAlpha:
+        return GL_CONSTANT_ALPHA;
+    case BlendFactor::OneMinusConstantAlpha:
+        return GL_ONE_MINUS_CONSTANT_ALPHA;
+    case BlendFactor::SrcAlphaSaturate:
+        return GL_SRC_ALPHA_SATURATE;
+    default:
+        return GL_ONE;
+    }
+}
+
+static GLenum GetGLBlendOp(BlendOp op)
+{
+    switch (op) {
+    case BlendOp::Add:
+        return GL_FUNC_ADD;
+    case BlendOp::Subtract:
+        return GL_FUNC_SUBTRACT;
+    case BlendOp::ReverseSubtract:
+        return GL_FUNC_REVERSE_SUBTRACT;
+    case BlendOp::Min:
+        return GL_MIN;
+    case BlendOp::Max_:
+        return GL_MAX;
+    default:
+        return GL_FUNC_ADD;
+    }
+}
+
 GraphicsGLImpl::GraphicsGLImpl(std::unique_ptr<OpenGLContext> context,
                                std::shared_ptr<GraphicsResourceCache> resourceCache)
     : m_glContext(std::move(context)), m_resouceCache(resourceCache)
@@ -192,8 +248,8 @@ void GraphicsGLImpl::BlitToScreen(uint32_t srcFBO, const Size2u& srcSize, const 
 
     const auto [srcW, srcH] = srcSize;
     const auto [dstW, dstH] = dstSize;
-    glBlitFramebuffer(0, 0, static_cast<GLint>(srcW), static_cast<GLint>(srcH), 0, 0, static_cast<GLint>(dstW),
-                      static_cast<GLint>(dstH), GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    m_glContext->GLBlitFramebuffer(0, 0, static_cast<GLint>(srcW), static_cast<GLint>(srcH), 0, 0,
+                                   static_cast<GLint>(dstW), static_cast<GLint>(dstH), GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
     m_glContext->GLBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
     m_glContext->GLBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -491,15 +547,32 @@ bool GraphicsGLImpl::BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor
 
     m_glContext->GLUseProgram(pipeline.programID);
 
-    const auto& [depthCompareOp, depthTest] = descriptor->GetDepthStencilState();
-    if (depthTest) {
+    const auto& depthStencil = descriptor->GetDepthStencilState();
+    if (depthStencil.depthTestEnable) {
         m_glContext->GLEnable(GL_DEPTH_TEST);
     } else {
         m_glContext->GLDisable(GL_DEPTH_TEST);
     }
     m_glContext->GLDisable(GL_STENCIL_TEST);
 
-    m_glContext->GLDepthFunc(GetGLCompareOp(depthCompareOp));
+    m_glContext->GLDepthFunc(GetGLCompareOp(depthStencil.depthCompareOp));
+
+    if (depthStencil.depthClampEnable) {
+        m_glContext->GLEnable(GL_DEPTH_CLAMP);
+    } else {
+        m_glContext->GLDisable(GL_DEPTH_CLAMP);
+    }
+
+    const auto& blend = descriptor->GetBlendState();
+    if (blend.blendEnable) {
+        m_glContext->GLEnable(GL_BLEND);
+        m_glContext
+            ->GLBlendFuncSeparate(GetGLBlendFactor(blend.srcColorFactor), GetGLBlendFactor(blend.dstColorFactor),
+                                  GetGLBlendFactor(blend.srcAlphaFactor), GetGLBlendFactor(blend.dstAlphaFactor))
+            .GLBlendEquationSeparate(GetGLBlendOp(blend.colorOp), GetGLBlendOp(blend.alphaOp));
+    } else {
+        m_glContext->GLDisable(GL_BLEND);
+    }
 
     m_curentStates.SetPipeline(descriptor);
     return true;

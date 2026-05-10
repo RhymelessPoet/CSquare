@@ -42,4 +42,58 @@ GraphicsPipeline& GraphicsPipeline::SetDepthCompareOP(DepthCompareOp op)
     return *this;
 }
 
+GraphicsPipeline& GraphicsPipeline::SetDepthClamp(bool enable)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetDepthClamp(enable);
+    return *this;
+}
+
+GraphicsPipeline& GraphicsPipeline::SetBlendEnable(bool enable)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetBlendEnable(enable);
+    return *this;
+}
+
+GraphicsPipeline& GraphicsPipeline::SetBlendColorFactors(BlendFactor src, BlendFactor dst)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetBlendColorFactors(src, dst);
+    return *this;
+}
+
+GraphicsPipeline& GraphicsPipeline::SetBlendAlphaFactors(BlendFactor src, BlendFactor dst)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetBlendAlphaFactors(src, dst);
+    return *this;
+}
+
+GraphicsPipeline& GraphicsPipeline::SetBlendColorOp(BlendOp op)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetBlendColorOp(op);
+    return *this;
+}
+
+GraphicsPipeline& GraphicsPipeline::SetBlendAlphaOp(BlendOp op)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetBlendAlphaOp(op);
+    return *this;
+}
+
 } // namespace CS

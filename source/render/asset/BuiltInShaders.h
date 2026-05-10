@@ -19,6 +19,7 @@ private:
     void createPanoramicSkyShader();
     void createPBRShader();
     void createShadowMapShader();
+    void createInfiniteGrid3DShader();
 
 private:
     std::map<std::string, std::shared_ptr<Shader>> m_vertexShaders;

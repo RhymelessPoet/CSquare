@@ -1,5 +1,6 @@
 #pragma once
 #include "ViewType.h"
+#include "base/Color.h"
 #include "base/PImpl.h"
 #include "graphics/RenderTarget.h"
 #include <memory>
@@ -43,6 +44,11 @@ public:
     void SetCamera(std::shared_ptr<Camera> camera);
 
     void SetInput(uint32_t slotID, Texture texture);
+
+    // Colour used to clear the colour attachment at the start of each frame.
+    // Defaults to the editor-style dark grey (61, 61, 61).
+    void SetClearColor(const Color& color);
+    Color GetClearColor() const;
 
 private:
     template <typename... Args>
