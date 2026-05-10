@@ -1,6 +1,7 @@
 #pragma once
 #include "model/TreeModel.h"
 #include "scene/CameraComponent.h"
+#include "scene/LightComponent.h"
 #include "scene/MeshRenderer.h"
 #include "scene/Scene.h"
 #include "scene/SceneObject.h"
@@ -54,7 +55,9 @@ struct TreeExtendStrategy<std::shared_ptr<CS::SceneObject>, bool, std::string>
     void Initialize(const std::shared_ptr<CS::SceneObject>& node, ExtendedPropertiesTuple& props)
     {
         std::get<0>(props) = false;
-        if (node->GetComponent<CS::CameraComponent>() != nullptr) {
+        if (node->GetComponent<CS::LightComponent>() != nullptr) {
+            std::get<1>(props) = "light";
+        } else if (node->GetComponent<CS::CameraComponent>() != nullptr) {
             std::get<1>(props) = "camera";
         } else if (node->GetComponent<CS::MeshRenderer>() != nullptr) {
             std::get<1>(props) = "model";

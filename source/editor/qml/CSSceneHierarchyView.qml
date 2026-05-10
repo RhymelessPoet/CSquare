@@ -97,17 +97,26 @@ Item {
             Layout.fillWidth: true
             spacing: 6
 
+            // Single toggle: expands all when collapsed, collapses all
+            // when expanded. Icon reflects the current aggregate state
+            // so clicking flips it.
             ToolButton {
+                id: expandToggle
+                property bool allExpanded: false
                 Layout.preferredWidth: 28
                 Layout.preferredHeight: 24
-                iconSource: "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png"
-                onTriggered: tree.expandRecursively(-1, -1)
-            }
-            ToolButton {
-                Layout.preferredWidth: 28
-                Layout.preferredHeight: 24
-                iconSource: "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
-                onTriggered: tree.collapseRecursively(-1)
+                iconSource: allExpanded
+                    ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png"
+                    : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
+                onTriggered: {
+                    if (allExpanded) {
+                        tree.collapseRecursively(-1)
+                        allExpanded = false
+                    } else {
+                        tree.expandRecursively(-1, -1)
+                        allExpanded = true
+                    }
+                }
             }
 
             TextField {
@@ -282,14 +291,19 @@ Item {
                         iconSize: 20
                         opacity: hasChildren ? 1.0 : 0.0
                         enabled: hasChildren
-                        iconPath: model.expand ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png" : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
+                        // Bind to TreeView's authoritative `expanded` (required
+                        // property on the delegate) rather than `model.expand`.
+                        // Recursive expand/collapse (triggered by the toolbar
+                        // toggle) mutates TreeView's internal state but does
+                        // not write back to the custom model role, so the
+                        // model role would go stale; `delegateItem.expanded`
+                        // stays correct in both paths.
+                        iconPath: delegateItem.expanded ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png" : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
                         onClicked: {
-                            if (model.expand) {
-                                model.expand = false
-                            } else {
-                                model.expand = true
-                            }
                             treeView.toggleExpanded(delegateItem.row)
+                            // Keep the custom model role in sync for any
+                            // future consumer that queries it.
+                            model.expand = delegateItem.expanded
                         }
                     }
 

@@ -51,6 +51,7 @@ Rectangle {
         CSIconButton {
             id: minimizeButton
             iconPath: "qrc:/CSQML/qml/icons/cs_title_bar_minimize.png"
+            padding: 6
             Layout.preferredWidth: 32
             Layout.preferredHeight: 28
 
@@ -60,6 +61,7 @@ Rectangle {
             id: maximizeButton
             checkable: true
             iconPath: "qrc:/CSQML/qml/icons/cs_title_bar_maximize.png"
+            padding: 6
             Layout.preferredWidth: 32
             Layout.preferredHeight: 28
 
@@ -78,6 +80,7 @@ Rectangle {
         CSIconButton {
             id: closeButton
             iconPath: "qrc:/CSQML/qml/icons/cs_title_bar_close.png"
+            padding: 6
             Layout.preferredWidth: 32
             Layout.preferredHeight: 28
             stateMaskColor: "#FF0000"

@@ -219,17 +219,21 @@ Item {
                 Layout.fillWidth: true
                 spacing: 6
 
+                // Single toggle: expands all when collapsed, collapses
+                // all when expanded. Icon reflects the current aggregate
+                // state so clicking flips it.
                 ToolButton {
+                    id: expandToggle
+                    property bool allExpanded: false
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: 24
-                    iconSource: "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png"
-                    onTriggered: drawer.expandAllRequested(true)
-                }
-                ToolButton {
-                    Layout.preferredWidth: 28
-                    Layout.preferredHeight: 24
-                    iconSource: "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
-                    onTriggered: drawer.expandAllRequested(false)
+                    iconSource: allExpanded
+                        ? "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_expanded.png"
+                        : "qrc:/CSQML/qml/icons/hierarchy/cs_hierarchy_collapsed.png"
+                    onTriggered: {
+                        allExpanded = !allExpanded
+                        drawer.expandAllRequested(allExpanded)
+                    }
                 }
 
                 TextField {
