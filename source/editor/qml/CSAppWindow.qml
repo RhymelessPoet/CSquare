@@ -73,14 +73,25 @@ ApplicationWindow {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 2
+                    anchors.leftMargin: 0
                     anchors.rightMargin: 5
                     spacing: 3
 
+                    // VS Code-style activity bar. Owns the hierarchy
+                    // visibility flag and the samples-launcher menu.
+                    CSSidebar {
+                        id: sidebar
+                        Layout.fillHeight: true
+                    }
+
                     CSSceneHierarchyView {
                         id: sceneHierarchyView
-                        Layout.preferredWidth: 380
-                        Layout.minimumWidth: 200
+                        // Width collapses to 0 when the sidebar toggle
+                        // hides this panel, letting the render view
+                        // reclaim the horizontal space.
+                        visible: sidebar.hierarchyVisible
+                        Layout.preferredWidth: visible ? 380 : 0
+                        Layout.minimumWidth: visible ? 200 : 0
                         Layout.fillHeight: true
                     }
 

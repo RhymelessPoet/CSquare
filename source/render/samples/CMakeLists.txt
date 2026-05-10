@@ -56,3 +56,14 @@ cs_add_sample(HelloTriangles main_hello_triangles.cpp SHelloTriangles.cpp)
 cs_add_sample(PanoramicHDRSky main_panoramic_hdr_sky.cpp SPanoramicHDRSky.cpp)
 cs_add_sample(AssetLoad main_asset_load.cpp SAssetLoad.cpp)
 cs_add_sample(InfiniteGrid3D main_infinite_grid_3d.cpp SInfiniteGrid3D.cpp)
+
+# Expose the sample target list to sibling CMake trees (e.g. the editor)
+# so they can both depend on these targets and deploy their executables
+# alongside the editor binary. CACHE INTERNAL keeps it out of the UI but
+# visible to every subdirectory regardless of scope ordering.
+set(CS_SAMPLE_TARGETS
+    HelloTriangles
+    PanoramicHDRSky
+    AssetLoad
+    InfiniteGrid3D
+    CACHE INTERNAL "Render sample executable targets" FORCE)

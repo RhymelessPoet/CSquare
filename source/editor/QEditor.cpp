@@ -3,9 +3,15 @@
 #include "ProjectModel.h"
 #include "QuickSceneObjectModel.h"
 #include "QuickTreeModel.h"
+#include "base/Logger.h"
 #include "model/SceneObjectModel.h"
 #include "model/TreeNode.h"
 #include "scene/SceneObject.h"
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
+#include <QProcess>
+
 
 namespace CSEditor
 {
@@ -109,6 +115,56 @@ void QEditor::clearSelectedSceneObject()
     if (m_sceneObjectDomain != nullptr) {
         m_sceneObjectDomain->Clear();
     }
+}
+
+QStringList QEditor::getSampleNames() const
+{
+    // Samples are deployed by the editor build into <editor-dir>/samples.
+    // We scan the directory once per call so the menu reflects whatever
+    // is currently on disk.
+    const QString samplesDir = QCoreApplication::applicationDirPath() + QStringLiteral("/samples");
+    QDir dir(samplesDir);
+    if (!dir.exists()) {
+        return {};
+    }
+    const QStringList filters{QStringLiteral("*.exe")};
+    const QFileInfoList entries = dir.entryInfoList(filters, QDir::Files | QDir::NoSymLinks, QDir::Name);
+    QStringList names;
+    names.reserve(entries.size());
+    for (const QFileInfo& fi : entries) {
+        names.push_back(fi.completeBaseName());
+    }
+    return names;
+}
+
+bool QEditor::launchSample(const QString& sampleName) const
+{
+    if (sampleName.isEmpty()) {
+        return false;
+    }
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString exePath = appDir + QStringLiteral("/samples/") + sampleName + QStringLiteral(".exe");
+    if (!QFileInfo::exists(exePath)) {
+        CS::LogError(CS::BuiltInChannels::Editor(),
+                     CS::Fmt("QEditor: sample executable not found: {}", exePath.toStdString()));
+        return false;
+    }
+
+    // Working directory is the sample's own folder so Windows picks up
+    // any side-by-side runtime DLLs first. The samples folder also
+    // receives a copy of the shared asset tree via the build so relative
+    // "assets/..." paths continue to resolve.
+    const QString workingDir = appDir + QStringLiteral("/samples");
+    qint64 pid = 0;
+    const bool ok = QProcess::startDetached(exePath, QStringList{}, workingDir, &pid);
+    if (!ok) {
+        CS::LogError(CS::BuiltInChannels::Editor(),
+                     CS::Fmt("QEditor: failed to launch sample: {}", exePath.toStdString()));
+        return false;
+    }
+    CS::LogInfo(CS::BuiltInChannels::Editor(),
+                CS::Fmt("QEditor: launched sample '{}' (pid={})", sampleName.toStdString(), pid));
+    return true;
 }
 
 void QEditor::updateModels(ProjectModel* project)

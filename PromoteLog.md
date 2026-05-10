@@ -62,3 +62,11 @@ Render Samples
 · 不依赖qt，使用glfw
 · 每个可执行程序里的窗口都支持鼠标事件，支持相机控制 CameraManipulator
 · 在samples文件夹下增加单独CMakeLists.txt
+
+
+Editor 侧边栏
+· 增加类似vs code的侧边栏，新增单独的 qml
+· 侧边栏顶部第一个button 与 SceneHierachyView关联，控制其显隐（icon: D:\Studio\CSquare\source\editor\qml\icons\cs_sidebar_hierarchy.png）
+· 侧边栏底部增加一个唤起菜单的button（icon: D:\Studio\CSquare\source\editor\qml\icons\cs_sidebar_samples.png）
+· 此button（icon: D:\Studio\CSquare\source\editor\qml\icons\cs_sidebar_samples.png）唤起展示render所有sample的菜单，点击菜单中某一项则执行对应sample的exe
+· 编译editor时，触发对所有samples的编译，并将exe拷贝到editor运行目录下的samples文件夹下

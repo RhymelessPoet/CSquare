@@ -5,6 +5,7 @@
 #include <QModelIndex>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QTimer>
 #include <memory>
 
@@ -36,6 +37,16 @@ public:
     Q_INVOKABLE const QString getProjectID() const;
     Q_INVOKABLE void setSelectedSceneObject(const QModelIndex& index);
     Q_INVOKABLE void clearSelectedSceneObject();
+
+    // Enumerates render samples deployed alongside the editor by scanning
+    // <editor-dir>/samples/*.exe. Called by the sidebar samples menu on
+    // each popup so newly-deployed samples appear without a restart.
+    Q_INVOKABLE QStringList getSampleNames() const;
+    // Spawns the selected sample executable as a detached process. The
+    // child's working directory is set to the editor's runtime directory
+    // so the sample's relative "assets/..." paths resolve against the
+    // shared assets folder that the editor build already deploys.
+    Q_INVOKABLE bool launchSample(const QString& sampleName) const;
     QuickTreeModel* getSceneTreeModel() { return m_sceneTreeModel.get(); }
     QuickSceneObjectModel* getSceneObjectModel() { return m_sceneObjectAdapter.get(); }
     QItemSelectionModel* getSceneSelection() { return m_sceneSelection.get(); }

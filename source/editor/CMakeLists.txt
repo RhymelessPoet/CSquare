@@ -127,6 +127,39 @@ add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
     COMMENT "Deploying editor_config.json"
 )
 
+# ---- Render samples deployment ----
+# The sidebar's "samples" menu lists executables found in
+# <editor-dir>/samples. Hook every sample target into the editor build so
+# (a) building the editor triggers a build of each sample, and (b) the
+# resulting exes land in that folder, ready to be launched by the sidebar.
+if(CS_SAMPLE_TARGETS)
+    add_dependencies(${TARGET_NAME} ${CS_SAMPLE_TARGETS})
+
+    set(SAMPLES_DEPLOY_DIR "$<TARGET_FILE_DIR:${TARGET_NAME}>/samples")
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${SAMPLES_DEPLOY_DIR}"
+        COMMENT "Preparing samples deploy directory"
+    )
+
+    foreach(sample_target IN LISTS CS_SAMPLE_TARGETS)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:${sample_target}>"
+            "${SAMPLES_DEPLOY_DIR}/$<TARGET_FILE_NAME:${sample_target}>"
+            COMMENT "Deploying sample: ${sample_target}"
+        )
+    endforeach()
+
+    # Sample executables load relative "assets/..." paths; point them at
+    # the editor's deployed asset tree by staging assets inside the
+    # samples folder used as their working directory.
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${ASSETS_PATH}" "${SAMPLES_DEPLOY_DIR}/assets"
+        COMMENT "Staging assets for deployed samples"
+    )
+endif()
+
 if(MSVC)
     get_target_property(QT_QMAKE_EXE Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXE}" DIRECTORY)
