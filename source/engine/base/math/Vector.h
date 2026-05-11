@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <format>
 #include <initializer_list>
 #include <limits>
 #include <type_traits>
@@ -361,3 +362,27 @@ struct tuple_element<I, CS::Vector<T, N>>
     using type = T;
 };
 } // namespace std
+
+// std::format support for CS::Vector<T, N>.
+// Inherits parse() from std::formatter<T>, so element format-spec is forwarded
+// (e.g. std::format("{:.2f}", v) -> "(1.00, 2.00, 3.00)").
+template <typename T, uint32_t N>
+struct std::formatter<CS::Vector<T, N>> : std::formatter<T>
+{
+    template <typename FormatContext>
+    auto format(const CS::Vector<T, N>& v, FormatContext& ctx) const
+    {
+        auto out = ctx.out();
+        *out++ = '(';
+        for (uint32_t i = 0; i < N; ++i) {
+            if (i > 0) {
+                *out++ = ',';
+                *out++ = ' ';
+            }
+            ctx.advance_to(out);
+            out = std::formatter<T>::format(v[i], ctx);
+        }
+        *out++ = ')';
+        return out;
+    }
+};

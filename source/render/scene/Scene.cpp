@@ -7,6 +7,7 @@
 #include "SceneEvents.h"
 #include "SceneObject.h"
 #include "SceneObjectEvents.h"
+#include "base/Logger.h"
 #include "base/math/Math.h"
 #include "geometry/GeometryNode.h"
 #include "materials/Material.h"
@@ -117,6 +118,7 @@ std::shared_ptr<SceneObject> Scene::CreateSceneObject(std::shared_ptr<SceneObjec
 const AABB& Scene::GetAABB(bool reCompute)
 {
     if (reCompute) {
+        m_box.Reset();
         traverseWith(m_root, [this](std::shared_ptr<SceneObject> object) {
             auto meshRenderer = object->GetComponent<MeshRenderer>();
             if (meshRenderer == nullptr) {

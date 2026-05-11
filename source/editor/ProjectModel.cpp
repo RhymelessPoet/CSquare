@@ -101,7 +101,7 @@ void ProjectModel::startAssetLoad()
     // Path assetPath = "C:/Users/Moke/Documents/Assets/sponza/sponza.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/road_bike/road_bike.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/lost_empire/lost_empire.gltf";
-    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel/san_miguel.gltf";
+    Path assetPath = "C:/Users/Moke/Documents/Assets/san_miguel_t/san_miguel_t.gltf";
     // Path assetPath = "C:/Users/Moke/Documents/Assets/fireplace_room/fireplace_room.gltf";
 
     m_assetLoadFuture = AssetManager::Instance().GetAssetSceneAsync(assetPath);

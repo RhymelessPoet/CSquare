@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "base/Logger.h"
 
 namespace CS
 {
@@ -78,13 +79,23 @@ void Mesh::RecomputeAABB()
     AABB box;
     ForEachAttribute([&](const Attribute& attr) {
         if (attr.name == "_position") {
-            auto vertexBuffer = GetVertexBuffer(attr.bufferID);
-            auto vertexData = vertexBuffer.GetData<float>();
-            size_t vertexCount = vertexData.size() / attr.componentCount;
-            for (size_t i = 0; i < vertexCount; ++i) {
-                Vector3d position;
-                for (uint8_t j = 0; j < attr.componentCount && j < 3; ++j) {
-                    position[j] = static_cast<double>(vertexData[i * attr.componentCount + j]);
+            const Buffer& vb = GetVertexBuffer(attr.bufferID);
+            auto bytes = vb.GetByteData();
+            if (bytes.empty())
+                return;
+
+            const uint32_t span = attr.end - attr.offset;
+            const uint32_t stride = span / m_vertexCount;
+            const uint32_t minElemBytes = attr.componentCount * sizeof(float);
+            if (stride < minElemBytes)
+                return;
+
+            for (uint32_t i = 0; i < m_vertexCount; ++i) {
+                const std::byte* base = bytes.data() + attr.offset + i * stride;
+                const float* p = reinterpret_cast<const float*>(base);
+                Vector3d position{0.0, 0.0, 0.0};
+                for (uint32_t j = 0; j < attr.componentCount && j < 3; ++j) {
+                    position[j] = static_cast<double>(p[j]);
                 }
                 box.Include(position);
             }

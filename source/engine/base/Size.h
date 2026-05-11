@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <initializer_list>
 #include <limits>
 #include <tuple>
@@ -205,3 +206,46 @@ struct std::tuple_element<Index, CS::Size3<T>>
 };
 
 } // namespace std
+
+// std::format support for CS::Size2<T> and CS::Size3<T>.
+// Inherits parse() from std::formatter<T> to forward the element format-spec
+// (e.g. std::format("{}", size2) -> "(w, h)", std::format("{:.2f}", size3) -> "(w, h, d)").
+template <typename T>
+struct std::formatter<CS::Size2<T>> : std::formatter<T>
+{
+    template <typename FormatContext>
+    auto format(const CS::Size2<T>& s, FormatContext& ctx) const
+    {
+        auto out = ctx.out();
+        *out++ = '(';
+        ctx.advance_to(out);
+        out = std::formatter<T>::format(s.data[0], ctx);
+        *out++ = ',';
+        *out++ = ' ';
+        ctx.advance_to(out);
+        out = std::formatter<T>::format(s.data[1], ctx);
+        *out++ = ')';
+        return out;
+    }
+};
+
+template <typename T>
+struct std::formatter<CS::Size3<T>> : std::formatter<T>
+{
+    template <typename FormatContext>
+    auto format(const CS::Size3<T>& s, FormatContext& ctx) const
+    {
+        auto out = ctx.out();
+        *out++ = '(';
+        for (int i = 0; i < 3; ++i) {
+            if (i > 0) {
+                *out++ = ',';
+                *out++ = ' ';
+            }
+            ctx.advance_to(out);
+            out = std::formatter<T>::format(s.data[i], ctx);
+        }
+        *out++ = ')';
+        return out;
+    }
+};
