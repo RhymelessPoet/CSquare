@@ -37,7 +37,6 @@ void CameraManipulator::Dolly(float delta, float speed)
     auto newDirection = m_center - position;
     if (newDirection.Dot(direction) > 0.0f && newDirection.Length() > m_nearPlane) {
         m_position = position;
-        m_farPlane = std::max(m_minFarPlane, 2.0f * newDirection.Length());
     }
     UpdateCamera();
 }
@@ -127,20 +126,39 @@ void CameraManipulator::Reset() {}
 void CameraManipulator::UpdateCamera()
 {
     auto _camera = camera();
+    m_farPlane = computeFarPlane();
     _camera->LookAt(m_position, m_center, m_up);
     _camera->Perspective(Math::AngleToRadian(m_fovY), m_aspectRatio, m_nearPlane, m_farPlane);
 }
 
 void CameraManipulator::FitTo(const AxisAlignedBoundingBox& box)
 {
-    m_center = box.GetCenter().Cast<float>();
-    auto boxSize = box.GetSize().Cast<float>();
-    auto& [min, max] = box;
-    m_minFarPlane = static_cast<float>(box.GetDiagonalLength());
-    m_position = m_center + Vector3f{0.0f, 0.0f, m_minFarPlane * 1.1f};
-    m_farPlane = (m_position - m_center).Length() * 2.0f;
+    m_sceneCenter = box.GetCenter().Cast<float>();
+    m_sceneRadius = static_cast<float>(box.GetDiagonalLength()) * 0.5f;
+    m_center = m_sceneCenter;
+    // Place the camera along +Z so the whole scene diagonal is in front, matching the
+    // previous framing behaviour. The far plane itself is handled by computeFarPlane().
+    float diagonal = static_cast<float>(box.GetDiagonalLength());
+    m_position = m_center + Vector3f{0.0f, 0.0f, diagonal * 1.1f};
 
     UpdateCamera();
+}
+
+float CameraManipulator::computeFarPlane() const
+{
+    // With a known scene bounding sphere, the farthest potentially-visible point sits at
+    // distance(camera, sceneCenter) + sceneRadius. A small multiplicative margin absorbs
+    // numerical error while keeping the near/far ratio (and therefore depth precision)
+    // as favourable as possible.
+    if (m_sceneRadius > 0.0f) {
+        float distanceToSceneCenter = (m_position - m_sceneCenter).Length();
+        float farPlane = distanceToSceneCenter + m_sceneRadius * 1.05f;
+        // Guard against pathological cases where the camera is inside the scene sphere.
+        return std::max(farPlane, m_nearPlane * 10.0f);
+    }
+    // No scene bounds known yet; use a distance-based estimate with a sane floor.
+    float distanceToTarget = (m_position - m_center).Length();
+    return std::max(distanceToTarget * 2.0f, 100.0f);
 }
 
 inline std::shared_ptr<Camera> CameraManipulator::camera() const

@@ -51,7 +51,7 @@ private:
     std::unique_ptr<IEvent> onEvent(NewGeometryNode* event);
     std::unique_ptr<IEvent> onEvent(NewLight* event);
 
-    void updateShadowCamera(Camera& camera, const Light& light);
+    void updateShadowCamera(Camera& camera, const Light& light, const std::shared_ptr<Camera>& observerCamera);
 
 private:
     std::string m_name;

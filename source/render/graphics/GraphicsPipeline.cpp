@@ -96,4 +96,13 @@ GraphicsPipeline& GraphicsPipeline::SetBlendAlphaOp(BlendOp op)
     return *this;
 }
 
+GraphicsPipeline& GraphicsPipeline::SetCullMode(CullMode mode)
+{
+    if (!IsValid()) {
+        return *this;
+    }
+    descriptor<GraphicsPipelineDescriptor>().SetCullMode(mode);
+    return *this;
+}
+
 } // namespace CS

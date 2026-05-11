@@ -35,6 +35,13 @@ public:
         BlendOp alphaOp{BlendOp::Add};
         bool blendEnable : 1 {false};
     };
+
+    // Rasterizer-state fragment related to face culling. Defaults to no culling
+    // so that existing materials keep their pre-encapsulation behaviour.
+    struct RasterizationState
+    {
+        CullMode cullMode{CullMode::None};
+    };
     GraphicsPipelineDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI);
     ~GraphicsPipelineDescriptor() = default;
 
@@ -73,6 +80,10 @@ public:
     void SetBlendAlphaOp(BlendOp op) { m_blendState.alphaOp = op; }
     const BlendState& GetBlendState() const { return m_blendState; }
 
+    void SetCullMode(CullMode mode) { m_rasterizationState.cullMode = mode; }
+    CullMode GetCullMode() const { return m_rasterizationState.cullMode; }
+    const RasterizationState& GetRasterizationState() const { return m_rasterizationState; }
+
     template <typename PipelineNativeDataType>
     PipelineNativeDataType GetNativePipelineData() const
     {
@@ -93,6 +104,7 @@ private:
     std::map<ShaderStage, std::unique_ptr<GraphicsShaderStage>> m_shaderStages;
     DepthStencilState m_depthStencilState;
     BlendState m_blendState;
+    RasterizationState m_rasterizationState;
     std::any m_nativePipelineData;
 };
 

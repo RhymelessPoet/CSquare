@@ -80,6 +80,12 @@ OpenGLContext& OpenGLContext::GLDepthMask(GLboolean flag)
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLCullFace(GLenum mode)
+{
+    glCullFace(mode);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
 {
     glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);

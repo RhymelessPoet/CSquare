@@ -80,12 +80,17 @@ public:
     {
         m_viewType = EViewType::Make<"Shadow_Map">();
         m_targetSlots.push_back(SlotDescription{.id = {.slotIndex = 0u}, .type = SlotType::Depth});
-        m_targetSize = Size2u{1024, 1024};
+        m_targetSize = Size2u{4096, 4096};
     }
     void Configure(GraphicsPipeline& pipeline) const override
     {
         pipeline.SetDepthTest(true);
         pipeline.SetDepthCompareOP(DepthCompareOp::Less);
+        // Cull front faces during the depth-only shadow pass. Back-face depth is
+        // biased inward along the light direction, which dramatically reduces
+        // self-shadow acne and "peter-panning" without inflating the constant
+        // bias. Requires watertight geometry; double-sided meshes should opt out.
+        pipeline.SetCullMode(CullMode::Front);
     }
 };
 

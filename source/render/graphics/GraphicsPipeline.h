@@ -37,6 +37,11 @@ public:
     GraphicsPipeline& SetBlendColorOp(BlendOp op);
     GraphicsPipeline& SetBlendAlphaOp(BlendOp op);
 
+    // Rasterizer face-culling configuration. Maps to glEnable(GL_CULL_FACE) +
+    // glCullFace(...) on OpenGL. Defaults to CullMode::None (no culling).
+    // Use CullMode::Front for shadow-caster passes to reduce peter-panning.
+    GraphicsPipeline& SetCullMode(CullMode mode);
+
 private:
     GraphicsPipeline(GraphicsPipelineDescriptor* descriptor);
 };

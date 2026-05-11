@@ -84,7 +84,7 @@ void ProjectModel::initializeScene()
 
     impl().directionalLight = std::make_unique<Light>(impl().scene);
     impl().directionalLight->SetLightType(ELightType::Make<"Directional">());
-    impl().directionalLight->SetDirection(-Vector3f{0.5f, 1.0f, 0.3f});
+    impl().directionalLight->SetDirection(-Vector3f{0.1f, 0.7f, 0.5f});
     impl().directionalLight->SetColor(Vector3f{1.0f, 1.0f, 1.0f});
     impl().directionalLight->SetIntensity(5.1f);
 

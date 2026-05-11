@@ -375,10 +375,45 @@ float SampleShadow(highp vec2 uv, float depth)
     return texture(shadow_map, uv).r < depth ? 1.0 : 0.0;
 }
 
-float CastanoBilinearPCF(highp vec2 pos, float depth, highp vec2 size, highp vec2 texelSize)
+// Receiver-plane depth bias (Isidoro 2006, "Shadow Mapping: GPU-based Tips and Techniques").
+//
+// Given the shadow-space position (uv, z) of the fragment, screen-space
+// derivatives give us the tangent plane of the receiver in shadow-map space:
+//
+//     [ duv/dx ] * rpBias = [ dz/dx ]
+//     [ duv/dy ]            [ dz/dy ]
+//
+// Solving for rpBias yields  d(shadowZ) / d(shadowUV)  -- the amount of depth
+// change per unit of UV shift along the receiver plane. Applying this bias per
+// PCF tap (sampleDepth = centerDepth + dot(offsetUV, rpBias)) keeps the compared
+// depth on the actual slanted receiver surface, so the bias self-adjusts with
+// slope and eliminates the need for an aggressive constant/slope-scaled bias.
+highp vec2 ComputeReceiverPlaneDepthBias(highp vec3 shadowPos)
+{
+    highp vec3 dx = dFdx(shadowPos);
+    highp vec3 dy = dFdy(shadowPos);
+
+    highp float det = dx.x * dy.y - dx.y * dy.x;
+    // Degenerate (e.g. silhouette edge, mipmap helper-lane): fall back to zero
+    // bias -- the small constant bias in GetPCFShadow still prevents acne.
+    if (abs(det) < 1e-8) {
+        return vec2(0.0);
+    }
+    highp float invDet = 1.0 / det;
+
+    highp vec2 rpBias;
+    rpBias.x = ( dy.y * dx.z - dx.y * dy.z) * invDet;
+    rpBias.y = (-dy.x * dx.z + dx.x * dy.z) * invDet;
+    return rpBias;
+}
+
+float CastanoBilinearPCF(highp vec2 pos, highp vec2 center, float centerDepth,
+                         highp vec2 rpBias, highp vec2 size, highp vec2 texelSize)
 {
     //  Castaño, 2013, "Shadow Mapping Summary Part 1"
-    //  Same algorithm as Filament's ShadowSample_PCF_Low
+    //  Same algorithm as Filament's ShadowSample_PCF_Low.
+    //  Depth per tap is adjusted along the receiver plane so compares stay on
+    //  the slanted surface instead of a fixed horizontal plane.
     vec2 offset = vec2(0.5);
     highp vec2 uv = (pos * size) + offset;
     highp vec2 base = (floor(uv) - offset) * texelSize;
@@ -393,11 +428,21 @@ float CastanoBilinearPCF(highp vec2 pos, float depth, highp vec2 size, highp vec
     u *= texelSize.x;
     v *= texelSize.y;
 
+    highp vec2 s00 = base + vec2(u.x, v.x);
+    highp vec2 s10 = base + vec2(u.y, v.x);
+    highp vec2 s01 = base + vec2(u.x, v.y);
+    highp vec2 s11 = base + vec2(u.y, v.y);
+
+    float d00 = centerDepth + dot(s00 - center, rpBias);
+    float d10 = centerDepth + dot(s10 - center, rpBias);
+    float d01 = centerDepth + dot(s01 - center, rpBias);
+    float d11 = centerDepth + dot(s11 - center, rpBias);
+
     float sum = 0.0;
-    sum += uw.x * vw.x * SampleShadow(base + vec2(u.x, v.x), depth);
-    sum += uw.y * vw.x * SampleShadow(base + vec2(u.y, v.x), depth);
-    sum += uw.x * vw.y * SampleShadow(base + vec2(u.x, v.y), depth);
-    sum += uw.y * vw.y * SampleShadow(base + vec2(u.y, v.y), depth);
+    sum += uw.x * vw.x * SampleShadow(s00, d00);
+    sum += uw.y * vw.x * SampleShadow(s10, d10);
+    sum += uw.x * vw.y * SampleShadow(s01, d01);
+    sum += uw.y * vw.y * SampleShadow(s11, d11);
     return sum * (1.0 / 16.0);
 }
 
@@ -407,8 +452,22 @@ float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
     highp vec2 size = vec2(textureSize(shadow_map, 0));
     highp vec2 texelSize = vec2(1.0) / size;
 
-    float bias = max(0.05 * (1.0 - dot(geoNormal, lightDirection)), 0.005);
-    highp float depth = position.z - bias;
+    // Receiver-plane depth bias replaces the old slope-scaled constant bias.
+    // A tiny fixed bias still guards against float precision noise on flat,
+    // light-facing surfaces where the RPDB magnitude is near zero.
+    highp vec2 rpBias = ComputeReceiverPlaneDepthBias(position);
+
+    // Cap per-texel slope contribution so near-silhouette pixels (where the
+    // receiver plane becomes nearly parallel to the light) don't blow the bias
+    // up and cause peter-panning.
+    highp float maxSlopeBias = 2.0 * max(texelSize.x, texelSize.y);
+    highp float rpBiasLen = length(rpBias * texelSize);
+    if (rpBiasLen > maxSlopeBias) {
+        rpBias *= maxSlopeBias / rpBiasLen;
+    }
+
+    const highp float kConstantBias = 5e-4;
+    highp float depth = position.z - kConstantBias;
 
     // clamp position to avoid overflows below, which cause some GPUs to abort
     position.xy = clamp(position.xy, vec2(-1.0), vec2(2.0));
@@ -422,10 +481,15 @@ float GetPCFShadow(vec3 geoNormal, vec3 lightDirection)
     const float spread = 2.0;
 
     // 2x2 offset grid: 4 taps x 4 Castaño samples = 16 effective PCF samples
-    shadow += CastanoBilinearPCF(position.xy + vec2(-0.5, -0.5) * texelSize * spread, depth, size, texelSize);
-    shadow += CastanoBilinearPCF(position.xy + vec2( 0.5, -0.5) * texelSize * spread, depth, size, texelSize);
-    shadow += CastanoBilinearPCF(position.xy + vec2(-0.5,  0.5) * texelSize * spread, depth, size, texelSize);
-    shadow += CastanoBilinearPCF(position.xy + vec2( 0.5,  0.5) * texelSize * spread, depth, size, texelSize);
+    highp vec2 p00 = position.xy + vec2(-0.5, -0.5) * texelSize * spread;
+    highp vec2 p10 = position.xy + vec2( 0.5, -0.5) * texelSize * spread;
+    highp vec2 p01 = position.xy + vec2(-0.5,  0.5) * texelSize * spread;
+    highp vec2 p11 = position.xy + vec2( 0.5,  0.5) * texelSize * spread;
+
+    shadow += CastanoBilinearPCF(p00, position.xy, depth, rpBias, size, texelSize);
+    shadow += CastanoBilinearPCF(p10, position.xy, depth, rpBias, size, texelSize);
+    shadow += CastanoBilinearPCF(p01, position.xy, depth, rpBias, size, texelSize);
+    shadow += CastanoBilinearPCF(p11, position.xy, depth, rpBias, size, texelSize);
 
     return shadow * 0.25;
 }

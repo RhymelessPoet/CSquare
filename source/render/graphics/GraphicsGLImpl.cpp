@@ -204,6 +204,22 @@ static GLenum GetGLBlendOp(BlendOp op)
     }
 }
 
+// Returns GL_FRONT / GL_BACK / GL_FRONT_AND_BACK. CullMode::None is handled
+// separately by the caller (glDisable(GL_CULL_FACE)) so it never reaches here.
+static GLenum GetGLCullFace(CullMode mode)
+{
+    switch (mode) {
+    case CullMode::Front:
+        return GL_FRONT;
+    case CullMode::Back:
+        return GL_BACK;
+    case CullMode::FrontAndBack:
+        return GL_FRONT_AND_BACK;
+    default:
+        return GL_BACK;
+    }
+}
+
 GraphicsGLImpl::GraphicsGLImpl(std::unique_ptr<OpenGLContext> context,
                                std::shared_ptr<GraphicsResourceCache> resourceCache)
     : m_glContext(std::move(context)), m_resouceCache(resourceCache)
@@ -572,6 +588,13 @@ bool GraphicsGLImpl::BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor
             .GLBlendEquationSeparate(GetGLBlendOp(blend.colorOp), GetGLBlendOp(blend.alphaOp));
     } else {
         m_glContext->GLDisable(GL_BLEND);
+    }
+
+    const auto& rasterization = descriptor->GetRasterizationState();
+    if (rasterization.cullMode == CullMode::None) {
+        m_glContext->GLDisable(GL_CULL_FACE);
+    } else {
+        m_glContext->GLEnable(GL_CULL_FACE).GLCullFace(GetGLCullFace(rasterization.cullMode));
     }
 
     m_curentStates.SetPipeline(descriptor);

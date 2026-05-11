@@ -87,6 +87,17 @@ enum class BlendOp : uint8_t
     Max
 };
 
+// Face culling mode. Maps to OpenGL's glCullFace(GL_FRONT | GL_BACK | GL_FRONT_AND_BACK).
+// `None` disables culling entirely (glDisable(GL_CULL_FACE)).
+enum class CullMode : uint8_t
+{
+    None = 0u,
+    Front,
+    Back,
+    FrontAndBack,
+    Max
+};
+
 static constexpr inline size_t GetTextureFormatSize(TextureFormat format)
 {
     switch (format) {

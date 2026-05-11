@@ -14,6 +14,10 @@
 #include "renderer/MaterialCompiler.h"
 #include "renderer/RenderContext.h"
 
+#include <algorithm>
+#include <array>
+#include <limits>
+
 namespace CS
 {
 
@@ -53,7 +57,7 @@ void Scene::OnRender(RenderContext& context)
         auto light = Light(m_lights[0].lock());
         auto lightCamera = Camera(m_lights[0].lock());
         if (context.GetTargetViewType() == EViewType::Make<"Shadow_Map">()) {
-            updateShadowCamera(*camera, light);
+            updateShadowCamera(*camera, light, context.GetObserverCamera());
         }
 
         auto lightVPMatrix_ = lightCamera.GetProjectionMatrix() * lightCamera.GetViewMatrix();
@@ -212,27 +216,169 @@ std::unique_ptr<IEvent> Scene::onEvent(NewLight* event)
     return std::unique_ptr<IEvent>();
 }
 
-void Scene::updateShadowCamera(Camera& camera, const Light& light)
+namespace
 {
+// Conservative clip-space frustum visibility test for an OBB.
+// Returns false only when all 8 corners lie on the outside side of the same
+// clip-space plane (never discards a possibly-visible OBB).
+bool IsOBBVisibleInFrustum(const OrientedBoundingBox& obb, const Matrix4f& viewProj)
+{
+    const auto corners = obb.GetCorners();
+    std::array<Vector4f, 8> clipCorners;
+    for (size_t i = 0; i < 8; ++i) {
+        auto c = corners[i].Cast<float>();
+        clipCorners[i] = viewProj * Vector4f(c, 1.0f);
+    }
+
+    auto allOutside = [&](auto pred) {
+        for (const auto& p : clipCorners) {
+            if (!pred(p)) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    if (allOutside([](const Vector4f& p) { return p.X() < -p.W(); }))
+        return false;
+    if (allOutside([](const Vector4f& p) { return p.X() > p.W(); }))
+        return false;
+    if (allOutside([](const Vector4f& p) { return p.Y() < -p.W(); }))
+        return false;
+    if (allOutside([](const Vector4f& p) { return p.Y() > p.W(); }))
+        return false;
+    if (allOutside([](const Vector4f& p) { return p.Z() < -p.W(); }))
+        return false;
+    if (allOutside([](const Vector4f& p) { return p.Z() > p.W(); }))
+        return false;
+    return true;
+}
+
+// 8 NDC corners of a canonical camera frustum, used to project the observer frustum
+// into light space (Filament: computeFrustumCorners).
+constexpr std::array<Vector3f, 8> kNdcCorners = {
+    Vector3f{-1.0f, -1.0f, -1.0f}, Vector3f{1.0f, -1.0f, -1.0f}, Vector3f{-1.0f, 1.0f, -1.0f},
+    Vector3f{1.0f, 1.0f, -1.0f},   Vector3f{-1.0f, -1.0f, 1.0f}, Vector3f{1.0f, -1.0f, 1.0f},
+    Vector3f{-1.0f, 1.0f, 1.0f},   Vector3f{1.0f, 1.0f, 1.0f},
+};
+
+} // namespace
+
+void Scene::updateShadowCamera(Camera& camera, const Light& light, const std::shared_ptr<Camera>& observerCamera)
+{
+    // Ensure the scene AABB is fresh so the eye placement below uses up-to-date bounds.
+    const auto& sceneBox = GetAABB(true);
+    if (!sceneBox.IsValid()) {
+        return;
+    }
+
     auto direction = light.GetDirection().Normalized();
-    auto center = m_box.GetCenter().Cast<float>();
-    auto distance = static_cast<float>(m_box.GetDiagonalLength());
+    auto center = sceneBox.GetCenter().Cast<float>();
+    auto distance = static_cast<float>(sceneBox.GetDiagonalLength());
     auto eye = -distance * direction + center;
 
     camera.LookAt(eye, center, {0.0f, 1.0f, 0.0f});
 
     auto viewMatrix = camera.GetViewMatrix();
-    AABB viewBox;
-    for (const auto& point : GetAABB(true).GetCorners()) {
-        auto point3f = point.Cast<float>();
-        auto pointInView = viewMatrix * Vector4f(point3f, 1.0f);
-        viewBox.Include(pointInView.Slice<0, 3>().Cast<double>());
+
+    // Observer (3D_Main) view*projection matrix; if available, cull OBBs that aren't
+    // visible from the user's camera so the shadow ortho box hugs only on-screen geometry.
+    const bool hasObserver = (observerCamera != nullptr);
+    Matrix4f observerVP;
+    if (hasObserver) {
+        observerVP = observerCamera->GetProjectionMatrix() * observerCamera->GetViewMatrix();
     }
 
-    const auto& [minX, minY, minZ] = viewBox.GetMin();
-    const auto& [maxX, maxY, maxZ] = viewBox.GetMax();
+    // Filament-style caster/receiver separation:
+    //   - receiversBox: observer-visible OBB corners in light space → defines XY + far plane
+    //   - castersMaxZ : max light-space Z across ALL OBB corners → defines near plane
+    // Camera convention looks down -Z, so a larger Z value == closer to the light.
+    AABB receiversBox;
+    float castersMaxZ = std::numeric_limits<float>::lowest();
+    traverseWith(m_root, [&](std::shared_ptr<SceneObject> object) {
+        auto meshRenderer = object->GetComponent<MeshRenderer>();
+        if (meshRenderer == nullptr) {
+            return;
+        }
+        for (const auto& obb : meshRenderer->GetWorldBoundingBoxes()) {
+            if (!obb.IsValid()) {
+                continue;
+            }
+            const bool isVisibleReceiver = !hasObserver || IsOBBVisibleInFrustum(obb, observerVP);
+            for (const auto& corner : obb.GetCorners()) {
+                auto cornerF = corner.Cast<float>();
+                auto cornerInView = viewMatrix * Vector4f(cornerF, 1.0f);
+                auto viewP = cornerInView.Slice<0, 3>();
+                // Every OBB is a potential caster: extends the near plane regardless of on-screen visibility.
+                castersMaxZ = std::max(castersMaxZ, viewP.Z());
+                if (isVisibleReceiver) {
+                    receiversBox.Include(viewP.Cast<double>());
+                }
+            }
+        }
+    });
 
-    camera.Ortho(minX, maxX, minY, maxY, -maxZ, -minZ);
+    if (!receiversBox.IsValid()) {
+        return;
+    }
+
+    const auto& rMin = receiversBox.GetMin();
+    const auto& rMax = receiversBox.GetMax();
+    float minX = static_cast<float>(rMin[0]);
+    float maxX = static_cast<float>(rMax[0]);
+    float minY = static_cast<float>(rMin[1]);
+    float maxY = static_cast<float>(rMax[1]);
+    const float receiversMaxZ = static_cast<float>(rMax[2]);
+    const float receiversMinZ = static_cast<float>(rMin[2]);
+
+    // Intersect the observer view frustum (in light space) with the receivers XY bounds.
+    // Filament: compute2DBounds on the frustum-box intersection. When the camera frustum
+    // is narrower than the receivers set, this further shrinks XY and improves texel density.
+    if (hasObserver) {
+        Matrix4f observerInvVP = observerVP.Inversed();
+        Matrix4f lightFromNdc = viewMatrix * observerInvVP;
+
+        float fMinX = std::numeric_limits<float>::max();
+        float fMaxX = std::numeric_limits<float>::lowest();
+        float fMinY = std::numeric_limits<float>::max();
+        float fMaxY = std::numeric_limits<float>::lowest();
+        for (const auto& ndc : kNdcCorners) {
+            Vector4f ws = lightFromNdc * Vector4f(ndc, 1.0f);
+            if (std::abs(ws.W()) < 1e-6f) {
+                continue;
+            }
+            float invW = 1.0f / ws.W();
+            float x = ws.X() * invW;
+            float y = ws.Y() * invW;
+            fMinX = std::min(fMinX, x);
+            fMaxX = std::max(fMaxX, x);
+            fMinY = std::min(fMinY, y);
+            fMaxY = std::max(fMaxY, y);
+        }
+        if (fMinX < fMaxX && fMinY < fMaxY) {
+            minX = std::max(minX, fMinX);
+            maxX = std::min(maxX, fMaxX);
+            minY = std::max(minY, fMinY);
+            maxY = std::min(maxY, fMaxY);
+        }
+    }
+
+    if (!(minX < maxX && minY < maxY)) {
+        return;
+    }
+
+    // Near: closest caster to the light (so off-screen casters still register).
+    //       Cap against receiversMaxZ -- a caster in front of every receiver would
+    //       produce no visible shadow, but extending the range costs precision.
+    // Far : farthest receiver. Casters beyond the last receiver can't shadow anything.
+    const float nearPlane = -std::max(receiversMaxZ, castersMaxZ);
+    const float farPlane = -receiversMinZ;
+
+    if (!(nearPlane < farPlane)) {
+        return;
+    }
+
+    camera.Ortho(minX, maxX, minY, maxY, nearPlane, farPlane);
 }
 
 } // namespace CS

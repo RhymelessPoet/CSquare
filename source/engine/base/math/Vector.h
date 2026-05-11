@@ -26,7 +26,7 @@ public:
 
     Vector() = default;
     Vector(const Vector& other) { m_data = other.m_data; }
-    Vector(std::initializer_list<T> list)
+    constexpr Vector(std::initializer_list<T> list)
     {
         int i = 0;
         for (auto it = list.begin(); it != list.end() && i < N; ++it, ++i) {

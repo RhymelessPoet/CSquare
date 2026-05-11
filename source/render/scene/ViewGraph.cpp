@@ -93,6 +93,11 @@ std::unique_ptr<IEvent> ViewGraph::OnEvent(std::unique_ptr<IEvent> event)
 
 void ViewGraph::OnRender(RenderContext& context) const
 {
+    // Expose the main view's camera so pre-passes (shadow map, etc.) can cull against
+    // what the user will actually see.
+    if (impl().mainView) {
+        context.SetObserverCamera(impl().mainView->GetCamera());
+    }
     for (const auto& view : impl().views) {
         view->OnRender(context);
     }

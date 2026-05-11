@@ -48,6 +48,11 @@ protected:
     inline std::shared_ptr<Camera> camera() const;
 
 private:
+    // Compute a tight far plane from the tracked scene bounds.
+    // When scene bounds are unknown (before FitTo), falls back to a distance-based estimate.
+    float computeFarPlane() const;
+
+private:
     std::weak_ptr<Camera> m_camera;
     Size2u m_viewport;
     Vector3f m_center{0.0f, 0.0f, 0.0f};
@@ -57,7 +62,11 @@ private:
     float m_aspectRatio{1.0f};
     float m_nearPlane{0.1f};
     float m_farPlane{1000.0f};
-    float m_minFarPlane{1000.0f};
+
+    // Tracked scene bounds (updated by FitTo). Used by computeFarPlane to keep
+    // the perspective far plane as tight as possible for better depth precision.
+    Vector3f m_sceneCenter{0.0f, 0.0f, 0.0f};
+    float m_sceneRadius{0.0f};
 
     std::optional<Bookmark> m_bookmark;
 };

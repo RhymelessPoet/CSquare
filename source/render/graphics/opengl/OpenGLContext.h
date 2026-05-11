@@ -31,6 +31,7 @@ public:
     OpenGLContext& GLEnable(GLenum cap);
     OpenGLContext& GLDepthFunc(GLenum func);
     OpenGLContext& GLDepthMask(GLboolean flag);
+    OpenGLContext& GLCullFace(GLenum mode);
 
     OpenGLContext& GLBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
     OpenGLContext& GLBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
