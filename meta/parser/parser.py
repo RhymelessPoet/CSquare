@@ -23,9 +23,10 @@ STD_INCLUDE_ARGS = [
     '-x', 'c++',
     '-std=c++20',
     '-I' + os.path.join(PROJECT_ROOT, 'meta'),
-    '-I' + os.path.join(PROJECT_ROOT, 'source', 'render'),
-    '-I' + os.path.join(PROJECT_ROOT, 'source', 'engine'),
+    '-I' + os.path.join(PROJECT_ROOT, 'modules', 'render', 'source'),
+    '-I' + os.path.join(PROJECT_ROOT, 'modules', 'base', 'source'),
     '-I' + os.path.join(PROJECT_ROOT, 'thirdparty'),
+    "-DCS_ENABLE_META"
 ]
 
 

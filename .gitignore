@@ -44,4 +44,4 @@ _deps/
 !/meta/bin/**
 !/source/**
 
-/source/render/generated
+/modules/render/source/generated
