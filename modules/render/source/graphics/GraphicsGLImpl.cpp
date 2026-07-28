@@ -1,18 +1,126 @@
 #include "GraphicsGLImpl.h"
+#include "ComputePipelineDescriptor.h"
 #include "GraphicsBufferDescriptor.h"
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceParameters.h"
 #include "GraphicsShaderStage.h"
 #include "ShaderBindingSetDescriptor.h"
+<<<<<<< HEAD:modules/render/source/graphics/GraphicsGLImpl.cpp
 #include "EnumUtils.h"
+=======
+#include "base/EnumUtils.h"
+#include "base/Logger.h"
+>>>>>>> 1ff51b6 ([graphics] Add compute pipeline, and test):source/render/graphics/GraphicsGLImpl.cpp
 #include "graphics/GraphicsResourceCache.h"
 #include "graphics/opengl/glad/include/glad/glad.h"
 #include "opengl/OpenGLContext.h"
-#include <iostream>
 
 namespace CS
 {
+
+namespace
+{
+void GLDebugCallback(GLenum source,
+                     GLenum type,
+                     GLuint id,
+                     GLenum severity,
+                     GLsizei length,
+                     const GLchar* message,
+                     const void* userParam)
+{
+    CS::Logger::SourceLocationCaptureProhibition prohibitSourceLocationCapture;
+
+    const char* srcName = "Unknown";
+    switch (source) {
+    case GL_DEBUG_SOURCE_API:
+        srcName = "API";
+        break;
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        srcName = "WINDOW";
+        break;
+    case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        srcName = "SHADER_COMPILER";
+        break;
+    case GL_DEBUG_SOURCE_THIRD_PARTY:
+        srcName = "THIRD_PARTY";
+        break;
+    case GL_DEBUG_SOURCE_APPLICATION:
+        srcName = "APP";
+        break;
+    case GL_DEBUG_SOURCE_OTHER:
+        srcName = "OTHER";
+        break;
+    }
+
+    const char* typeName = "Unknown";
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        typeName = "ERROR";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        typeName = "DEPRECATED";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        typeName = "UNDEFINED";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        typeName = "PORTABILITY";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        typeName = "PERF";
+        break;
+    case GL_DEBUG_TYPE_MARKER:
+        typeName = "MARKER";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        typeName = "OTHER";
+        break;
+    }
+
+    const char* sevName = "Unknown";
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_HIGH:
+        sevName = "HIGH";
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        sevName = "MEDIUM";
+        break;
+    case GL_DEBUG_SEVERITY_LOW:
+        sevName = "LOW";
+        break;
+    case GL_DEBUG_SEVERITY_NOTIFICATION:
+        sevName = "NOTIFY";
+        break;
+    }
+
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: {
+        LogError(BuiltInChannels::Graphics(), Fmt("OpenGL [{}] [{}] [{}] {}", typeName, srcName, sevName, message));
+        break;
+    }
+    case GL_DEBUG_TYPE_PORTABILITY:
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        LogWarning(BuiltInChannels::Graphics(), Fmt("OpenGL [{}] [{}] [{}] {}", typeName, srcName, sevName, message),
+                   std::source_location());
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        // LogInfo(BuiltInChannels::Graphics(), Fmt("OpenGL [{}] [{}] [{}] {}", typeName, srcName, sevName, message),
+        //         std::source_location());
+        break;
+    case GL_DEBUG_TYPE_MARKER:
+        LogDebug(BuiltInChannels::Graphics(), Fmt("OpenGL [{}] [{}] [{}] {}", typeName, srcName, sevName, message));
+        break;
+
+    default:
+        LogError(BuiltInChannels::Graphics(), Fmt("OpenGL [{}] [{}] [{}] {}", typeName, srcName, sevName, message));
+    }
+}
+
+} // namespace
+
 //  GL_BYTE, GL_UNSIGNED_BYTE, GL_SHORT, GL_UNSIGNED_SHORT, GL_INT, and GL_UNSIGNED_INT are accepted by
 //  glVertexAttribPointer and glVertexAttribIPointer. Additionally GL_HALF_FLOAT, GL_FLOAT, GL_DOUBLE, GL_FIXED,
 //  GL_INT_2_10_10_10_REV, GL_UNSIGNED_INT_2_10_10_10_REV and GL_UNSIGNED_INT_10F_11F_11F_REV
@@ -231,7 +339,14 @@ bool GraphicsGLImpl::Initialize()
 {
     bool glLoad = gladLoadGL() == 1;
 
-    std::cerr << m_glContext->GetVersion() << std::endl;
+    {
+        CS::Logger::SourceLocationCaptureProhibition prohibitSourceLocationCapture;
+        LogInfo(BuiltInChannels::Graphics(), Fmt("OpenGL Version: {}", m_glContext->GetVersion()));
+    }
+
+    if (glLoad && m_glContext != nullptr) {
+        m_glContext->GLSetupDebugMessageCallback(GLDebugCallback, nullptr);
+    }
 
     return glLoad;
 }
@@ -508,6 +623,116 @@ struct GLGraphicsPipeline
     GLuint fragmentShaderID{0u};
 };
 
+struct GLComputePipeline
+{
+    GLuint programID{0u};
+    GLuint shaderID{0u};
+};
+
+bool GraphicsGLImpl::IsBuild(const ComputePipelineDescriptor* descriptor)
+{
+    return descriptor->GetNativePipelineData<GLComputePipeline>().programID != 0u;
+}
+
+std::vector<std::byte>
+GraphicsGLImpl::ReadGraphicsBuffer(GraphicsBufferDescriptor* descriptor, size_t offset, size_t size)
+{
+    if (!descriptor->IsBuild() || offset > descriptor->GetSize() || size > descriptor->GetSize() - offset)
+        return {};
+    std::vector<std::byte> result(size);
+    auto target = GetBufferType(descriptor->GetBufferType());
+    m_glContext->GLBindBuffer(target, descriptor->GetNativeBuffer())
+        .GLGetBufferSubData(target, offset, size, result.data())
+        .GLBindBuffer(target, 0);
+    return result;
+}
+
+bool GraphicsGLImpl::BuildComputePipeline(ComputePipelineDescriptor* descriptor)
+{
+    const auto& stage = descriptor->GetShaderStage();
+    if (stage == nullptr) {
+        return false;
+    }
+
+    GLComputePipeline pipeline;
+    auto source = stage->GetShader()->GetSource().data();
+    m_glContext->GLCreateShader(GL_COMPUTE_SHADER, &pipeline.shaderID)
+        .GLShaderSource(pipeline.shaderID, 1, &source, nullptr)
+        .GLCompileShader(pipeline.shaderID);
+
+    GLint compileStatus = GL_FALSE;
+    m_glContext->GLGetShaderiv(pipeline.shaderID, GL_COMPILE_STATUS, &compileStatus);
+    if (compileStatus != GL_TRUE) {
+        m_glContext->GLDeleteShader(pipeline.shaderID);
+        return false;
+    }
+
+    m_glContext->GLCreateProgram(&pipeline.programID)
+        .GLAttachShader(pipeline.programID, pipeline.shaderID)
+        .GLLinkProgram(pipeline.programID);
+
+    GLint linkStatus = GL_FALSE;
+    m_glContext->GLGetProgramiv(pipeline.programID, GL_LINK_STATUS, &linkStatus);
+    if (linkStatus == GL_TRUE) {
+        descriptor->SetNativePipelineData(std::move(pipeline));
+        return true;
+    }
+
+    m_glContext->GLDeleteShader(pipeline.shaderID).GLDeleteProgram(pipeline.programID);
+    return false;
+}
+
+bool GraphicsGLImpl::BindComputePipeline(ComputePipelineDescriptor* descriptor)
+{
+    if (!descriptor->IsBuild()) {
+        return false;
+    }
+    m_glContext->GLUseProgram(descriptor->GetNativePipelineData<GLComputePipeline>().programID);
+    m_curentStates.SetComputePipeline(descriptor);
+    return true;
+}
+
+bool GraphicsGLImpl::DestroyComputePipeline(ComputePipelineDescriptor* descriptor)
+{
+    if (!descriptor->IsBuild()) {
+        return false;
+    }
+    const auto pipeline = descriptor->GetNativePipelineData<GLComputePipeline>();
+    m_glContext->GLDeleteShader(pipeline.shaderID).GLDeleteProgram(pipeline.programID);
+    descriptor->ResetNativePipelineData();
+    return true;
+}
+
+bool GraphicsGLImpl::Dispatch(uint32_t x, uint32_t y, uint32_t z)
+{
+    if (m_curentStates.GetComputePipeline() == nullptr || x == 0u || y == 0u || z == 0u) {
+        return false;
+    }
+    m_glContext->GLDispatchCompute(x, y, z);
+    return true;
+}
+
+bool GraphicsGLImpl::MemoryBarrier(CS::MemoryBarrier barriers)
+{
+    auto bits = static_cast<uint32_t>(barriers);
+    GLbitfield result = barriers == CS::MemoryBarrier::All ? GL_ALL_BARRIER_BITS : 0;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::VertexBuffer))
+        result |= GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::IndexBuffer))
+        result |= GL_ELEMENT_ARRAY_BARRIER_BIT;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::UniformBuffer))
+        result |= GL_UNIFORM_BARRIER_BIT;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::StorageBuffer))
+        result |= GL_SHADER_STORAGE_BARRIER_BIT;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::TextureFetch))
+        result |= GL_TEXTURE_FETCH_BARRIER_BIT;
+    if (bits & static_cast<uint32_t>(CS::MemoryBarrier::StorageTexture))
+        result |= GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+    if (result != 0)
+        m_glContext->GLMemoryBarrier(result);
+    return result != 0 || barriers == CS::MemoryBarrier::None;
+}
+
 bool GraphicsGLImpl::IsBuild(const GraphicsPipelineDescriptor* descriptor)
 {
     const auto& pipeline = descriptor->GetNativePipelineData<GLGraphicsPipeline>();
@@ -562,6 +787,7 @@ bool GraphicsGLImpl::BindGraphicsPipeline(GraphicsPipelineDescriptor* descriptor
     const auto& pipeline = descriptor->GetNativePipelineData<GLGraphicsPipeline>();
 
     m_glContext->GLUseProgram(pipeline.programID);
+    m_curentStates.SetComputePipeline(nullptr);
 
     const auto& depthStencil = descriptor->GetDepthStencilState();
     if (depthStencil.depthTestEnable) {
@@ -615,6 +841,10 @@ bool GraphicsGLImpl::BindShaderBindingSet(ShaderBindingSetDescriptor* descriptor
             hasError = !bindUniformBuffer(descriptor, binding);
         } else if (binding.GetType() == ShaderBinding::Type::SampledTexture) {
             hasError = !bindSampledTexture(descriptor, binding);
+        } else if (binding.GetType() == ShaderBinding::Type::StorageBuffer) {
+            hasError = !bindStorageBuffer(descriptor, binding);
+        } else if (binding.GetType() == ShaderBinding::Type::StorageTexture) {
+            hasError = !bindStorageTexture(descriptor, binding);
         }
     }
 
@@ -799,6 +1029,31 @@ bool GraphicsGLImpl::bindSampledTexture(ShaderBindingSetDescriptor* descriptor, 
     return false;
 }
 
+bool GraphicsGLImpl::bindStorageBuffer(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding)
+{
+    auto info = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::StorageBufferBinding>(binding.GetBinding());
+    if (!info || info->buffer == nullptr || !info->buffer->Build())
+        return false;
+    m_glContext->GLBindBufferRange(GL_SHADER_STORAGE_BUFFER, binding.GetBinding(), info->buffer->GetNativeBuffer(),
+                                   info->offset, info->range);
+    return true;
+}
+
+bool GraphicsGLImpl::bindStorageTexture(ShaderBindingSetDescriptor* descriptor, const ShaderBinding& binding)
+{
+    auto info = descriptor->GetBindingInfo<ShaderBindingSetDescriptor::StorageTextureBinding>(binding.GetBinding());
+    if (!info.has_value()) {
+        return false;
+    }
+
+    const GLenum access = info->access == StorageTextureAccess::ReadOnly    ? GL_READ_ONLY
+                          : info->access == StorageTextureAccess::WriteOnly ? GL_WRITE_ONLY
+                                                                            : GL_READ_WRITE;
+    m_glContext->GLBindImageTexture(binding.GetBinding(), info->texture->GetNativeTexture(), info->mipLevel, GL_FALSE,
+                                    0, access, GetGLFormatMapping(info->texture->GetFormat()).internalFormat);
+    return true;
+}
+
 GraphicsGLImpl::CurrentStates::~CurrentStates()
 {
     Reset();
@@ -814,6 +1069,37 @@ void GraphicsGLImpl::CurrentStates::SetPipeline(GraphicsPipelineDescriptor* pipe
 
     if (m_pipeline != nullptr) {
         m_pipeline->AddReference();
+    }
+}
+
+std::vector<std::byte> GraphicsGLImpl::ReadTexture(TextureDescriptor* descriptor)
+{
+    if (!descriptor->IsBuild())
+        return {};
+    const auto size = descriptor->GetSize();
+    const auto mapping = GetGLFormatMapping(descriptor->GetFormat());
+    std::vector<std::byte> result(size.width * size.height * GetTextureFormatSize(descriptor->GetFormat()));
+    m_glContext->GLPixelStorei(GL_PACK_ALIGNMENT, 1)
+        .GLBindTexture(GL_TEXTURE_2D, descriptor->GetNativeTexture())
+        .GLGetTexImage(GL_TEXTURE_2D, 0, mapping.format, mapping.type, result.data())
+        .GLBindTexture(GL_TEXTURE_2D, 0)
+        .GLPixelStorei(GL_PACK_ALIGNMENT, 4);
+    return result;
+}
+
+void GraphicsGLImpl::CurrentStates::SetComputePipeline(ComputePipelineDescriptor* pipeline)
+{
+    if (m_computePipeline != nullptr) {
+        m_computePipeline->Release();
+    }
+
+    m_computePipeline = pipeline;
+    if (m_computePipeline != nullptr) {
+        m_computePipeline->AddReference();
+    }
+
+    if (m_computePipeline != nullptr) {
+        SetPipeline(nullptr);
     }
 }
 
@@ -840,6 +1126,11 @@ void GraphicsGLImpl::CurrentStates::Reset()
     if (m_inputAssembly != nullptr) {
         m_inputAssembly->Release();
         m_inputAssembly = nullptr;
+    }
+
+    if (m_computePipeline != nullptr) {
+        m_computePipeline->Release();
+        m_computePipeline = nullptr;
     }
 }
 

@@ -12,7 +12,13 @@ bool GraphicsBufferDescriptor::IsBuild() const
     return m_bufferID != 0u;
 }
 
-void GraphicsBufferDescriptor::Destroy() {}
+void GraphicsBufferDescriptor::Destroy()
+{
+    auto graphicsAPI = GetGraphicsAPI();
+    if (graphicsAPI != nullptr && IsBuild()) {
+        graphicsAPI->DestroyGraphicsBuffer(this);
+    }
+}
 
 bool GraphicsBufferDescriptor::IsDirty() const
 {

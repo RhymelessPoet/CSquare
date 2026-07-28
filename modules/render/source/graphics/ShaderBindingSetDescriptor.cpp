@@ -67,8 +67,8 @@ bool ShaderBindingSetDescriptor::IsDirty() const
 bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t bufferID, size_t offset, size_t range)
 {
     if (binding >= m_bindings.size()) {
-        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("BindUniformBuffer: binding {} out of range (size={})", binding,
-                     m_bindings.size()));
+        CS::LogError(::CS::BuiltInChannels::Render(),
+                     CS::Fmt("BindUniformBuffer: binding {} out of range (size={})", binding, m_bindings.size()));
         return false;
     }
 
@@ -86,8 +86,8 @@ bool ShaderBindingSetDescriptor::BindUniformBuffer(size_t binding, size_t buffer
 bool ShaderBindingSetDescriptor::BindSampledTexture(size_t binding, size_t textureID, size_t samplerID)
 {
     if (binding >= m_bindings.size()) {
-        CS::LogError(::CS::BuiltInChannels::Render(), CS::Fmt("BindSampledTexture: binding {} out of range (size={})", binding,
-                     m_bindings.size()));
+        CS::LogError(::CS::BuiltInChannels::Render(),
+                     CS::Fmt("BindSampledTexture: binding {} out of range (size={})", binding, m_bindings.size()));
         return false;
     }
 
@@ -101,6 +101,33 @@ bool ShaderBindingSetDescriptor::BindSampledTexture(size_t binding, size_t textu
     m_bindings[binding] = texBinding;
     setDirty();
 
+    return true;
+}
+
+bool ShaderBindingSetDescriptor::BindStorageBuffer(size_t binding, size_t bufferID, size_t offset, size_t range)
+{
+    if (binding >= m_bindings.size())
+        return false;
+    auto buffer = GetGraphicsAPI()->GetResourceDescriptor<GraphicsBufferDescriptor>(bufferID);
+    if (buffer == nullptr || offset > buffer->GetSize() || range > buffer->GetSize() - offset)
+        return false;
+    m_bindings[binding] = StorageBufferBinding{buffer, offset, range};
+    setDirty();
+    return true;
+}
+
+bool ShaderBindingSetDescriptor::BindStorageTexture(size_t binding,
+                                                    size_t textureID,
+                                                    StorageTextureAccess access,
+                                                    uint32_t mipLevel)
+{
+    if (binding >= m_bindings.size())
+        return false;
+    auto texture = GetGraphicsAPI()->GetResourceDescriptor<TextureDescriptor>(textureID);
+    if (texture == nullptr)
+        return false;
+    m_bindings[binding] = StorageTextureBinding{texture, access, mipLevel};
+    setDirty();
     return true;
 }
 

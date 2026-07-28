@@ -1,6 +1,7 @@
 #include "GraphicsCommands.h"
 #include "GraphicsInputAssemblyDescriptor.h"
 #include "GraphicsPipelineDescriptor.h"
+#include "ComputePipelineDescriptor.h"
 #include "ShaderBindingSetDescriptor.h"
 #include "graphics/GraphicsGLImpl.h"
 
@@ -41,6 +42,19 @@ bool Command_BindPipeline::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
     return graphicsAPI->BindGraphicsPipeline(descriptor);
 }
 
+bool Command_BindComputePipeline::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
+{
+    auto descriptor = graphicsAPI->GetResourceDescriptor<ComputePipelineDescriptor>(m_pipeline);
+    if (descriptor == nullptr) {
+        return false;
+    }
+    buildGraphicsResource(descriptor);
+    if (!descriptor->IsBuild()) {
+        return false;
+    }
+    return graphicsAPI->BindComputePipeline(descriptor);
+}
+
 bool Command_BindShaderBindingSet::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     auto descriptor = graphicsAPI->GetResourceDescriptor<ShaderBindingSetDescriptor>(m_shaderBindingSet);
@@ -55,6 +69,16 @@ Command_DrawIndexed::Command_DrawIndexed(uint32_t count, uint32_t indexOffset)
 bool Command_DrawIndexed::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
 {
     return graphicsAPI->DrawIndexed(m_count, 1u, m_indexOffset);
+}
+
+bool Command_Dispatch::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
+{
+    return graphicsAPI->Dispatch(m_x, m_y, m_z);
+}
+
+bool Command_MemoryBarrier::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)
+{
+    return graphicsAPI->MemoryBarrier(m_barriers);
 }
 
 bool Command_SetViewport::Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI)

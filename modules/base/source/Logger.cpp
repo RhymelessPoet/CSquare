@@ -33,6 +33,8 @@ struct Logger::Impl
     std::string filePath; // stored for rotation
     bool initialized{false};
 
+    std::atomic<bool> prohibitSourceLocationCapture{false};
+
     void RotateIfNeeded()
     {
         if (maxFileSize == 0 || !fileStream.is_open())
@@ -141,6 +143,16 @@ struct Logger::Impl
 // ---------------------------------------------------------------------------
 static bool s_initialized{false};
 
+Logger::SourceLocationCaptureProhibition::SourceLocationCaptureProhibition()
+{
+    Logger::Instance().m_impl->prohibitSourceLocationCapture = true;
+}
+
+Logger::SourceLocationCaptureProhibition::~SourceLocationCaptureProhibition()
+{
+    Logger::Instance().m_impl->prohibitSourceLocationCapture = false;
+}
+
 // ---------------------------------------------------------------------------
 // Logger public API
 // ---------------------------------------------------------------------------
@@ -248,8 +260,9 @@ bool Logger::ShouldLog(LogLevel level) const
 
 void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, std::string_view message) const
 {
-    if (m_impl == nullptr || !m_impl->initialized)
+    if (m_impl == nullptr || !m_impl->initialized || m_impl->prohibitSourceLocationCapture) {
         return;
+    }
 
     std::string_view levelName = level;
     std::string_view channelName = channel;
@@ -265,6 +278,7 @@ void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, 
     // loc.function_name() on MSVC returns the full decorated signature, e.g.
     //   "void __cdecl CS::MaterialInstance::Apply(class CS::MaterialCompiler &)"
     // Extract just the last unqualified name before the first '('.
+
     std::string_view funcFull = loc.function_name();
     std::string_view funcName = funcFull;
     {
@@ -300,6 +314,51 @@ void Logger::Emit(LogLevel level, LogChannel channel, std::source_location loc, 
     } else {
         line = std::format("[{}] [{}] [{}] {}::{}({}): {}", timestamp, levelName, channelName, fileStem, funcName,
                            loc.line(), message);
+    }
+
+    std::lock_guard lock(m_impl->mutex);
+
+    if (m_impl->sinks.Test(LogSinkValues::Console())) {
+        auto color = Impl::LevelColor(levelName);
+        auto* out = (levelName == "error" || levelName == "fatal") ? stderr : stdout;
+        std::fprintf(out, "%s%s%s\n", color.data(), line.c_str(), Impl::kColorReset.data());
+        std::fflush(out);
+    }
+
+    if (m_impl->sinks.Test(LogSinkValues::File()) && m_impl->fileStream.is_open()) {
+        m_impl->fileStream << line << '\n';
+        m_impl->RotateIfNeeded();
+    }
+}
+
+void Logger::Emit(LogLevel level, LogChannel channel, std::string_view message) const
+{
+    if (m_impl == nullptr || !m_impl->initialized || !m_impl->prohibitSourceLocationCapture) {
+        return;
+    }
+
+    std::string_view levelName = level;
+    std::string_view channelName = channel;
+
+    auto timestamp = Impl::Timestamp();
+
+    // ---- assemble log line ----
+    // Base format: [time] [level  ] [channel]: message
+    // pid/tid are appended only when enabled.
+    std::string line;
+    if (m_impl->showPid && m_impl->showTid) {
+        auto pid = Impl::ProcessID();
+        auto tid = Impl::ThreadID();
+        line =
+            std::format("[{}] [{}] [{}] [pid:{}] [tid:{:x}]: {}", timestamp, levelName, channelName, pid, tid, message);
+    } else if (m_impl->showPid) {
+        line =
+            std::format("[{}] [{}] [{}] [pid:{}]: {}", timestamp, levelName, channelName, Impl::ProcessID(), message);
+    } else if (m_impl->showTid) {
+        line =
+            std::format("[{}] [{}] [{}] [tid:{:x}]: {}", timestamp, levelName, channelName, Impl::ThreadID(), message);
+    } else {
+        line = std::format("[{}] [{}] [{}]: {}", timestamp, levelName, channelName, message);
     }
 
     std::lock_guard lock(m_impl->mutex);

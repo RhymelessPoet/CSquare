@@ -11,7 +11,8 @@ OpenGLContext::OpenGLContext()
     m_nativeContext = std::make_unique<GLFWContext>();
 }
 
-OpenGLContext::OpenGLContext(std::shared_ptr<OpenGLContext> sharedContext) {}
+OpenGLContext::OpenGLContext(std::shared_ptr<OpenGLContext> sharedContext) : m_sharedContext(std::move(sharedContext))
+{}
 
 OpenGLContext::OpenGLContext(std::unique_ptr<INativeContext> nativeContext) : m_nativeContext(std::move(nativeContext))
 {}
@@ -20,26 +21,30 @@ OpenGLContext::~OpenGLContext() {}
 
 bool OpenGLContext::IsShared() const
 {
-    return false;
+    return m_sharedContext != nullptr;
 }
 
 bool OpenGLContext::MakeCurrent()
 {
-    return m_nativeContext ? m_nativeContext->MakeCurrent() : false;
+    if (m_nativeContext)
+        return m_nativeContext->MakeCurrent();
+    return m_sharedContext ? m_sharedContext->MakeCurrent() : false;
 }
 
 void OpenGLContext::DoneCurrent()
 {
-    if (m_nativeContext) {
+    if (m_nativeContext)
         m_nativeContext->DoneCurrent();
-    }
+    else if (m_sharedContext)
+        m_sharedContext->DoneCurrent();
 }
 
 void OpenGLContext::SwapBuffers()
 {
-    if (m_nativeContext) {
+    if (m_nativeContext)
         m_nativeContext->SwapBuffers();
-    }
+    else if (m_sharedContext)
+        m_sharedContext->SwapBuffers();
 }
 
 std::string_view OpenGLContext::GetVersion()
@@ -487,6 +492,48 @@ OpenGLContext& OpenGLContext::GLDrawElements(GLenum mode, GLsizei count, GLenum 
     return *this;
 }
 
+OpenGLContext& OpenGLContext::GLDeleteProgram(GLuint program)
+{
+    glDeleteProgram(program);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data)
+{
+    glGetBufferSubData(target, offset, size, data);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ)
+{
+    glDispatchCompute(numGroupsX, numGroupsY, numGroupsZ);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLMemoryBarrier(GLbitfield barriers)
+{
+    glMemoryBarrier(barriers);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLBindImageTexture(GLuint unit,
+                                                 GLuint texture,
+                                                 GLint level,
+                                                 GLboolean layered,
+                                                 GLint layer,
+                                                 GLenum access,
+                                                 GLenum format)
+{
+    glBindImageTexture(unit, texture, level, layered, layer, access, format);
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels)
+{
+    glGetTexImage(target, level, format, type, pixels);
+    return *this;
+}
+
 OpenGLContext& OpenGLContext::GLCheck()
 {
     GLenum err;
@@ -519,6 +566,15 @@ OpenGLContext& OpenGLContext::GLCheck()
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL Error: " << getErrorString(err) << std::endl;
     }
+    return *this;
+}
+
+OpenGLContext& OpenGLContext::GLSetupDebugMessageCallback(GLDEBUGPROC callback, const void* userParam)
+{
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(callback, userParam);
+
     return *this;
 }
 

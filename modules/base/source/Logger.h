@@ -76,10 +76,11 @@ struct BuiltInChannels
 {
     // clang-format off
     static inline FlagEnumClass<LogChannelTag,
-        "Engine", "Render", "Asset", "Editor", "General"> Values{};
+        "Engine", "Graphics", "Render", "Asset", "Editor", "General"> Values{};
     // clang-format on
 
     static LogChannel Engine() { return LogChannel::Make<"Engine">(); }
+    static LogChannel Graphics() { return LogChannel::Make<"Graphics">(); }
     static LogChannel Render() { return LogChannel::Make<"Render">(); }
     static LogChannel Asset() { return LogChannel::Make<"Asset">(); }
     static LogChannel Editor() { return LogChannel::Make<"Editor">(); }
@@ -92,6 +93,13 @@ struct BuiltInChannels
 class Logger
 {
 public:
+    class SourceLocationCaptureProhibition
+    {
+    public:
+        SourceLocationCaptureProhibition();
+        ~SourceLocationCaptureProhibition();
+    };
+    friend class SourceLocationCaptureProhibition;
     CS_DELETE_COPY_MOVE(Logger)
 
     static Logger& Instance();
@@ -115,6 +123,7 @@ public:
     bool ShouldLog(LogLevel level) const;
 
     void Emit(LogLevel level, LogChannel channel, std::source_location loc, std::string_view message) const;
+    void Emit(LogLevel level, LogChannel channel, std::string_view message) const;
 
 private:
     Logger() = default;
@@ -155,7 +164,13 @@ template <typename... Args>
 }
 
 // clang-format off
-inline void Log      (LogLevel l, LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { if (Logger::IsInitialized() && Logger::Instance().ShouldLog(l)) Logger::Instance().Emit(l, ch, loc, msg); }
+inline void Log(LogLevel l, LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current())
+{ 
+    if (Logger::IsInitialized() && Logger::Instance().ShouldLog(l)) {
+        Logger::Instance().Emit(l, ch, loc, msg);
+        Logger::Instance().Emit(l, ch, msg);
+    }
+}
 inline void LogTrace  (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Trace(),   ch, msg, loc); }
 inline void LogDebug  (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Debug(),   ch, msg, loc); }
 inline void LogInfo   (LogChannel ch, std::string_view msg, std::source_location loc = std::source_location::current()) { Log(LogLevels::Info(),    ch, msg, loc); }

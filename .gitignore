@@ -5,6 +5,8 @@ lib/
 .vs/
 .vscode/
 .qoder/
+.venv/
+.agents/
 # bin/
 _deps/
 
@@ -40,7 +42,7 @@ _deps/
 *.pdb
 *.pyc
 
-
+/bin/**
 !/meta/bin/**
 !/source/**
 

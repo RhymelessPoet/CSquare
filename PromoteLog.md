@@ -70,3 +70,15 @@ Editor 侧边栏
 · 侧边栏底部增加一个唤起菜单的button（icon: D:\Studio\CSquare\source\editor\qml\icons\cs_sidebar_samples.png）
 · 此button（icon: D:\Studio\CSquare\source\editor\qml\icons\cs_sidebar_samples.png）唤起展示render所有sample的菜单，点击菜单中某一项则执行对应sample的exe
 · 编译editor时，触发对所有samples的编译，并将exe拷贝到editor运行目录下的samples文件夹下
+
+参考graphicspipeline，实现computepipeline
+
+在test/render/compute文件夹下实现对ComputePipeline的测试，先给出计划
+· 窗口系统使用qt
+· 测试界面支持切换显示用例结果，和保存图像
+. 测试shader放到用例所在cpp中
+· 在test目录和render目录下分别创建CMakeList，为computepipeline测试创建可执行程序，main.cpp在compute目录下
+· 测试ComputePipeline，直接使用GraphicsAPI一级的接口
+· 测试case
+·· 图像边缘保持滤波，图像从assets/images/lighthouse.png
+.. 拉普拉斯曲面平滑（渲染使用正交相机，Blinn-Phong光照）

@@ -1,4 +1,5 @@
 #pragma once
+#include "GraphicsResourceParameters.h"
 #include "IGraphicsResourceDescriptor.h"
 #include "ShaderBinding.h"
 #include "TypeTraits.h"
@@ -49,7 +50,21 @@ public:
         SamplerDescriptor* sampler{nullptr};
     };
 
-    using BindingInfo = std::variant<UniformBufferBinding, SampledTextureBinding>;
+    struct StorageBufferBinding
+    {
+        GraphicsBufferDescriptor* buffer{nullptr};
+        size_t offset{0u};
+        size_t range{0u};
+    };
+    struct StorageTextureBinding
+    {
+        TextureDescriptor* texture{nullptr};
+        StorageTextureAccess access{StorageTextureAccess::ReadWrite};
+        uint32_t mipLevel{0u};
+    };
+
+    using BindingInfo =
+        std::variant<UniformBufferBinding, SampledTextureBinding, StorageBufferBinding, StorageTextureBinding>;
 
     ShaderBindingSetDescriptor(size_t id, std::shared_ptr<GraphicsGLImpl> graphicsAPI, size_t layoutResourceID);
     ~ShaderBindingSetDescriptor() = default;
@@ -60,6 +75,8 @@ public:
 
     bool BindUniformBuffer(size_t binding, size_t bufferID, size_t offset, size_t range);
     bool BindSampledTexture(size_t binding, size_t textureID, size_t samplerID);
+    bool BindStorageBuffer(size_t binding, size_t bufferID, size_t offset, size_t range);
+    bool BindStorageTexture(size_t binding, size_t textureID, StorageTextureAccess access, uint32_t mipLevel);
 
     ShaderBindingSetLayoutDescriptor* GetLayout() const { return m_layout; }
 

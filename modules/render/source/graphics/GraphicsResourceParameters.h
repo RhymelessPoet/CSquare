@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <type_traits>
 
 namespace CS
 {
@@ -97,6 +98,25 @@ enum class CullMode : uint8_t
     FrontAndBack,
     Max
 };
+
+enum class StorageTextureAccess : uint8_t { ReadOnly, WriteOnly, ReadWrite };
+
+enum class MemoryBarrier : uint32_t
+{
+    None = 0,
+    VertexBuffer = 1u << 0,
+    IndexBuffer = 1u << 1,
+    UniformBuffer = 1u << 2,
+    StorageBuffer = 1u << 3,
+    TextureFetch = 1u << 4,
+    StorageTexture = 1u << 5,
+    All = 0xffffffffu
+};
+
+constexpr MemoryBarrier operator|(MemoryBarrier lhs, MemoryBarrier rhs)
+{
+    return static_cast<MemoryBarrier>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
 
 static constexpr inline size_t GetTextureFormatSize(TextureFormat format)
 {

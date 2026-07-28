@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicsInputAssembly.h"
 #include "GraphicsPipeline.h"
+#include "ComputePipeline.h"
 #include "RenderTarget.h"
 #include "ShaderBindingSet.h"
 #include "Color.h"
@@ -25,9 +26,12 @@ public:
     GraphicsCommandBuffer& SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
     GraphicsCommandBuffer& Bind(GraphicsPipeline pipeline);
+    GraphicsCommandBuffer& Bind(ComputePipeline pipeline);
     GraphicsCommandBuffer& Bind(GraphicsInputAssembly inputAssembly);
     GraphicsCommandBuffer& Bind(ShaderBindingSet shaderBindingSet);
     GraphicsCommandBuffer& DrawIndexed(uint32_t count, uint32_t indexOffset);
+    GraphicsCommandBuffer& Dispatch(uint32_t groupCountX, uint32_t groupCountY = 1, uint32_t groupCountZ = 1);
+    GraphicsCommandBuffer& Barrier(MemoryBarrier barriers);
 
     void ClearBuffer();
 

@@ -40,6 +40,12 @@ GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(GraphicsPipeline pipeline)
     return *this;
 }
 
+GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(ComputePipeline pipeline)
+{
+    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_BindComputePipeline>(pipeline.GetID());
+    return *this;
+}
+
 GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(GraphicsInputAssembly inputAssembly)
 {
     descriptor<GraphicsCommandBufferDescriptor>().Push<Command_BindInputAssembly>(inputAssembly.GetID());
@@ -55,6 +61,18 @@ GraphicsCommandBuffer& GraphicsCommandBuffer::Bind(ShaderBindingSet shaderBindin
 GraphicsCommandBuffer& GraphicsCommandBuffer::DrawIndexed(uint32_t count, uint32_t indexOffset)
 {
     descriptor<GraphicsCommandBufferDescriptor>().Push<Command_DrawIndexed>(count, indexOffset);
+    return *this;
+}
+
+GraphicsCommandBuffer& GraphicsCommandBuffer::Dispatch(uint32_t x, uint32_t y, uint32_t z)
+{
+    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_Dispatch>(x, y, z);
+    return *this;
+}
+
+GraphicsCommandBuffer& GraphicsCommandBuffer::Barrier(MemoryBarrier barriers)
+{
+    descriptor<GraphicsCommandBufferDescriptor>().Push<Command_MemoryBarrier>(barriers);
     return *this;
 }
 

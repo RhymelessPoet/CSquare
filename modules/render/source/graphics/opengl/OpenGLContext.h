@@ -90,6 +90,7 @@ public:
     OpenGLContext& GLBindBufferRange(GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
     OpenGLContext& GLBufferData(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
     OpenGLContext& GLBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
+    OpenGLContext& GLGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, void* data);
     OpenGLContext& GLDeleteBuffers(GLsizei n, const GLuint* buffers);
 
     OpenGLContext& GLBindVertexArray(GLuint array);
@@ -110,6 +111,7 @@ public:
     OpenGLContext& GLCreateShader(GLenum type, GLuint* shader);
     OpenGLContext& GLDeleteShader(GLuint shader);
     OpenGLContext& GLCreateProgram(GLuint* program);
+    OpenGLContext& GLDeleteProgram(GLuint program);
     OpenGLContext& GLAttachShader(GLuint program, GLuint shader);
     OpenGLContext& GLLinkProgram(GLuint program);
     OpenGLContext& GLGetProgramiv(GLuint program, GLenum pname, GLint* params);
@@ -130,14 +132,26 @@ public:
 
     OpenGLContext& GLDrawArrays(GLenum mode, GLint first, GLsizei count);
     OpenGLContext& GLDrawElements(GLenum mode, GLsizei count, GLenum type, const void* indices);
+    OpenGLContext& GLDispatchCompute(GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ);
+    OpenGLContext& GLMemoryBarrier(GLbitfield barriers);
+    OpenGLContext& GLBindImageTexture(GLuint unit,
+                                      GLuint texture,
+                                      GLint level,
+                                      GLboolean layered,
+                                      GLint layer,
+                                      GLenum access,
+                                      GLenum format);
+    OpenGLContext& GLGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void* pixels);
 
     OpenGLContext& GLCheck();
+    OpenGLContext& GLSetupDebugMessageCallback(GLDEBUGPROC callback, const void* userParam);
 
 private:
     void initVersion();
 
 private:
     std::unique_ptr<INativeContext> m_nativeContext;
+    std::shared_ptr<OpenGLContext> m_sharedContext;
     std::string m_version;
 };
 

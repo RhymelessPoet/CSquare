@@ -1,4 +1,5 @@
 #include "GraphicsAPI.h"
+#include "ComputePipelineDescriptor.h"
 #include "GraphicsBufferDescriptor.h"
 #include "GraphicsCommandBufferDescriptor.h"
 #include "GraphicsGLImpl.h"
@@ -112,6 +113,35 @@ GraphicsPipeline GraphicsAPI::CreatePipeline()
     return GraphicsPipeline(descriptor);
 }
 
+StorageBuffer GraphicsAPI::CreateStorageBuffer(size_t size)
+{
+    auto cache = m_impl->GetResourceCache();
+    auto id = cache->Allocate<GraphicsBufferDescriptor>(m_impl);
+    auto descriptor = cache->GetDescriptor<GraphicsBufferDescriptor>(id);
+    descriptor->SetBufferType(GraphicsBufferDescriptor::BufferType::StorageBuffer);
+    descriptor->SetSize(size);
+    return StorageBuffer(descriptor);
+}
+
+VertexBuffer GraphicsAPI::CreateVertexBufferView(StorageBuffer buffer)
+{
+    return VertexBuffer(m_impl->GetResourceDescriptor<GraphicsBufferDescriptor>(buffer.GetID()));
+}
+
+std::vector<std::byte> GraphicsAPI::ReadStorageBuffer(StorageBuffer buffer, size_t offset, size_t size)
+{
+    auto descriptor = m_impl->GetResourceDescriptor<GraphicsBufferDescriptor>(buffer.GetID());
+    return descriptor != nullptr && descriptor->Build() ? m_impl->ReadGraphicsBuffer(descriptor, offset, size)
+                                                        : std::vector<std::byte>{};
+}
+
+ComputePipeline GraphicsAPI::CreateComputePipeline()
+{
+    auto resourceCache = m_impl->GetResourceCache();
+    auto resourceID = resourceCache->Allocate<ComputePipelineDescriptor>(m_impl);
+    return ComputePipeline(resourceCache->GetDescriptor<ComputePipelineDescriptor>(resourceID));
+}
+
 Texture GraphicsAPI::CreateTexture(TextureFormat format, const Size2u& size)
 {
     auto resorceCache = m_impl->GetResourceCache();
@@ -135,6 +165,12 @@ Texture GraphicsAPI::GetTexture(size_t id) const
     }
 
     return Texture(descriptor);
+}
+
+std::vector<std::byte> GraphicsAPI::ReadTexture(Texture texture)
+{
+    auto descriptor = m_impl->GetResourceDescriptor<TextureDescriptor>(texture.GetID());
+    return descriptor != nullptr && descriptor->Build() ? m_impl->ReadTexture(descriptor) : std::vector<std::byte>{};
 }
 
 Texture GraphicsAPI::GetColorAttachment(RenderTarget renderTarget) const
