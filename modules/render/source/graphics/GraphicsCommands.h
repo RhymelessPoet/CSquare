@@ -1,11 +1,8 @@
 #pragma once
-#include "IGraphicsCommand.h"
-<<<<<<< HEAD:modules/render/source/graphics/GraphicsCommands.h
 #include "Color.h"
-=======
-#include "base/Color.h"
 #include "GraphicsResourceParameters.h"
->>>>>>> 1ff51b6 ([graphics] Add compute pipeline, and test):source/render/graphics/GraphicsCommands.h
+#include "IGraphicsCommand.h"
+
 
 namespace CS
 {
@@ -69,6 +66,7 @@ class Command_BindComputePipeline : public IGraphicsCommand
 public:
     explicit Command_BindComputePipeline(size_t pipeline) : m_pipeline(pipeline) {}
     bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) override;
+
 private:
     size_t m_pipeline{-1u};
 };
@@ -114,6 +112,7 @@ class Command_Dispatch : public IGraphicsCommand
 public:
     Command_Dispatch(uint32_t x, uint32_t y, uint32_t z) : m_x(x), m_y(y), m_z(z) {}
     bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) override;
+
 private:
     uint32_t m_x, m_y, m_z;
 };
@@ -123,6 +122,7 @@ class Command_MemoryBarrier : public IGraphicsCommand
 public:
     explicit Command_MemoryBarrier(MemoryBarrier barriers) : m_barriers(barriers) {}
     bool Execute(std::shared_ptr<GraphicsGLImpl>& graphicsAPI) override;
+
 private:
     MemoryBarrier m_barriers;
 };

@@ -5,16 +5,12 @@
 #include "GraphicsPipelineDescriptor.h"
 #include "GraphicsResourceParameters.h"
 #include "GraphicsShaderStage.h"
+#include "Logger.h"
 #include "ShaderBindingSetDescriptor.h"
-<<<<<<< HEAD:modules/render/source/graphics/GraphicsGLImpl.cpp
-#include "EnumUtils.h"
-=======
-#include "base/EnumUtils.h"
-#include "base/Logger.h"
->>>>>>> 1ff51b6 ([graphics] Add compute pipeline, and test):source/render/graphics/GraphicsGLImpl.cpp
 #include "graphics/GraphicsResourceCache.h"
 #include "graphics/opengl/glad/include/glad/glad.h"
 #include "opengl/OpenGLContext.h"
+
 
 namespace CS
 {

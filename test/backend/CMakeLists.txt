@@ -24,8 +24,8 @@ qt_add_qml_module(${TARGET_NAME}
 )
 
 target_link_libraries(${TARGET_NAME} PRIVATE
+    CSBase
     CSRender
-    CSEngine
     Qt6::Core
     Qt6::Gui
     Qt6::Qml

@@ -1,6 +1,6 @@
 #include "ComputeResultItem.h"
 #include "ComputeTestController.h"
-#include "base/Logger.h"
+#include "Logger.h"
 #include <QGuiApplication>
 #include <QProcessEnvironment>
 #include <QQmlApplicationEngine>
