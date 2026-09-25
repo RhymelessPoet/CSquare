@@ -7,6 +7,7 @@ lib/
 .qoder/
 .venv/
 .agents/
+.github/
 # bin/
 _deps/
 

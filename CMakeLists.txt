@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(PROJECT_NAME CircleSquare)
 project(${PROJECT_NAME} LANGUAGES CXX VERSION 0.0.0)
 
+option(CS_BUILD_TESTS "Build interactive CSquare test applications" ON)
+
 set(THIRD_PARTY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
 set(PROJECT_BINARY_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
@@ -15,9 +17,3 @@ find_package(Python3 3.12 COMPONENTS Interpreter REQUIRED)
 
 add_subdirectory(thirdparty)
 add_subdirectory(modules)
-
-option(CS_BUILD_TESTS "Build interactive CSquare test applications" ON)
-
-if(CS_BUILD_TESTS)
-    add_subdirectory(test)
-endif()
